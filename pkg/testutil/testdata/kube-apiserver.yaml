@@ -1,0 +1,185 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    component: kube-apiserver
+    tier: control-plane
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - exec /usr/local/bin/kube-apiserver --v=2
+      --cloud-config=/etc/gce.conf
+      --address=127.0.0.1
+      --allow-privileged=true
+      --cloud-provider=gce
+      --client-ca-file=/etc/srv/kubernetes/pki/ca-certificates.crt
+      --etcd-servers=http://127.0.0.1:2379
+      --etcd-servers-overrides=/events#http://127.0.0.1:4002
+      --secure-port=443
+      --tls-cert-file=/etc/srv/kubernetes/pki/apiserver.crt
+      --tls-private-key-file=/etc/srv/kubernetes/pki/apiserver.key
+      --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+      --requestheader-client-ca-file=/etc/srv/kubernetes/pki/aggr_ca.crt
+      --requestheader-allowed-names=aggregator
+      --requestheader-extra-headers-prefix=X-Remote-Extra-
+      --requestheader-group-headers=X-Remote-Group
+      --requestheader-username-headers=X-Remote-User
+      --proxy-client-cert-file=/etc/srv/kubernetes/pki/proxy_client.crt
+      --proxy-client-key-file=/etc/srv/kubernetes/pki/proxy_client.key
+      --enable-aggregator-routing=true
+      --tls-cert-file=/etc/srv/kubernetes/pki/apiserver.crt
+      --tls-private-key-file=/etc/srv/kubernetes/pki/apiserver.key
+      --kubelet-client-certificate=/etc/srv/kubernetes/pki/apiserver-client.crt
+      --kubelet-client-key=/etc/srv/kubernetes/pki/apiserver-client.key
+      --service-account-key-file=/etc/srv/kubernetes/pki/serviceaccount.crt
+      --token-auth-file=/etc/srv/kubernetes/known_tokens.csv
+      --basic-auth-file=/etc/srv/kubernetes/basic_auth.csv
+      --storage-backend=etcd3
+      --storage-media-type=application/vnd.kubernetes.protobuf
+      --etcd-compaction-interval=150s
+      --target-ram-mb=180
+      --service-cluster-ip-range=10.51.240.0/20
+      --audit-policy-file=/etc/audit_policy.config
+      --audit-webhook-mode=batch
+      --audit-webhook-config-file=/etc/audit_webhook.config
+      --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ExtendedResourceToleration,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
+      --runtime-config=api/all=true
+      --advertise-address=33.3.3.3
+      --ssh-user=zorp
+      --ssh-keyfile=/etc/srv/sshproxy/.sshkeyfile
+      --authentication-token-webhook-config-file=/etc/gcp_authn.config
+      --authorization-webhook-config-file=/etc/gcp_authz.config
+      --authorization-mode=Node,RBAC,Webhook
+      --allow-privileged=true 1>>/var/log/kube-apiserver.log
+      2>&1
+    image: gcr.io/google_containers/kube-apiserver:v1.9.7
+    livenessProbe:
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    name: kube-apiserver
+    ports:
+    - containerPort: 443
+      hostPort: 443
+      name: https
+    - containerPort: 8080
+      hostPort: 8080
+      name: local
+    resources:
+      requests:
+        cpu: 250m
+    volumeMounts:
+    - mountPath: /etc/gce.conf
+      name: cloudconfigmount
+      readOnly: true
+    - mountPath: /etc/gcp_authz.config
+      name: webhookconfigmount
+      readOnly: false
+    - mountPath: /etc/gcp_authn.config
+      name: webhookauthnconfigmount
+      readOnly: false
+    - mountPath: /etc/audit_policy.config
+      name: auditpolicyconfigmount
+      readOnly: true
+    - mountPath: /etc/audit_webhook.config
+      name: auditwebhookconfigmount
+      readOnly: true
+    - mountPath: /etc/srv/kubernetes
+      name: srvkube
+      readOnly: true
+    - mountPath: /var/log/kube-apiserver.log
+      name: logfile
+      readOnly: false
+    - mountPath: /var/log/kube-apiserver-audit.log
+      name: auditlogfile
+      readOnly: false
+    - mountPath: /etc/ssl
+      name: etcssl
+      readOnly: true
+    - mountPath: /usr/share/ca-certificates
+      name: usrsharecacerts
+      readOnly: true
+    - mountPath: /var/ssl
+      name: varssl
+      readOnly: true
+    - mountPath: /etc/openssl
+      name: etcopenssl
+      readOnly: true
+    - mountPath: /etc/srv/pki
+      name: etcpki
+      readOnly: true
+    - mountPath: /etc/srv/sshproxy
+      name: srvsshproxy
+      readOnly: false
+  hostNetwork: true
+  volumes:
+  - hostPath:
+      path: /etc/gce.conf
+      type: FileOrCreate
+    name: cloudconfigmount
+  - hostPath:
+      path: /etc/gcp_authz.config
+      type: FileOrCreate
+    name: webhookconfigmount
+  - hostPath:
+      path: /etc/gcp_authn.config
+      type: FileOrCreate
+    name: webhookauthnconfigmount
+  - hostPath:
+      path: /etc/audit_policy.config
+      type: FileOrCreate
+    name: auditpolicyconfigmount
+  - hostPath:
+      path: /etc/audit_webhook.config
+      type: FileOrCreate
+    name: auditwebhookconfigmount
+  - hostPath:
+      path: /etc/srv/kubernetes
+    name: srvkube
+  - hostPath:
+      path: /var/log/kube-apiserver.log
+      type: FileOrCreate
+    name: logfile
+  - hostPath:
+      path: /var/log/kube-apiserver-audit.log
+      type: FileOrCreate
+    name: auditlogfile
+  - hostPath:
+      path: /etc/ssl
+    name: etcssl
+  - hostPath:
+      path: /usr/share/ca-certificates
+    name: usrsharecacerts
+  - hostPath:
+      path: /var/ssl
+    name: varssl
+  - hostPath:
+      path: /etc/openssl
+    name: etcopenssl
+  - hostPath:
+      path: /etc/srv/pki
+    name: etcpki
+  - hostPath:
+      path: /etc/srv/sshproxy
+    name: srvsshproxy

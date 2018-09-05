@@ -1,0 +1,93 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: 'bundle.k8s.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.9.7.testbundle'
+
+  optionsDefaults:
+  - appName: 'cluster-options'
+    objectName: 'options-defaults'
+
+  imageConfigs:
+  - name: 'ubuntu-control-plane'
+    initScript: "echo 'I'm a script'"
+    baseOsImage:
+      path: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+    preloadedFiles:
+    - name: 'floo'
+      version: '1.0'
+      file:
+        path: '/tmp/var/floo.txt'
+    env:
+      - name: FOO_VAR
+        value: 'foo-val'
+  - name: 'ubuntu-cluster-node'
+    initScript: "echo 'I'm another script'"
+    baseOsImage:
+      path: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+
+  clusterApps:
+  #====================#
+  # Core control plane #
+  #====================#
+  - name: kubernetes-control-plane
+    clusterObjects:
+    - name: etcd-server-pod
+      file:
+        path: 'etcd-server.yaml'
+      overlayFile:
+        path: 'etcd-server-overlays.yaml'
+    - name: kube-apiserver-pod
+      file:
+        path: 'kube-apiserver.yaml'
+    - name: kube-scheduler-pod
+      file:
+        path: 'kube-scheduler.yaml'
+    - name: kube-controller-manager-pod
+      file:
+        path: 'kube-controller-manager.yaml'
+
+  #========#
+  # Addons #
+  #========#
+  - name: kubedns
+    clusterObjects:
+    - name: kubedns-service
+      file:
+        path: 'kubedns/service.yaml'
+    - name: kubedns-service-account
+      file:
+        path: 'kubedns/service-account.yaml'
+    - name: kubedns-config-map
+      file:
+        path: 'kubedns/config-map.yaml'
+    - name: kubedns-deployment
+      file:
+        path: 'kubedns/deployment.yaml'
+
+  #=========#
+  # Options #
+  #=========#
+  - name: 'cluster-options'
+    clusterObjects:
+    - name: 'options-defaults'
+      file:
+        path: 'options-defaults.yaml'
+    - name: 'options-crd'
+      file:
+        path: 'options-crd.yaml'

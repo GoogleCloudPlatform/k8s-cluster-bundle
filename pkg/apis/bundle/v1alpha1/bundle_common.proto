@@ -1,0 +1,56 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package pkg.apis.bundle.v1alpha1;
+
+option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1";
+
+// File represents some sort of file that's specified external to the bundle,
+// which could be on either a local or remote file system.
+message File {
+  // Path to find this file.
+  string path = 1;
+
+  // Optional Sha256 hash of the binary to ensure we are pulling the correct
+  // binary/file.
+  string hash = 2;
+}
+
+// Group-version-kind wrapper for Kubernetes types. For example, if a Kubernetes
+// object begins with:
+//
+//   apiVersion: apps/v1
+//   kind: StatefulSet
+//   metadata: ...
+//   spec: ...
+//
+// The corresponding GroupVersionKind (or GVK) would be:
+//
+//   {group: 'apps', version: 'v1', kind: 'StatefulSet'}
+message GroupVersionKind {
+  string group = 1;
+  string version = 2;
+  string kind = 3;
+}
+
+// A key for retrieving a specific cluster object.
+message ClusterObjectKey {
+  // Name of the cluster application.
+  string app_name = 1;
+
+  // Name of the cluster object within the application.
+  string object_name = 2;
+}

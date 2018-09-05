@@ -1,0 +1,69 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package pkg.apis.bundle.v1alpha1;
+
+option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1";
+
+import "google/protobuf/struct.proto";
+import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
+import "pkg/apis/bundle/v1alpha1/overlay.proto";
+
+// A Kubernetes application, either run statically by the Kubelet or run by the
+// K8S Control Plane.
+message ClusterApplication {
+  // Name of this cluster application. Each cluster application in the bundle
+  // should have a unique name. For an example you might have a 'kube-apiserver'
+  // application or perhaps even a 'kubernetes' application.
+  string name = 1;
+
+  // Structured Kubenetes objects that run as part of this app, whether on the
+  // master, on the nodes, or in some other fashion. There is no ordering
+  // guarantee for when these objects are deployed (they can be deployed in any
+  // order to the cluster).
+  repeated ClusterObject cluster_objects = 2;
+}
+
+// A Kubernetes object of unspecified type.
+message ClusterObject {
+  // The name of this cluster object. This must be unique within the Cluster
+  // Application.
+  string name = 1;
+
+  // A Kubernetes object that's untyped but which has YAML-structure. These have
+  // historically been called 'YAMLs' or 'Manifests'. You might expect
+  // Kubernetes objects like pods, deployments, or daemonsets to live here.
+  oneof kube_data {
+    // The Kubernetes file specified as an inline object. All Kubernetes objects
+    // must be YAML/JSON compatible.
+    google.protobuf.Struct inlined = 2;
+
+    // An external Kubernetes file, specified on a local or remote file system.
+    // The file must be specified as either YAML or JSON.
+    File file = 3;
+  }
+
+  // Overlays for this cluster object, which allow specialization/customization
+  // of the cluster via strategic merge patch.
+  oneof overlay_data {
+    // Inlined overlays.
+    OverlayCollection overlay_collection = 4;
+
+    // Externally referenced overlays that has the format of an
+    // OverlayCollection. The file must be be either YAML or JSON.
+    File overlay_file = 5;
+  }
+}
