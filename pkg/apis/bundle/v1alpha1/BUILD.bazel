@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "v1alpha1_proto",
+    srcs = [
+        "application_bundle.proto",
+        "bundle_common.proto",
+        "cluster_bundle.proto",
+        "image_config.proto",
+        "object_meta.proto",
+        "overlay.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:struct_proto"],
+)
+
+go_proto_library(
+    name = "v1alpha1_go_proto",
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1",
+    proto = ":v1alpha1_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["doc.go"],
+    embed = [":v1alpha1_go_proto"],
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1",
+    visibility = ["//visibility:public"],
+)
