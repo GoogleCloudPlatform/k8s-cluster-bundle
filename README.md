@@ -18,22 +18,20 @@ The Cluster Bundle has three components:
 *   **Library**: Go-library code for interacting with the Cluster Bundle
 *   **CLI**: A minimal CLI for interacting with Cluster Bundles.
 
-
 ## Directory Structure
 
 This directory should follow the structure the standard Go package layout
 specified in https://github.com/golang-standards/project-layout
 
--   `pkg/`: Library code.
--   `pkg/apis`: APIs and schema for the Cluster Bundle.
--   `cmd/`: Binaries. In particular, this contains the `bundler` CLI which
+*   `pkg/`: Library code.
+*   `pkg/apis`: APIs and schema for the Cluster Bundle.
+*   `cmd/`: Binaries. In particular, this contains the `bundler` CLI which
     assists in modifying and inspecting Bundles.
 
 ## Building and Testing
 
 The Cluster Bundle relies on [Bazel](https://bazel.build/) for building and
 testing.
-
 
 ### Testing
 
@@ -61,7 +59,8 @@ bazel run //:gazelle
 ### Generating Proto Go Files
 
 Currently, the schema for the Cluster Bundle is specified as Proto files. To
-generate the Go client libraries, run
+generate the Go client libraries, first install
+[protoc-gen-go](https://github.com/golang/protobuf#installation) and run:
 
 ```shell
 pkg/apis/bundle/v1alpha1/regenerate-sources.sh
