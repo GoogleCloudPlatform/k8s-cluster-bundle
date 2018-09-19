@@ -22,19 +22,19 @@ import (
 )
 
 // Key representing a specific cluster object.
-type appObjKey struct {
-	appName string
-	objName string
+type compObjKey struct {
+	compName string
+	objName  string
 }
 
 // BundleFinder is a wrapper which allows for efficient searching through
 // bundles. The BundleFinder is intended to be readonly; if modifications are
 // made to the bundle, subsequent lookups will fail.
 type BundleFinder struct {
-	bundle       *bpb.ClusterBundle
-	nodeLookup   map[string]*bpb.ImageConfig
-	appLookup    map[string]*bpb.ClusterApplication
-	appObjLookup map[appObjKey]*bpb.ClusterObject
+	bundle        *bpb.ClusterBundle
+	nodeLookup    map[string]*bpb.NodeConfig
+	compLookup    map[string]*bpb.ClusterComponent
+	compObjLookup map[compObjKey]*bpb.ClusterObject
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
@@ -42,8 +42,8 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	b = converter.CloneBundle(b)
 	// TODO: we assume the bundle is in a correct state at this point.
 	// should we? Should we validate here?
-	nodeConfigs := make(map[string]*bpb.ImageConfig)
-	for _, nc := range b.GetSpec().GetImageConfigs() {
+	nodeConfigs := make(map[string]*bpb.NodeConfig)
+	for _, nc := range b.GetSpec().GetNodeConfigs() {
 		n := nc.GetName()
 		if n == "" {
 			return nil, fmt.Errorf("node bootstrap configs must always have a name. was empty for %v", nc)
@@ -51,42 +51,42 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 		nodeConfigs[n] = nc
 	}
 
-	appConfigs := make(map[string]*bpb.ClusterApplication)
-	appObjLookup := make(map[appObjKey]*bpb.ClusterObject)
-	for _, ca := range b.GetSpec().GetClusterApps() {
+	compConfigs := make(map[string]*bpb.ClusterComponent)
+	compObjLookup := make(map[compObjKey]*bpb.ClusterObject)
+	for _, ca := range b.GetSpec().GetComponents() {
 		n := ca.GetName()
 		if n == "" {
-			return nil, fmt.Errorf("cluster applications must always have a name. was empty for %v", ca)
+			return nil, fmt.Errorf("cluster components must always have a name. was empty for %v", ca)
 		}
-		appConfigs[n] = ca
+		compConfigs[n] = ca
 		for _, co := range ca.GetClusterObjects() {
 			con := co.GetName()
 			if con == "" {
-				return nil, fmt.Errorf("cluster application objects must always have a name. was empty for object %v in app %q", co, n)
+				return nil, fmt.Errorf("cluster component objects must always have a name. was empty for object %v in component %q", co, n)
 			}
-			appObjLookup[appObjKey{n, con}] = co
+			compObjLookup[compObjKey{n, con}] = co
 		}
 	}
 
 	return &BundleFinder{
-		bundle:       b,
-		nodeLookup:   nodeConfigs,
-		appLookup:    appConfigs,
-		appObjLookup: appObjLookup,
+		bundle:        b,
+		nodeLookup:    nodeConfigs,
+		compLookup:    compConfigs,
+		compObjLookup: compObjLookup,
 	}, nil
 }
 
-// ClusterApp returns a found cluster application or nil.
-func (b *BundleFinder) ClusterApp(name string) *bpb.ClusterApplication {
-	return b.appLookup[name]
+// ClusterComponent returns a found cluster component or nil.
+func (b *BundleFinder) ClusterComponent(name string) *bpb.ClusterComponent {
+	return b.compLookup[name]
 }
 
-// ImageConfig returns a node bootstrap config or nil.
-func (b *BundleFinder) ImageConfig(name string) *bpb.ImageConfig {
+// NodeConfig returns a node bootstrap config or nil.
+func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 	return b.nodeLookup[name]
 }
 
-// ClusterAppObject returns a Cluster Application's Kubernetes object or nil.
-func (b *BundleFinder) ClusterAppObject(appName string, objName string) *bpb.ClusterObject {
-	return b.appObjLookup[appObjKey{appName, objName}]
+// ClusterComponentObject returns a ClusterComponent's Cluster object or nil.
+func (b *BundleFinder) ClusterComponentObject(compName string, objName string) *bpb.ClusterObject {
+	return b.compObjLookup[compObjKey{compName, objName}]
 }

@@ -16,33 +16,23 @@ package converter
 
 import (
 	"testing"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
-const bundleSimple = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: test-bundle
-spec:
-  nodeConfigs:
-  - name: master
-    initFile: "echo 'making a control plane'"
-  components:
-  - name: kube-apiserver
-    clusterObjects:
-    - name: pod
-      file:
-        url: 'file://path/to/kube_apiserver.yaml'
-`
-
-func TestBundleParse(t *testing.T) {
-	b, err := Bundle.YAMLToProto([]byte(bundleSimple))
+func TestRealisticBundleParse(t *testing.T) {
+	bundleContents, err := testutil.ReadTestBundle("../testutil/testdata")
 	if err != nil {
-		t.Fatalf("Error parsing bundle: %v", err)
+		t.Fatalf("Error reading bundle file %v", err)
+	}
+	b, err := Bundle.YAMLToProto(bundleContents)
+	if err != nil {
+		t.Fatalf("Error parsing file: %v", err)
 	}
 	bp := ToBundle(b)
 
-	if bp.GetMetadata().GetName() != "test-bundle" {
-		t.Errorf("Got name %q, expected name %q", bp.Metadata.Name, "test-bundle")
+	expID := "1.9.7.testbundle-zork"
+	if bp.GetMetadata().GetName() != expID {
+		t.Errorf("Got name %q, expected name %q", bp.GetMetadata().GetName(), expID)
 	}
 }

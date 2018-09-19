@@ -25,18 +25,17 @@ kind: ClusterBundle
 metadata:
   name: test-bundle
 spec:
-  version: 'testbundle'
-  imageConfigs:
+  nodeConfigs:
   - name: masterNode
-    initScript: "echo 'I'm a script'"
-    baseOsImage:
-      path: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-  clusterApps:
+    initFile: "echo 'I'm a script'"
+    osImage:
+      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+  components:
   - name: kube-apiserver
     clusterObjects:
     - name: kube-apiserver-pod
       file:
-        path: 'path/to/kube_apiserver.yaml'
+        url: 'file://path/to/kube_apiserver.yaml'
 `
 
 const podYAML = `

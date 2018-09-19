@@ -36,7 +36,7 @@ const patchedFilePermissions = os.FileMode(0644)
 // Patcher provides an interface for patching overlays into a ClusterBundle.
 type Patcher interface {
 	PatchBundle(customResources []map[string]interface{}) (*bpb.ClusterBundle, error)
-	PatchApplication(app *bpb.ClusterApplication, customResources []map[string]interface{}) (*bpb.ClusterApplication, error)
+	PatchComponent(component *bpb.ClusterComponent, customResources []map[string]interface{}) (*bpb.ClusterComponent, error)
 }
 
 // OptionsReader is an interface for reading options custom resources.
@@ -52,15 +52,15 @@ func (r *localFileSystemReader) ReadOptions(filepath string) ([]byte, error) {
 	return ioutil.ReadFile(filepath)
 }
 
-// appFinder is an interface for finding a cluster application in a bundle.
-type appFinder interface {
-	ClusterApp(name string) *bpb.ClusterApplication
+// comFinder is an interface for finding a cluster component in a bundle.
+type compFinder interface {
+	ClusterComponent(name string) *bpb.ClusterComponent
 }
 
 type patchOptions struct {
 	bundlePath string
 	optionsCRs []string
-	app        string
+	component  string
 	output     string
 }
 
@@ -93,17 +93,17 @@ func addPatchCommand() {
 		Run:   patchBundleAction,
 	}
 
-	patchAppCmd := &cobra.Command{
-		Use:   "app",
-		Short: "Apply patches to an application in the bundle",
-		Long:  "Apply all the patches found in the given application in the bundle to customize it with the given options custom resources",
-		Run:   patchAppAction,
+	patchCompCmd := &cobra.Command{
+		Use:   "component",
+		Short: "Apply patches to a component in the bundle",
+		Long:  "Apply all the patches found in the given component in the bundle to customize it with the given options custom resources",
+		Run:   patchCompAction,
 	}
 
-	// Required patch app flags
-	patchAppCmd.Flags().StringVarP(&patchOpts.app, "app", "a", "", "The application in the bundle to patch")
+	// Required patch component flags
+	patchCompCmd.Flags().StringVarP(&patchOpts.component, "component", "c", "", "The component in the bundle to patch")
 
-	patchCmd.AddCommand(patchBundleCmd, patchAppCmd)
+	patchCmd.AddCommand(patchBundleCmd, patchCompCmd)
 	rootCmd.AddCommand(patchCmd)
 }
 
@@ -150,21 +150,21 @@ func runPatchBundle(opts *patchOptions, brw BundleReaderWriter, or OptionsReader
 	return brw.WriteBundleFile(opts.output, patched, patchedFilePermissions)
 }
 
-func patchAppAction(cmd *cobra.Command, _ []string) {
+func patchCompAction(cmd *cobra.Command, _ []string) {
 	if err := validateBaseFlags(); err != nil {
 		exitWithHelp(cmd, err.Error())
 	}
 
-	if patchOpts.app == "" {
-		exitWithHelp(cmd, "the name of the application to patch must be specified.")
+	if patchOpts.component == "" {
+		exitWithHelp(cmd, "the name of the component to patch must be specified.")
 	}
 
-	if err := runPatchApp(patchOpts, &realReaderWriter{}, &localFileSystemReader{}, &localFileSystemWriter{}); err != nil {
+	if err := runPatchComponent(patchOpts, &realReaderWriter{}, &localFileSystemReader{}, &localFileSystemWriter{}); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runPatchApp(opts *patchOptions, brw BundleReaderWriter, or OptionsReader, aw appWriter) error {
+func runPatchComponent(opts *patchOptions, brw BundleReaderWriter, or OptionsReader, aw compWriter) error {
 	b, err := readBundle(opts.bundlePath, brw)
 	if err != nil {
 		return err
@@ -180,9 +180,9 @@ func runPatchApp(opts *patchOptions, brw BundleReaderWriter, or OptionsReader, a
 		return err
 	}
 
-	app := finder.ClusterApp(opts.app)
-	if app == nil {
-		return fmt.Errorf("could not find app %q in bundle", opts.app)
+	comp := finder.ClusterComponent(opts.component)
+	if comp == nil {
+		return fmt.Errorf("could not find component %q in bundle", opts.component)
 	}
 
 	patcher, err := createPatcherFn(b)
@@ -190,15 +190,15 @@ func runPatchApp(opts *patchOptions, brw BundleReaderWriter, or OptionsReader, a
 		return err
 	}
 
-	patched, err := patcher.PatchApplication(app, crs)
+	patched, err := patcher.PatchComponent(comp, crs)
 	if err != nil {
 		return err
 	}
-	return aw.WriteAppToFile(patched, opts.output, patchedFilePermissions)
+	return aw.WriteComponentToFile(patched, opts.output, patchedFilePermissions)
 }
 
-// createFinderFn creates an appFinder that operates on the given ClusterBundle.
-var createFinderFn = func(b *bpb.ClusterBundle) (appFinder, error) {
+// createFinderFn creates an compFinder that operates on the given ClusterBundle.
+var createFinderFn = func(b *bpb.ClusterBundle) (compFinder, error) {
 	return find.NewBundleFinder(b)
 }
 

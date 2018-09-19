@@ -22,32 +22,32 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// FakeAppWriter is a fake implementation of appWriter for unit tests.
-type FakeAppWriter struct {
+// FakeComponentWriter is a fake implementation of compWriter for unit tests.
+type FakeComponentWriter struct {
 	ValidPath string
 	ValidDir  string
 }
 
-// NewFakeAppWriterForPath returns a FakeAppWriter that will fake a successful write when the
-// given ValidPath is passed into the write functions.
-func NewFakeAppWriterForPath(s string) *FakeAppWriter {
-	return &FakeAppWriter{ValidPath: s}
+// NewFakeAppWriterForPath returns a FakeComponentWriter that will fake a successful
+// write when the given ValidPath is passed into the write functions.
+func NewFakeComponentWriterForPath(s string) *FakeComponentWriter {
+	return &FakeComponentWriter{ValidPath: s}
 }
 
-// NewFakeAppWriterForDir returns a FakeAppWriter that will fake a successful write when the
-// path passed to the write functions is in the given ValidDir.
-func NewFakeAppWriterForDir(s string) *FakeAppWriter {
-	return &FakeAppWriter{ValidDir: s}
+// NewFakeAppWriterForDir returns a FakeAppWriter that will fake a successful
+// write when the path passed to the write functions is in the given ValidDir.
+func NewFakeComponentWriterForDir(s string) *FakeComponentWriter {
+	return &FakeComponentWriter{ValidDir: s}
 }
 
-// WriteAppToFile fakes an app write by returning nil if ValidString is passed as the path.
-// Otherwise it returns an error.
-func (f *FakeAppWriter) WriteAppToFile(_ *bpb.ClusterApplication, path string, _ os.FileMode) error {
+// WriteComponentToFile fakes a component write by returning nil if ValidString is
+// passed as the path.  Otherwise it returns an error.
+func (f *FakeComponentWriter) WriteComponentToFile(_ *bpb.ClusterComponent, path string, _ os.FileMode) error {
 	if f.ValidPath != "" && path == f.ValidPath {
 		return nil
 	}
 	if f.ValidDir != "" && strings.Contains(path, f.ValidDir) {
 		return nil
 	}
-	return fmt.Errorf("error writing application")
+	return fmt.Errorf("error writing component")
 }

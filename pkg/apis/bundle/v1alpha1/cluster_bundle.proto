@@ -18,14 +18,16 @@ package pkg.apis.bundle.v1alpha1;
 
 option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1";
 
-import "pkg/apis/bundle/v1alpha1/application_bundle.proto";
 import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
-import "pkg/apis/bundle/v1alpha1/image_config.proto";
+import "pkg/apis/bundle/v1alpha1/cluster_component.proto";
+import "pkg/apis/bundle/v1alpha1/node_config.proto";
 import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 
-// All the components necessary for deploying (or re-deploying) the cluster.
+// All the components necessary for deploying (or re-deploying) the cluster. A
+// Cluster Bundle can be thought of as a cookie cutter for creating Kubernetes
+// clusters.
 message ClusterBundle {
-  // API Version for the Bundle. Should have the form <namespace>/<phase>.
+  // API Version for the Bundle.
   string api_version = 1;
 
   // The Kubernetes `kind` for this object. Should be 'ClusterBundle'.
@@ -41,16 +43,15 @@ message ClusterBundle {
 
 // A spec object that wraps the Cluster Bundle.
 message ClusterBundleSpec {
-  // The version of this cluster-bundle. Typically this should be a semantic-ver
-  // string.
-  string version = 1;
+  // Configuration for the nodes.
+  repeated NodeConfig node_configs = 1;
 
-  // Configuration for the base OS images used for the nodes.
-  repeated ImageConfig image_configs = 2;
+  // Kubernetes objects grouped into cluster components and versioned together.
+  // These could be applications or they could be some sort of supporting
+  // object collection.
+  repeated ClusterComponent components = 2;
 
-  // Kubernetes cluster applications that are part of the bundle.
-  repeated ClusterApplication cluster_apps = 3;
-
-  // Keys for retrieving option defaults objects.
-  repeated ClusterObjectKey options_defaults = 4;
+  // Options examples: These are examples of options that can be applied to the
+  // cluster bundle in order to specialize it based on user input.
+  repeated ClusterObjectKey options_examples = 3;
 }

@@ -52,11 +52,14 @@ type localReader struct {
 }
 
 func (l *localReader) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
-	path := file.GetPath()
-	if path == "" {
-		return nil, fmt.Errorf("file %v was specified but no file path was provided", file)
+	url := file.GetUrl()
+	if url == "" {
+		return nil, fmt.Errorf("file %v was specified but no file url was provided", file)
 	}
-	return ioutil.ReadFile(filepath.Join(l.WorkingDir, path))
+	if strings.HasPrefix(url, "file://") {
+		url = strings.TrimPrefix(url, "file://")
+	}
+	return ioutil.ReadFile(filepath.Join(l.WorkingDir, url))
 }
 
 // Inline converts dereferences File-references in a bundle and turns them into
@@ -74,28 +77,28 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 		return b, nil
 	}
 	// Process all node-bootstrap files.
-	for _, v := range spec.GetImageConfigs() {
+	for _, v := range spec.GetNodeConfigs() {
 		k := v.GetName()
-		if v.GetInitScriptFile() != nil {
-			contents, err := n.ReadFile(ctx, v.GetInitScriptFile())
+		if v.GetExternalInitFile() != nil {
+			contents, err := n.ReadFile(ctx, v.GetExternalInitFile())
 			if err != nil {
 				return nil, fmt.Errorf("error processing init script for node bootstrap config %q: %v", k, err)
 			}
-			v.InitData = &bpb.ImageConfig_InitScript{string(contents)}
+			v.InitData = &bpb.NodeConfig_InitFile{string(contents)}
 		}
 	}
 
-	// Process all the cluster applications files.
-	for _, v := range spec.GetClusterApps() {
+	// Process all the cluster component files.
+	for _, v := range spec.GetComponents() {
 		k := v.GetName()
-		if err := n.processClusterApp(ctx, k, v); err != nil {
+		if err := n.processClusterComponent(ctx, k, v); err != nil {
 			return nil, err
 		}
 	}
 	return b, nil
 }
 
-func (n *Inliner) processClusterApp(ctx context.Context, k string, b *bpb.ClusterApplication) error {
+func (n *Inliner) processClusterComponent(ctx context.Context, k string, b *bpb.ClusterComponent) error {
 	for _, co := range b.GetClusterObjects() {
 		kco := co.GetName()
 		if co.GetFile() != nil {
@@ -110,16 +113,16 @@ func (n *Inliner) processClusterApp(ctx context.Context, k string, b *bpb.Cluste
 			co.KubeData = &bpb.ClusterObject_Inlined{converter.ToStruct(pb)}
 		}
 
-		if co.GetOverlayFile() != nil {
-			contents, err := n.ReadFile(ctx, co.GetOverlayFile())
+		if co.GetPatchFile() != nil {
+			contents, err := n.ReadFile(ctx, co.GetPatchFile())
 			if err != nil {
-				return fmt.Errorf("error reading overlay file for app %q and object %q: %v", k, kco, err)
+				return fmt.Errorf("error reading patch file for app %q and object %q: %v", k, kco, err)
 			}
-			pb, err := converter.OverlayCollection.YAMLToProto(contents)
+			pb, err := converter.PatchCollection.YAMLToProto(contents)
 			if err != nil {
-				return fmt.Errorf("error converting overlay collection for app %q and object %q: %v", k, kco, err)
+				return fmt.Errorf("error converting patch collection for app %q and object %q: %v", k, kco, err)
 			}
-			co.OverlayData = &bpb.ClusterObject_OverlayCollection{converter.ToOverlayCollection(pb)}
+			co.PatchData = &bpb.ClusterObject_PatchCollection{converter.ToPatchCollection(pb)}
 		}
 	}
 	return nil
@@ -127,16 +130,18 @@ func (n *Inliner) processClusterApp(ctx context.Context, k string, b *bpb.Cluste
 
 // ReadFile from either a local or remote location.
 func (n *Inliner) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
-	path := file.GetPath()
-	if path == "" {
-		return nil, fmt.Errorf("file %v was specified but no file path was provided", file)
+	url := file.GetUrl()
+	if url == "" {
+		return nil, fmt.Errorf("file %v was specified but no file path/url was provided", file)
 	}
 
 	switch {
-	case strings.HasPrefix("gs://", path):
-		return nil, fmt.Errorf("path-type (GCS) not supported yet; file was %q", path)
-	case strings.HasPrefix("https://", path) || strings.HasPrefix("http://", path):
-		return nil, fmt.Errorf("path-type (HTTP[S]) not supported yet; file was %q", path)
+	case strings.HasPrefix("gs://", url):
+		return nil, fmt.Errorf("url-type (GCS) not supported; file was %q", url)
+	case strings.HasPrefix("https://", url) || strings.HasPrefix("http://", url):
+		return nil, fmt.Errorf("url-type (HTTP[S]) not supported; file was %q", url)
+	case strings.HasPrefix("file://", url):
+		return n.LocalReader.ReadFile(ctx, file)
 	default:
 		// By default, assume that the user expects to read from the local filesystem.
 		return n.LocalReader.ReadFile(ctx, file)

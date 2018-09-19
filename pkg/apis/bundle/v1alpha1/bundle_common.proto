@@ -21,36 +21,37 @@ option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/
 // File represents some sort of file that's specified external to the bundle,
 // which could be on either a local or remote file system.
 message File {
-  // Path to find this file.
-  string path = 1;
+  // Url to find this file.
+  string url = 1;
 
   // Optional Sha256 hash of the binary to ensure we are pulling the correct
   // binary/file.
   string hash = 2;
 }
 
-// Group-version-kind wrapper for Kubernetes types. For example, if a Kubernetes
+// Object reference for Kubernetes types. For example, if a Kubernetes
 // object begins with:
 //
 //   apiVersion: apps/v1
 //   kind: StatefulSet
 //   metadata: ...
+//     name: foo
 //   spec: ...
 //
-// The corresponding GroupVersionKind (or GVK) would be:
+// The corresponding ObjectReferenc (or ObjectRef) would be:
 //
-//   {group: 'apps', version: 'v1', kind: 'StatefulSet'}
-message GroupVersionKind {
-  string group = 1;
-  string version = 2;
-  string kind = 3;
+//   {apiVersion: 'apps/v1', kind: 'StatefulSet', name: 'foo'}
+message ObjectReference {
+  string api_version = 1;
+  string kind = 2;
+  string name = 3;
 }
 
 // A key for retrieving a specific cluster object.
 message ClusterObjectKey {
-  // Name of the cluster application.
-  string app_name = 1;
+  // Name of the cluster component.
+  string component_name = 1;
 
-  // Name of the cluster object within the application.
+  // Name of the cluster object within the component.
   string object_name = 2;
 }

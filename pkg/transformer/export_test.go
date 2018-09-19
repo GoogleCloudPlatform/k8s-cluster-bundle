@@ -30,7 +30,7 @@ kind: ClusterBundle
 metadata:
   name: inlined-bundle
 spec:
-  clusterApps:
+  components:
   - name: kubedns
     clusterObjects:
     - name: kubedns-service
@@ -58,48 +58,48 @@ kind: ClusterBundle
 metadata:
   name: files-bundle
 spec:
-  clusterApps:
+  components:
   - name: kube-apiserver
     clusterObjects:
     - name: kube-apiserver-pod
       file:
-        path: 'path/to/kube_apiserver.yaml'
+        url: 'file://path/to/kube_apiserver.yaml'
 `
 
 func TestExport(t *testing.T) {
 	var testcases = []struct {
 		testName   string
 		bundleYaml string
-		appName    string
-		// Export returns a list of ExportedApps that have a name and a ClusterApplication.
+		compName   string
+		// Export returns a list of ExportedApps that have a name and a ClusterComponent.
 		// This is for checking that:
-		// 1. We get applications for the layers we expect.
-		// 2. The returned applications contain the objects we expect.
+		// 1. We get components for the layers we expect.
+		// 2. The returned componentscontain the objects we expect.
 		expectedObjects   []string
 		expectErrContains string
 	}{
 		{
 			testName:        "single layer app",
 			bundleYaml:      inlinedBundle,
-			appName:         "kubedns",
+			compName:        "kubedns",
 			expectedObjects: []string{"kubedns-service", "kubedns-service-account"},
 		},
 		{
 			testName:        "two layer app",
 			bundleYaml:      inlinedBundle,
-			appName:         "two-layer-app",
+			compName:        "two-layer-app",
 			expectedObjects: []string{"dynamic-control-plane-pod", "user-space-pod-1", "user-space-pod-2"},
 		},
 		{
-			testName:          "cluster application not found",
+			testName:          "cluster component not found",
 			bundleYaml:        inlinedBundle,
-			appName:           "not-an-app",
+			compName:          "not-an-app",
 			expectErrContains: "not-an-app",
 		},
 		{
 			testName:          "bundle not inlined",
 			bundleYaml:        filesBundle,
-			appName:           "kube-apiserver",
+			compName:          "kube-apiserver",
 			expectErrContains: "not inlined",
 		},
 	}
@@ -111,33 +111,33 @@ func TestExport(t *testing.T) {
 				t.Fatalf("YAMLToProto(...) returned error: %v", err)
 			}
 			bp := converter.ToBundle(b)
-			exporter, err := NewAppExporter(bp)
+			exporter, err := NewComponentExporter(bp)
 			if err != nil {
 				t.Fatalf("Error creating exporter for bundle %v: %v", bp, err)
 			}
 
-			app, err := exporter.Export(bp, tc.appName)
+			comp, err := exporter.Export(bp, tc.compName)
 			if tc.expectErrContains != "" {
 				if err == nil {
-					t.Fatalf("Export(%v, %q) should have returned an error but error was nil", bp, tc.appName)
+					t.Fatalf("Export(%v, %q) should have returned an error but error was nil", bp, tc.compName)
 				}
 				if !strings.Contains(err.Error(), tc.expectErrContains) {
-					t.Fatalf("Export(%v, %q) error message should have contained: %v, Got: %v", bp, tc.appName, tc.expectErrContains, err)
+					t.Fatalf("Export(%v, %q) error message should have contained: %v, Got: %v", bp, tc.compName, tc.expectErrContains, err)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("Export(%v, %v) returned unexpected error: %v", bp, tc.appName, err)
+				t.Fatalf("Export(%v, %v) returned unexpected error: %v", bp, tc.compName, err)
 			}
 
-			gotObjs := objectNames(app.Objects)
+			gotObjs := objectNames(comp.Objects)
 			if len(gotObjs) != len(tc.expectedObjects) {
-				t.Errorf("Export(%v, %q) did not return the expected app, Got: %v, Want: %v", bp, tc.appName, gotObjs, tc.expectedObjects)
+				t.Errorf("Export(%v, %q) did not return the expected component, Got: %v, Want: %v", bp, tc.compName, gotObjs, tc.expectedObjects)
 			}
 
 			sort.Strings(gotObjs)
 			if !reflect.DeepEqual(gotObjs, tc.expectedObjects) {
-				t.Errorf("Export(%v, %q) did not return the expected objects for app %q, Got: %v, Want: %v", bp, tc.appName, app.Name, gotObjs, tc.expectedObjects)
+				t.Errorf("Export(%v, %q) did not return the expected objects for component %q, Got: %v, Want: %v", bp, tc.compName, comp.Name, gotObjs, tc.expectedObjects)
 			}
 		})
 	}

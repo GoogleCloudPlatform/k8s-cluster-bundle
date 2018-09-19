@@ -23,21 +23,21 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (
 	// Bundle is a converter for ClusterBundles
 	Bundle = &Converter{&bpb.ClusterBundle{}}
 
-	// ClusterApplication is a converter for ClusterApplication protos.
-	ClusterApplication = &Converter{&bpb.ClusterApplication{}}
+	// ClusterComponent is a converter for ClusterComponent protos.
+	ClusterComponent = &Converter{&bpb.ClusterComponent{}}
 
-	// Overlay is a converter for Overlay protos.
-	Overlay = &Converter{&bpb.Overlay{}}
+	// Patch is a converter for Patch protos.
+	Patch = &Converter{&bpb.Patch{}}
 
-	// OverlayCollection is a converter for Overlay protos.
-	OverlayCollection = &Converter{&bpb.OverlayCollection{}}
+	// PatchCollection is a converter for Patch protos.
+	PatchCollection = &Converter{&bpb.PatchCollection{}}
 
 	// Struct is a converter for Struct protos.
 	Struct = &Converter{&structpb.Struct{}}
@@ -48,20 +48,20 @@ func ToBundle(msg proto.Message) *bpb.ClusterBundle {
 	return msg.(*bpb.ClusterBundle)
 }
 
-// ToClusterApplication is a type converter for converting a proto to a ClusterApplication.
-func ToClusterApplication(msg proto.Message) *bpb.ClusterApplication {
-	return msg.(*bpb.ClusterApplication)
+// ToClusterComponent is a type converter for converting a proto to a ClusterComponent.
+func ToClusterComponent(msg proto.Message) *bpb.ClusterComponent {
+	return msg.(*bpb.ClusterComponent)
 }
 
-// ToOverlay is a type converter for converting a proto to an Overlay.
-func ToOverlay(msg proto.Message) *bpb.Overlay {
-	return msg.(*bpb.Overlay)
+// ToPatch is a type converter for converting a proto to an Patch.
+func ToPatch(msg proto.Message) *bpb.Patch {
+	return msg.(*bpb.Patch)
 }
 
-// ToOverlayCollection is a type converter for converting a proto to an
-// OverlayCollection.
-func ToOverlayCollection(msg proto.Message) *bpb.OverlayCollection {
-	return msg.(*bpb.OverlayCollection)
+// ToPatchCollection is a type converter for converting a proto to an
+// PatchCollection.
+func ToPatchCollection(msg proto.Message) *bpb.PatchCollection {
+	return msg.(*bpb.PatchCollection)
 }
 
 // ToStruct is a type converter for converting a proto to an Struct.
@@ -69,12 +69,13 @@ func ToStruct(msg proto.Message) *structpb.Struct {
 	return msg.(*structpb.Struct)
 }
 
-// ToGVK converts a GroupVersionKind proto to the Kubernetes GroupVersionKind type.
-func ToGVK(pb *bpb.GroupVersionKind) schema.GroupVersionKind {
-	return schema.GroupVersionKind{
-		Group:   pb.GetGroup(),
-		Version: pb.GetVersion(),
-		Kind:    pb.GetKind(),
+// ToObjectReference converts a Bundle ObjectReference proto to the Kubernetes
+// ObjectReference type.
+func ToObjectReference(pb *bpb.ObjectReference) corev1.ObjectReference {
+	return corev1.ObjectReference{
+		APIVersion: pb.GetApiVersion(),
+		Kind:       pb.GetKind(),
+		Name:       pb.GetName(),
 	}
 }
 
