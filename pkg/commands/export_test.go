@@ -26,17 +26,17 @@ import (
 )
 
 const (
-	invalidApp = "not-an-app"
+	invalidComponent = "not-a-component"
 )
 
 // Fake implementation of Exporter for unit tests.
 type fakeExporter struct{}
 
-func (f *fakeExporter) Export(_ *bpb.ClusterBundle, appName string) (*transformer.ExportedApp, error) {
-	if appName == invalidApp {
-		return nil, fmt.Errorf("could not find cluster application named \"%v\"", appName)
+func (f *fakeExporter) Export(_ *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error) {
+	if compName == invalidComponent {
+		return nil, fmt.Errorf("could not find cluster component named \"%v\"", compName)
 	}
-	return &transformer.ExportedApp{Name: appName}, nil
+	return &transformer.ExportedComponent{Name: compName}, nil
 }
 
 func TestRunExport(t *testing.T) {
@@ -55,7 +55,7 @@ func TestRunExport(t *testing.T) {
 			opts: &exportOptions{
 				bundlePath: validBundle,
 				outputDir:  validDir,
-				apps:       []string{"kube-apiserver", "kube-scheduler"},
+				components: []string{"kube-apiserver", "kube-scheduler"},
 			},
 		},
 		{
@@ -67,20 +67,20 @@ func TestRunExport(t *testing.T) {
 			expectErrContains: "error reading",
 		},
 		{
-			testName: "extract app error",
+			testName: "extract component error",
 			opts: &exportOptions{
 				bundlePath: validBundle,
 				outputDir:  validDir,
-				apps:       []string{invalidApp},
+				components: []string{invalidComponent},
 			},
-			expectErrContains: invalidApp,
+			expectErrContains: invalidComponent,
 		},
 		{
-			testName: "app write error",
+			testName: "component write error",
 			opts: &exportOptions{
 				bundlePath: validBundle,
 				outputDir:  invalidDir,
-				apps:       []string{"kube-apiserver"},
+				components: []string{"kube-apiserver"},
 			},
 			expectErrContains: "error writing",
 		},
@@ -91,7 +91,7 @@ func TestRunExport(t *testing.T) {
 		return &fakeExporter{}, nil
 	}
 	brw := test.NewFakeReaderWriter(validBundle)
-	aw := test.NewFakeAppWriterForDir(validDir)
+	aw := test.NewFakeComponentWriterForDir(validDir)
 
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {

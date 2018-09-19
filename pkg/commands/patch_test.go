@@ -29,14 +29,14 @@ kind: BundleOptions
 foo: Bar
 `
 
-// Fake implementation of appFinder for unit tests.
+// Fake implementation of compFinder for unit tests.
 type fakeFinder struct {
-	validApp string
+	validComp string
 }
 
-func (f *fakeFinder) ClusterApp(name string) *bpb.ClusterApplication {
-	if name == f.validApp {
-		return &bpb.ClusterApplication{}
+func (f *fakeFinder) ClusterComponent(name string) *bpb.ClusterComponent {
+	if name == f.validComp {
+		return &bpb.ClusterComponent{}
 	}
 	return nil
 }
@@ -53,11 +53,11 @@ func (f *fakePatcher) PatchBundle([]map[string]interface{}) (*bpb.ClusterBundle,
 	return &bpb.ClusterBundle{}, nil
 }
 
-func (f *fakePatcher) PatchApplication(*bpb.ClusterApplication, []map[string]interface{}) (*bpb.ClusterApplication, error) {
+func (f *fakePatcher) PatchComponent(*bpb.ClusterComponent, []map[string]interface{}) (*bpb.ClusterComponent, error) {
 	if f.throwsErr {
-		return nil, errors.New("error patching application")
+		return nil, errors.New("error patching component")
 	}
-	return &bpb.ClusterApplication{}, nil
+	return &bpb.ClusterComponent{}, nil
 }
 
 // Fake implementation of OptionsReader for unit tests.
@@ -174,7 +174,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				app:        validApp,
+				component:  validApp,
 				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
@@ -185,7 +185,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: invalidFile,
 				optionsCRs: []string{validOptionsFile},
-				app:        validApp,
+				component:  validApp,
 				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
@@ -196,7 +196,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile, invalidFile},
-				app:        validApp,
+				component:  validApp,
 				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
@@ -207,7 +207,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				app:        "invalid-app",
+				component:  "invalid-app",
 				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
@@ -218,7 +218,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				app:        validApp,
+				component:  validApp,
 				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: true},
@@ -229,7 +229,7 @@ func TestRunPatchApp(t *testing.T) {
 			opts: &patchOptions{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				app:        validApp,
+				component:  validApp,
 				output:     invalidFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
@@ -239,10 +239,10 @@ func TestRunPatchApp(t *testing.T) {
 
 	or := fakeOptionsReader{validOptionsFile}
 	brw := test.NewFakeReaderWriter(validBundleFile)
-	aw := test.NewFakeAppWriterForPath(validOutFile)
+	aw := test.NewFakeComponentWriterForPath(validOutFile)
 	// Override the createFinderFn to return a fakeFinder.
-	createFinderFn = func(*bpb.ClusterBundle) (appFinder, error) {
-		return &fakeFinder{validApp: validApp}, nil
+	createFinderFn = func(*bpb.ClusterBundle) (compFinder, error) {
+		return &fakeFinder{validComp: validApp}, nil
 	}
 
 	for _, tc := range testCases {
@@ -251,12 +251,12 @@ func TestRunPatchApp(t *testing.T) {
 			createPatcherFn = func(*bpb.ClusterBundle) (Patcher, error) {
 				return tc.patcher, nil
 			}
-			err := runPatchApp(tc.opts, brw, &or, aw)
+			err := runPatchComponent(tc.opts, brw, &or, aw)
 			if !tc.wantErr && err != nil {
-				t.Errorf("runPatchApp(opts: %+v) = error %v, want no error", tc.opts, err)
+				t.Errorf("runPatchComponent(opts: %+v) = error %v, want no error", tc.opts, err)
 			}
 			if tc.wantErr && err == nil {
-				t.Errorf("runPatchApp(opts: %+v) = no error, want error", tc.opts)
+				t.Errorf("runPatchComponent(opts: %+v) = no error, want error", tc.opts)
 			}
 		})
 	}

@@ -17,77 +17,72 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-
-  optionsDefaults:
-  - appName: 'cluster-options'
+  optionsExamples:
+  - componentName: 'cluster-options'
     objectName: 'options-defaults'
 
-  imageConfigs:
+  nodeConfigs:
   - name: 'ubuntu-control-plane'
-    initScript: "echo 'I'm a script'"
-    baseOsImage:
-      path: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-    preloadedFiles:
-    - name: 'floo'
-      version: '1.0'
-      file:
-        path: '/tmp/var/floo.txt'
-    env:
+    initFile: "echo 'I'm a script'"
+    osImage:
+      url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+    envVars:
       - name: FOO_VAR
         value: 'foo-val'
   - name: 'ubuntu-cluster-node'
-    initScript: "echo 'I'm another script'"
-    baseOsImage:
-      path: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+    initFile: "echo 'I'm another script'"
+    osImage:
+      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
-  clusterApps:
+  components:
   #====================#
   # Core control plane #
   #====================#
   - name: kubernetes-control-plane
+    version: '1.0'
     clusterObjects:
     - name: etcd-server-pod
       file:
-        path: 'etcd-server.yaml'
-      overlayFile:
-        path: 'etcd-server-overlays.yaml'
+        url: 'file://etcd-server.yaml'
+      patchFile:
+        url: 'file://etcd-server-patches.yaml'
     - name: kube-apiserver-pod
       file:
-        path: 'kube-apiserver.yaml'
+        url: 'file://kube-apiserver.yaml'
     - name: kube-scheduler-pod
       file:
-        path: 'kube-scheduler.yaml'
+        url: 'file://kube-scheduler.yaml'
     - name: kube-controller-manager-pod
       file:
-        path: 'kube-controller-manager.yaml'
+        url: 'file://kube-controller-manager.yaml'
 
   #========#
   # Addons #
   #========#
   - name: kubedns
+    version: '2.0'
     clusterObjects:
     - name: kubedns-service
       file:
-        path: 'kubedns/service.yaml'
+        url: 'file://kubedns/service.yaml'
     - name: kubedns-service-account
       file:
-        path: 'kubedns/service-account.yaml'
+        url: 'file://kubedns/service-account.yaml'
     - name: kubedns-config-map
       file:
-        path: 'kubedns/config-map.yaml'
+        url: 'file://kubedns/config-map.yaml'
     - name: kubedns-deployment
       file:
-        path: 'kubedns/deployment.yaml'
+        url: 'file://kubedns/deployment.yaml'
 
   #=========#
   # Options #
   #=========#
   - name: 'cluster-options'
     clusterObjects:
-    - name: 'options-defaults'
+    - name: 'options-example'
       file:
-        path: 'options-defaults.yaml'
+        url: 'file://options-example.yaml'
     - name: 'options-crd'
       file:
-        path: 'options-crd.yaml'
+        url: 'file://options-crd.yaml'

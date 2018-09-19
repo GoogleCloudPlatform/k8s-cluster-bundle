@@ -20,29 +20,26 @@ option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/
 
 import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
 
-// Configuration for a base OS image used to configure the nodes.
-message ImageConfig {
+// Configuration for node images.
+message NodeConfig {
   // The name of this image configuration.
   string name = 1;
 
-  // Script to run on VM startup to kick things off.
+  // Initialization file to run on VM startup. The contents of this init file
+  // will depend a great deal on the specific environment and operation system.
   oneof init_data {
     // The file specified inline as a UTF-8 encoded byte string.
-    string init_script = 2;
+    string init_file = 2;
 
-    // An external file for the init script.
-    File init_script_file = 3;
+    // An external init file.
+    File external_init_file = 3;
   }
 
   // Envirnoment variables to set before startup to configure the init script.
-  repeated EnvVar env = 4;
+  repeated EnvVar env_vars = 4;
 
-  // The Base OS image to use for VM creation.
-  File base_os_image = 5;
-
-  // Preloaded files used as part of bootstrap. The presence of these files is
-  // purely informational.
-  repeated PreloadedFile preloaded_files = 6;
+  // The OS image to use for VM creation.
+  File os_image = 5;
 }
 
 // An environment variable specified for node startup.
@@ -54,19 +51,4 @@ message EnvVar {
 
   // The value to set for this environment variable.
   string value = 2;
-}
-
-// A preloaded file is a file that must exist on the OS before cluster
-// installation occurrs.
-message PreloadedFile {
-  // Name of the bootstrap file.
-  // For example: `kubelet`.
-  string name = 1;
-
-  // An optional version for this file. Not all files will be versioned, but
-  // some (like the kubelet binary) will.
-  string version = 2;
-
-  // The actual path and hash representing this file.
-  File file = 3;
 }
