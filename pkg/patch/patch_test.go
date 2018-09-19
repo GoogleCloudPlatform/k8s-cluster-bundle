@@ -16,14 +16,13 @@ package patch
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/scheme"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type patchExample struct {
@@ -34,7 +33,7 @@ type patchExample struct {
 
 func applyPatch(ex *patchExample) (*structpb.Struct, error) {
 	patcher := &Patcher{
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	o, err := converter.Struct.YAMLToProto([]byte(ex.obj))
 	var patches []*bpb.Patch
@@ -255,7 +254,7 @@ spec:
 	}
 	comp := converter.ToClusterComponent(compPb)
 	patcher := &Patcher{
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	patched, err := patcher.PatchComponent(comp, []map[string]interface{}{ipCR, imageCR})
 	if err != nil {
@@ -359,7 +358,7 @@ spec:
 
 	patcher := &Patcher{
 		Bundle: bp,
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	patched, err := patcher.PatchBundle([]map[string]interface{}{fooCR, barCR})
 	if err != nil {
@@ -374,106 +373,5 @@ spec:
 	}
 	if !strings.Contains(string(out), barVal) {
 		t.Errorf("yaml did not contain %v", barVal)
-	}
-}
-
-func TestObjectRefFromCustomResource(t *testing.T) {
-	testCases := []struct {
-		desc        string
-		cr          string
-		ref         corev1.ObjectReference
-		errContains string
-	}{
-		{
-			desc: "success case",
-			cr: `
-apiVersion: bundles/v1alpha1
-kind: BundleOptions
-metadata:
-  name: Zoinks
-foo: Bar
-`,
-			ref: corev1.ObjectReference{
-				APIVersion: "bundles/v1alpha1",
-				Kind:       "BundleOptions",
-				Name:       "Zoinks",
-			},
-		},
-		{
-			desc: "bad apiVersion format",
-			cr: `
-apiVersion: bundles
-kind: BundleOptions
-metadata:
-  name: Zoinks
-foo: Bar
-`,
-			errContains: "not formatted as group/version",
-		},
-		{
-			desc: "missing apiVersion",
-			cr: `
-kind: BundleOptions
-metadata:
-  name: Zoinks
-foo: Bar
-`,
-			errContains: "no apiVersion field",
-		},
-		{
-			desc: "missing kind",
-			cr: `
-apiVersion: bundles/v1alpha1
-metadata:
-  name: Zoinks
-foo: Bar"
-`,
-			errContains: "no kind field",
-		},
-		{
-			desc: "missing metadata",
-			cr: `
-apiVersion: bundles/v1alpha1
-kind: BundleOptions
-foo: Bar"
-`,
-			errContains: "no metadata field",
-		},
-		{
-			desc: "missing metadata.name",
-			cr: `
-apiVersion: bundles/v1alpha1
-kind: BundleOptions
-metadata:
-  UUID: zoinks
-foo: Bar"
-`,
-			errContains: "no metadata.name field",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			cr, err := converter.CustomResourceYAMLToMap([]byte(tc.cr))
-			if err != nil {
-				t.Fatalf("CustomResourceYAMLToMap(%s) returned err: %v", tc.cr, err)
-			}
-			ref, err := objectRefFromCustomResource(cr)
-			if !reflect.DeepEqual(ref, tc.ref) {
-				t.Errorf("objectRefFromCustomResource(%v) returned %+v, want %+v", tc.cr, ref, tc.ref)
-			}
-			if tc.errContains != "" {
-				if err == nil {
-					t.Fatalf("objectRefFromCustomResource(%v) should have returned an error but error was nil", tc.cr)
-				}
-				if !strings.Contains(err.Error(), tc.errContains) {
-					t.Fatalf("objectRefFromCustomResource(%v) error message should have contained: %v, Got: %v", tc.cr, tc.errContains, err)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("objectRefFromCustomResource(%v) returned unexpected error: %v", tc.cr, err)
-			}
-		})
 	}
 }
