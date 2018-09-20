@@ -52,7 +52,7 @@ spec:
       value: http://127.0.0.1:2379
     - name: ETCD_CREDS
       value: ""
-    image: gcr.io/google_containers/etcd:3.1.11
+    image: k8s.gcr.io/etcd:3.1.11
     livenessProbe:
       httpGet:
         host: 127.0.0.1

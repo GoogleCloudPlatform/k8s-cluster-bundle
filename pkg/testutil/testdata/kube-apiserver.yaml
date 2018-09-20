@@ -70,7 +70,7 @@ spec:
       --authorization-mode=Node,RBAC,Webhook
       --allow-privileged=true 1>>/var/log/kube-apiserver.log
       2>&1
-    image: gcr.io/google_containers/kube-apiserver:v1.9.7
+    image: k8s.gcr.io/kube-apiserver:v1.9.7
     livenessProbe:
       httpGet:
         host: 127.0.0.1
