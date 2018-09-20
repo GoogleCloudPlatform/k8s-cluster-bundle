@@ -20,34 +20,39 @@ option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/
 
 import "google/protobuf/struct.proto";
 import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
-import "pkg/apis/bundle/v1alpha1/overlay.proto";
+import "pkg/apis/bundle/v1alpha1/patch.proto";
 
-// A Kubernetes application, either run statically by the Kubelet or run by the
-// K8S Control Plane.
-message ClusterApplication {
-  // Name of this cluster application. Each cluster application in the bundle
-  // should have a unique name. For an example you might have a 'kube-apiserver'
-  // application or perhaps even a 'kubernetes' application.
+// Kubernetes objects grouped into cluster components and versioned together.
+// These could be applications or they could be some sort of supporting
+// object collection.
+message ClusterComponent {
+  // Name of this component. Each component in a bundle must have a unique
+  // name. For an example you might have a 'kube-apiserver' component or
+  // perhaps even a 'kubernetes' component, depending on the granulatarity of
+  // the Bundle components.
   string name = 1;
+
+  // Version-string for this component.
+  string version = 2;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashion. There is no ordering
   // guarantee for when these objects are deployed (they can be deployed in any
   // order to the cluster).
-  repeated ClusterObject cluster_objects = 2;
+  repeated ClusterObject cluster_objects = 3;
 }
 
 // A Kubernetes object of unspecified type.
 message ClusterObject {
   // The name of this cluster object. This must be unique within the Cluster
-  // Application.
+  // Component.
   string name = 1;
 
   // A Kubernetes object that's untyped but which has YAML-structure. These have
   // historically been called 'YAMLs' or 'Manifests'. You might expect
   // Kubernetes objects like pods, deployments, or daemonsets to live here.
   oneof kube_data {
-    // The Kubernetes file specified as an inline object. All Kubernetes objects
+    // The Kubernetes object specified as an inline. All Kubernetes objects
     // must be YAML/JSON compatible.
     google.protobuf.Struct inlined = 2;
 
@@ -56,14 +61,14 @@ message ClusterObject {
     File file = 3;
   }
 
-  // Overlays for this cluster object, which allow specialization/customization
+  // Patches this cluster object, which allow specialization/customization
   // of the cluster via strategic merge patch.
-  oneof overlay_data {
-    // Inlined overlays.
-    OverlayCollection overlay_collection = 4;
+  oneof patch_data {
+    // Inlined patches
+    PatchCollection patch_collection = 4;
 
-    // Externally referenced overlays that has the format of an
-    // OverlayCollection. The file must be be either YAML or JSON.
-    File overlay_file = 5;
+    // Externally referenced patches that has the format of an
+    // PatchCollection. The file must be be either YAML or JSON.
+    File patch_file = 5;
   }
 }

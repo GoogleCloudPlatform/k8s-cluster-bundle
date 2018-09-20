@@ -25,9 +25,9 @@ func CloneBundle(b *bpb.ClusterBundle) *bpb.ClusterBundle {
 	return proto.Clone(b).(*bpb.ClusterBundle)
 }
 
-// CloneApplication creates a copy of a cluster application proto.
-func CloneApplication(a *bpb.ClusterApplication) *bpb.ClusterApplication {
-	return proto.Clone(a).(*bpb.ClusterApplication)
+// CloneClusterComponent creates a copy of a object collection proto.
+func CloneClusterComponent(a *bpb.ClusterComponent) *bpb.ClusterComponent {
+	return proto.Clone(a).(*bpb.ClusterComponent)
 }
 
 // CloneStruct creates a copy of a struct proto.

@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Overlays for the etcd-server pod
-overlays:
+# patchesfor the etcd-server pod
+patches:
 - name: etcdPeerUrls
-  customResourceKey:
-    group: bundle-example.k8s.io
-    version: v1alpha1
+  objectRef:
+    apiVersion: bundle-example.k8s.io/v1alpha1
     kind: ClusterOptions
   templateString: |
     spec:
@@ -31,9 +30,8 @@ overlays:
         - name: INITIAL_ADVERTISE_PEER_URLS
           value: '{{.etcdPeerUrls}}'
 - name: etcdClientUrls
-  customResourceKey:
-    group: bundle-example.k8s.io
-    version: v1alpha1
+  objectRef:
+    apiVersion: bundle-example.k8s.io/v1alpha1
     kind: ClusterOptions
   templateString: |
     spec:

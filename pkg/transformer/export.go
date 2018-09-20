@@ -21,54 +21,54 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 )
 
-// ExportedApp is a ClusterApplication that has been extracted from a ClusterBundle.
-type ExportedApp struct {
-	// Name represents name of the application.
+// ExportedComponent is a ClusterComponent that has been extracted from a ClusterBundle.
+type ExportedComponent struct {
+	// Name represents name of the component
 	Name string
 
 	// Objects represent the cluster objects.
 	Objects []*bpb.ClusterObject
 }
 
-// AppExporter is a struct that exports cluster apps.
-type AppExporter struct {
+// ComponentExporter is a struct that exports cluster components.
+type ComponentExporter struct {
 	finder *find.BundleFinder
 }
 
-// NewAppExporter creates a new app exporter.
-func NewAppExporter(b *bpb.ClusterBundle) (*AppExporter, error) {
+// NewComponentExporter creates a new component exporter.
+func NewComponentExporter(b *bpb.ClusterBundle) (*ComponentExporter, error) {
 	f, err := find.NewBundleFinder(b)
 	if err != nil {
 		return nil, err
 	}
-	return &AppExporter{
+	return &ComponentExporter{
 		finder: f,
 	}, nil
 }
 
-// Export extracts the named ClusterApplication from the given bundle. It returns a list of
-// ExportedApps.
-// - Returns an error if no application by the given appName is found.
-// - Returns an error if the desired application in the given bundle is not inlined.
-func (e *AppExporter) Export(b *bpb.ClusterBundle, appName string) (*ExportedApp, error) {
-	app := e.finder.ClusterApp(appName)
-	if app == nil {
-		return nil, fmt.Errorf("could not find cluster application named %q", appName)
+// Export extracts the named ClusterComponent from the given bundle. It returns a list of
+// ExportedComponents.
+// - Returns an error if no component by the given compName is found.
+// - Returns an error if the desired component in the given bundle is not inlined.
+func (e *ComponentExporter) Export(b *bpb.ClusterBundle, compName string) (*ExportedComponent, error) {
+	comp := e.finder.ClusterComponent(compName)
+	if comp == nil {
+		return nil, fmt.Errorf("could not find cluster component named %q", compName)
 	}
 
-	objs := app.GetClusterObjects()
+	objs := comp.GetClusterObjects()
 	if len(objs) == 0 {
-		return nil, fmt.Errorf("no cluster objects found for app %q", appName)
+		return nil, fmt.Errorf("no cluster objects found for component %q", compName)
 	}
 
 	for _, co := range objs {
 		if co.GetInlined() == nil {
-			return nil, fmt.Errorf("cluster object %q is not inlined for app %q", co.GetName(), appName)
+			return nil, fmt.Errorf("cluster object %q is not inlined for component %q", co.GetName(), compName)
 		}
 	}
 
-	return &ExportedApp{
-		Name:    appName,
+	return &ExportedComponent{
+		Name:    compName,
 		Objects: objs,
 	}, nil
 }

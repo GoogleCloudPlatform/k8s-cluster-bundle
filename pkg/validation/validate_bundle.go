@@ -33,88 +33,88 @@ func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
 // Validate validates Bundles, providing as many errors as it can.
 func (b *BundleValidator) Validate() []error {
 	var errs []error
-	errs = append(errs, b.validateImageConfigs()...)
-	errs = append(errs, b.validateClusterAppNames()...)
-	errs = append(errs, b.validateClusterAppObjectNames()...)
+	errs = append(errs, b.validateNodeConfigs()...)
+	errs = append(errs, b.validateClusterComponentNames()...)
+	errs = append(errs, b.validateClusterObjNames()...)
 	return errs
 }
 
-func (b *BundleValidator) validateImageConfigs() []error {
+func (b *BundleValidator) validateNodeConfigs() []error {
 	var errs []error
-	imageConfigs := make(map[string]*bpb.ImageConfig)
-	for _, nc := range b.Bundle.GetSpec().GetImageConfigs() {
+	nodeConfigs := make(map[string]*bpb.NodeConfig)
+	for _, nc := range b.Bundle.GetSpec().GetNodeConfigs() {
 		n := nc.GetName()
 		if n == "" {
-			errs = append(errs, fmt.Errorf("image configs must always have a name. was empty for config %v", nc))
+			errs = append(errs, fmt.Errorf("node configs must always have a name. was empty for config %v", nc))
 			continue
 		}
-		if _, ok := imageConfigs[n]; ok {
-			errs = append(errs, fmt.Errorf("duplicate image config key %q found when processing config %v", n, nc))
+		if _, ok := nodeConfigs[n]; ok {
+			errs = append(errs, fmt.Errorf("duplicate node config key %q found when processing config %v", n, nc))
 			continue
 		}
-		imageConfigs[n] = nc
+		nodeConfigs[n] = nc
 	}
 	return errs
 }
 
-func (b *BundleValidator) validateClusterAppNames() []error {
+func (b *BundleValidator) validateClusterComponentNames() []error {
 	var errs []error
-	appConfigs := make(map[string]*bpb.ClusterApplication)
-	for _, ca := range b.Bundle.GetSpec().GetClusterApps() {
+	objCollect := make(map[string]*bpb.ClusterComponent)
+	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		n := ca.GetName()
 		if n == "" {
-			errs = append(errs, fmt.Errorf("cluster applications must always have a name. was empty for config %v", ca))
+			errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for config %v", ca))
 			continue
 		}
-		if _, ok := appConfigs[n]; ok {
-			errs = append(errs, fmt.Errorf("duplicate cluster application key %q when processing config %v", n, ca))
+		if _, ok := objCollect[n]; ok {
+			errs = append(errs, fmt.Errorf("duplicate cluster component key %q when processing config %v", n, ca))
 			continue
 		}
-		appConfigs[n] = ca
+		objCollect[n] = ca
 	}
 	return errs
 }
 
-// appObjKey is a key for an app+object, for use in maps.
-type appObjKey struct {
-	appName string
-	objName string
+// compObjKey is a key for an component+object, for use in maps.
+type compObjKey struct {
+	compName string
+	objName  string
 }
 
-func (b *BundleValidator) validateClusterAppObjectNames() []error {
+func (b *BundleValidator) validateClusterObjNames() []error {
 	var errs []error
-	appObjects := make(map[appObjKey]*bpb.ClusterObject)
-	for _, ca := range b.Bundle.GetSpec().GetClusterApps() {
-		appName := ca.GetName()
-		appConfigs := make(map[string]*bpb.ClusterObject)
+	compObjects := make(map[compObjKey]*bpb.ClusterObject)
+	for _, ca := range b.Bundle.GetSpec().GetComponents() {
+		compName := ca.GetName()
+		objCollect := make(map[string]*bpb.ClusterObject)
 		for _, obj := range ca.GetClusterObjects() {
 			n := obj.GetName()
 			if n == "" {
-				errs = append(errs, fmt.Errorf("cluster applications objects must always have a name. was empty for app %q", appName))
+				errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for component %q", compName))
 				continue
 			}
-			if _, ok := appConfigs[n]; ok {
-				errs = append(errs, fmt.Errorf("duplicate cluster application object key %q when processing app %q", n, appName))
+			if _, ok := objCollect[n]; ok {
+				errs = append(errs, fmt.Errorf("duplicate cluster component object key %q when processing component %q", n, compName))
 				continue
 			}
-			key := appObjKey{appName: appName, objName: n}
-			if _, ok := appObjects[key]; ok {
-				errs = append(errs, fmt.Errorf("combination of application name %q and object name %q was not unique", n, appName))
+			key := compObjKey{compName: compName, objName: n}
+			if _, ok := compObjects[key]; ok {
+				errs = append(errs, fmt.Errorf("combination of cluster component object name %q and object name %q was not unique", n, compName))
 				continue
 			}
-			appConfigs[n] = obj
-			appObjects[appObjKey{appName: appName, objName: n}] = obj
+			objCollect[n] = obj
+			compObjects[compObjKey{compName: compName, objName: n}] = obj
 		}
 	}
-	return append(errs, b.validateClusterOptionsKeys(appObjects)...)
+	return append(errs, b.validateClusterOptionsKeys(compObjects)...)
 }
 
-func (b *BundleValidator) validateClusterOptionsKeys(appObjects map[appObjKey]*bpb.ClusterObject) []error {
+func (b *BundleValidator) validateClusterOptionsKeys(compObjects map[compObjKey]*bpb.ClusterObject) []error {
 	var errs []error
-	for _, key := range b.Bundle.GetSpec().GetOptionsDefaults() {
-		appObjKey := appObjKey{key.GetAppName(), key.GetObjectName()}
-		if _, ok := appObjects[appObjKey]; !ok {
-			errs = append(errs, fmt.Errorf("options specified with application name %q and object name %q was not found", key.GetAppName(), key.GetObjectName()))
+	for _, key := range b.Bundle.GetSpec().GetOptionsExamples() {
+		compObjKey := compObjKey{key.GetComponentName(), key.GetObjectName()}
+		if _, ok := compObjects[compObjKey]; !ok {
+			errs = append(errs, fmt.Errorf("options specified with cluster component name %q and object name %q was not found", key.GetComponentName(), key.GetObjectName()))
 			continue
 		}
 	}

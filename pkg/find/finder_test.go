@@ -25,13 +25,12 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-  imageConfigs:
+  nodeConfigs:
   - name: masterNode
-    initScript: "echo 'I'm a script'"
+    initFile: "echo 'I'm a script'"
   - name: userNode
-    initScript: "echo 'I'm another script'"
-  clusterApps:
+    initFile: "echo 'I'm another script'"
+  components:
   - name: etcd-server
     clusterObjects:
     - name: pod
@@ -52,67 +51,67 @@ func TestBundleFinder(t *testing.T) {
 	}
 	testCases := []struct {
 		desc       string
-		imageName  string
-		appName    string
+		nodeName   string
+		compName   string
 		objName    string
 		shouldFind bool
 	}{
 		{
 			desc:       "success: bootstrap lookup",
-			imageName:  "masterNode",
+			nodeName:   "masterNode",
 			shouldFind: true,
 		},
 		{
 			desc:       "failure: bootstrap lookup",
-			imageName:  "masterNoob",
+			nodeName:   "masterNoob",
 			shouldFind: false,
 		},
 		{
-			desc:       "success: cluster app lookup",
-			appName:    "etcd-server",
+			desc:       "success: cluster comp lookup",
+			compName:   "etcd-server",
 			shouldFind: true,
 		},
 		{
-			desc:       "failure: cluster app lookup",
-			appName:    "etcd-server-bloop",
+			desc:       "failure: cluster comp lookup",
+			compName:   "etcd-server-bloop",
 			shouldFind: false,
 		},
 		{
 			desc:       "success: cluster obj lookup",
-			appName:    "etcd-server",
+			compName:   "etcd-server",
 			objName:    "pod",
 			shouldFind: true,
 		},
 		{
 			desc:       "failure: cluster obj lookup",
-			appName:    "etcd-server",
+			compName:   "etcd-server",
 			objName:    "blorp",
 			shouldFind: false,
 		},
 	}
 	for _, tc := range testCases {
-		if tc.imageName != "" {
-			v := finder.ImageConfig(tc.imageName)
+		if tc.nodeName != "" {
+			v := finder.NodeConfig(tc.nodeName)
 			if v == nil && tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected nil response for lookup of bootstrap", tc.desc)
 			} else if v != nil && !tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected non-nil response %v for lookup of bootstrap", tc.desc, v)
 			}
 
-		} else if tc.objName != "" && tc.appName != "" {
-			v := finder.ClusterAppObject(tc.appName, tc.objName)
+		} else if tc.objName != "" && tc.compName != "" {
+			v := finder.ClusterComponentObject(tc.compName, tc.objName)
 			if v == nil && tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected nil response for cluster app object lookup", tc.desc)
+				t.Errorf("Test %v: Got unexpected nil response for cluster comp object lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected non-nil response %v for cluster app object lookup", tc.desc, v)
+				t.Errorf("Test %v: Got unexpected non-nil response %v for cluster comp object lookup", tc.desc, v)
 			}
 
-		} else if tc.appName != "" {
-			v := finder.ClusterApp(tc.appName)
+		} else if tc.compName != "" {
+			v := finder.ClusterComponent(tc.compName)
 			if v == nil && tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected nil response for cluster app lookup", tc.desc)
+				t.Errorf("Test %v: Got unexpected nil response for cluster comp lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected non-nil response %v for cluster app lookup", tc.desc, v)
+				t.Errorf("Test %v: Got unexpected non-nil response %v for cluster comp lookup", tc.desc, v)
 			}
 
 		} else {

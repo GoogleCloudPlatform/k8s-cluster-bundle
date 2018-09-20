@@ -16,6 +16,7 @@ package transformer
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"context"
@@ -30,21 +31,21 @@ kind: ClusterBundle
 metadata:
   name: test-bundle
 spec:
-  imageConfigs:
+  nodeConfigs:
   - name: master
-    initScriptFile:
-      path: 'path/to/init-script.sh'
-  clusterApps:
+    externalInitFile:
+      url: 'file://path/to/init-script.sh'
+  components:
   - name: kube-apiserver
     clusterObjects:
     - name: pod
       file:
-        path: 'path/to/kube_apiserver.yaml'
+        url: 'file://path/to/kube_apiserver.yaml'
   - name: kubelet-config
     clusterObjects:
     - name: kubelet-config-pod
       file:
-        path: 'path/to/kubelet/config.yaml'
+        url: 'file://path/to/kubelet/config.yaml'
 `
 
 const (
@@ -58,17 +59,21 @@ const (
 type fakeLocalReader struct{}
 
 func (*fakeLocalReader) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
+	url := file.GetUrl()
+	if strings.HasPrefix(url, "file://") {
+		url = strings.TrimPrefix(url, "file://")
+	}
 	switch {
-	case file.GetPath() == initScriptFile:
+	case url == initScriptFile:
 		return []byte(initScriptContents), nil
 
-	case file.GetPath() == kubeletConfigFile:
+	case url == kubeletConfigFile:
 		return []byte("{\"foo\": \"bar\"}"), nil
 
-	case file.GetPath() == kubeAPIServerFile:
+	case url == kubeAPIServerFile:
 		return []byte("{\"biff\": \"bam\"}"), nil
 	default:
-		return nil, fmt.Errorf("unexpected file path %q", file.Path)
+		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
 	}
 }
 
@@ -91,13 +96,13 @@ func TestInlineBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
-	if got := finder.ImageConfig("master").GetInitScript(); got != initScriptContents {
+	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
-	if got := finder.ClusterAppObject("kube-apiserver", "pod").GetInlined().GetFields()["biff"].GetStringValue(); got != "bam" {
+	if got := finder.ClusterComponentObject("kube-apiserver", "pod").GetInlined().GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
-	if got := finder.ClusterAppObject("kubelet-config", "kubelet-config-pod").GetInlined().GetFields()["foo"].GetStringValue(); got != "bar" {
+	if got := finder.ClusterComponentObject("kubelet-config", "kubelet-config-pod").GetInlined().GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bar")
 	}
 }

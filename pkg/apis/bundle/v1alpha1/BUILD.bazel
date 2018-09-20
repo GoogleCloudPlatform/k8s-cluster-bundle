@@ -3,13 +3,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
-        "application_bundle.pb.go",
         "bundle_common.pb.go",
         "cluster_bundle.pb.go",
+        "cluster_component.pb.go",
         "doc.go",
-        "image_config.pb.go",
+        "node_config.pb.go",
         "object_meta.pb.go",
-        "overlay.pb.go",
+        "patch.pb.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1",
     visibility = ["//visibility:public"],

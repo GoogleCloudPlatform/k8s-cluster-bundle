@@ -33,54 +33,49 @@ func TestValidateBundle(t *testing.T) {
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  version: '1.9.7.testbundle'`,
+  name: '1.9.7.testbundle-zork'`,
 			// no errors
 		},
 
 		{
-			desc: "fail: duplicate image config key",
+			desc: "fail: duplicate node config key",
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-  imageConfigs:
+  nodeConfigs:
   - name: masterNode
   - name: masterNode`,
-			errSubstring: "duplicate image config",
+			errSubstring: "duplicate node config",
 		},
 
 		{
-			desc: "fail: duplicate cluster app config key",
+			desc: "fail: duplicate cluster component key",
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-  clusterApps:
+  components:
   - name: coolApp
   - name: coolApp`,
-			errSubstring: "duplicate cluster application key",
+			errSubstring: "duplicate cluster component key",
 		},
 
 		{
-			desc: "fail: duplicated cluster app object config key",
+			desc: "fail: duplicated cluster component key",
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-  clusterApps:
+  components:
   - name: coolApp1
     clusterObjects:
     - name: pod
     - name: pod`,
-			errSubstring: "duplicate cluster application object key",
+			errSubstring: "duplicate cluster component object key",
 		},
 
 		{
@@ -90,15 +85,14 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  version: '1.9.7.testbundle'
-  optionsDefaults:
-  - appName: foo
+  optionsExamples:
+  - componentName: foo
     objectName: bar
-  clusterApps:
+  components:
   - name: coolApp1
     clusterObjects:
     - name: pod`,
-			errSubstring: "options specified with application",
+			errSubstring: "options specified with cluster component",
 		},
 	}
 

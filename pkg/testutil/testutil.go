@@ -22,18 +22,20 @@ import (
 	"path/filepath"
 )
 
-const curDir = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil/testdata"
+const testDir = "pkg/testutil/testdata"
 
 // TestPathPrefix returns the empty string or the bazel test path prefix.
-func TestPathPrefix() string {
+func TestPathPrefix(inpath string) string {
 	path := os.Getenv("TEST_SRCDIR") // For dealing with bazel.
+	workspace := os.Getenv("TEST_WORKSPACE")
 	if path != "" {
-		return filepath.Join(path, curDir)
+		return filepath.Join(path, workspace, testDir)
 	}
-	return path
+	return inpath
 }
 
 // ReadTestBundle reads the test-Bundle from disk.
-func ReadTestBundle() ([]byte, error) {
-	return ioutil.ReadFile(filepath.Join(TestPathPrefix(), "example-bundle.yaml"))
+func ReadTestBundle(inpath string) ([]byte, error) {
+	testpath := TestPathPrefix(inpath)
+	return ioutil.ReadFile(filepath.Join(testpath, "example-bundle.yaml"))
 }

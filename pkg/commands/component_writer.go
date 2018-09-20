@@ -23,19 +23,19 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// appWriter is an interface for writing applications.
+// compWriter is an interface for writing applications.
 // This interface is used by the export and patch commands in this package.
 // There is a fake implementation in the testing package.
-type appWriter interface {
-	// WriteAppToFile writes a ClusterApplication to the given file path.
-	WriteAppToFile(app *bpb.ClusterApplication, path string, permissions os.FileMode) error
+type compWriter interface {
+	// WriteComponentToFile writes a ClusterComponent to the given file path.
+	WriteComponentToFile(comp *bpb.ClusterComponent, path string, permissions os.FileMode) error
 }
 
 // localFileSystemWriter implements the appWriter interface and writes apps to the local filesystem.
 type localFileSystemWriter struct{}
 
-func (*localFileSystemWriter) WriteAppToFile(app *bpb.ClusterApplication, path string, permissions os.FileMode) error {
-	yaml, err := converter.Struct.ProtoToYAML(app)
+func (*localFileSystemWriter) WriteComponentToFile(comp *bpb.ClusterComponent, path string, permissions os.FileMode) error {
+	yaml, err := converter.Struct.ProtoToYAML(comp)
 	if err != nil {
 		return err
 	}

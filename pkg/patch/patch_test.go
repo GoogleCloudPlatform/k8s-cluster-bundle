@@ -16,40 +16,39 @@ package patch
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/scheme"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type overlayExample struct {
-	overlays       []string
+type patchExample struct {
+	patches        []string
 	obj            string
 	customResource interface{}
 }
 
-func applyPatch(ex *overlayExample) (*structpb.Struct, error) {
+func applyPatch(ex *patchExample) (*structpb.Struct, error) {
 	patcher := &Patcher{
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	o, err := converter.Struct.YAMLToProto([]byte(ex.obj))
-	var overlays []*bpb.Overlay
-	for _, pstr := range ex.overlays {
-		p, err := converter.Overlay.YAMLToProto([]byte(pstr))
+	var patches []*bpb.Patch
+	for _, pstr := range ex.patches {
+		p, err := converter.Patch.YAMLToProto([]byte(pstr))
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing overlay %s: %v", pstr, err)
+			return nil, fmt.Errorf("Error parsing patch %s: %v", pstr, err)
 		}
-		overlays = append(overlays, converter.ToOverlay(p))
+		patches = append(patches, converter.ToPatch(p))
 	}
 
 	if err != nil {
 		return nil, err
 	}
-	return patcher.ApplyToClusterObjects(overlays, ex.customResource, converter.ToStruct(o))
+	return patcher.ApplyToClusterObjects(patches, ex.customResource, converter.ToStruct(o))
 }
 
 const apiServerExample = `
@@ -92,9 +91,9 @@ spec:
 `
 
 func TestApplyPatchEnvVar(t *testing.T) {
-	overlay := `
+	patchBase := `
 name: apiserver-advertise-address
-custom_resource_key:
+objectRef:
   kind: ApiServerAddress
 templateString: |
   spec:
@@ -109,18 +108,18 @@ templateString: |
 kind: ApiServerAddress
 advertiseAddress: %s
 `, val)
-	cr, err := converter.CustomResourceYAMLToMap([]byte(crYAML))
+	cr, err := converter.KubeResourceYAMLToMap([]byte(crYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", crYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", crYAML, err)
 	}
-	ex := &overlayExample{
-		overlays:       []string{overlay},
+	ex := &patchExample{
+		patches:        []string{patchBase},
 		obj:            apiServerExample,
 		customResource: cr,
 	}
 	out, err := applyPatch(ex)
 	if err != nil {
-		t.Fatalf("Error applying overlay: %v", err)
+		t.Fatalf("Error applying patch: %v", err)
 	}
 	if out == nil {
 		t.Errorf("Patch file was unexpectedly nil")
@@ -132,7 +131,7 @@ advertiseAddress: %s
 }
 
 func TestApplyDeleteVolumes(t *testing.T) {
-	overlay := `
+	patchBase := `
 name: apiserver-delete-volumes
 templateString: |
   spec:
@@ -145,13 +144,13 @@ templateString: |
     - name: cloudconfigmount
       $patch: delete
 `
-	ex := &overlayExample{
-		overlays: []string{overlay},
-		obj:      apiServerExample,
+	ex := &patchExample{
+		patches: []string{patchBase},
+		obj:     apiServerExample,
 	}
 	out, err := applyPatch(ex)
 	if err != nil {
-		t.Fatalf("Error applying overlay: %v", err)
+		t.Fatalf("Error applying patch: %v", err)
 	}
 	if out == nil {
 		t.Errorf("Patch file was unexpectedly nil")
@@ -165,8 +164,8 @@ templateString: |
 	}
 }
 
-func TestPatchApplication(t *testing.T) {
-	appYaml := `
+func TestPatchComponent(t *testing.T) {
+	compYAML := `
 name: my-app
 clusterObjects:
 - name: object1
@@ -175,13 +174,13 @@ clusterObjects:
     kind: Pod
     spec:
       ip: PLACEHOLDER
-  overlayCollection:
-    overlays:
-    - name: ip-overlay
-      customResourceKey:
-        group: bundles
-        version: v1alpha1
+  patchCollection:
+    patches:
+    - name: ip-patch
+      objectRef:
+        apiVersion: bundles/v1alpha1
         kind: IPAddress
+        name: Zed
       templateString: |
         spec:
           ip: '{{.spec.ip}}'
@@ -196,13 +195,13 @@ clusterObjects:
         env:
         - name: IP
           value: PLACEHOLDER
-  overlayCollection:
-    overlays:
-    - name: ip-overlay
-      customResourceKey:
-        group: bundles
-        version: v1alpha1
+  patchCollection:
+    patches:
+    - name: ip-patch
+      objectRef:
+        apiVersion: bundles/v1alpha1
         kind: IPAddress
+        name: Zed
       templateString: |
         spec:
           containers:
@@ -210,11 +209,11 @@ clusterObjects:
             env:
             - name: IP
               value: '{{.spec.ip}}'
-    - name: image-overlay
-      customResourceKey:
-        group: bundles
-        version: v1alpha1
+    - name: image-patch
+      objectRef:
+        apiVersion: bundles/v1alpha1
         kind: ImageName
+        name: Zed
       templateString: |
         spec:
           containers:
@@ -225,35 +224,39 @@ clusterObjects:
 	ipCRYAML := fmt.Sprintf(`
 apiVersion: bundles/v1alpha1
 kind: IPAddress
+metadata:
+  name: Zed
 spec:
   ip: %s
 `, ipVal)
-	ipCR, err := converter.CustomResourceYAMLToMap([]byte(ipCRYAML))
+	ipCR, err := converter.KubeResourceYAMLToMap([]byte(ipCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", ipCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", ipCRYAML, err)
 	}
 
 	imageVal := "path/to/image"
 	imageCRYAML := fmt.Sprintf(`
 apiVersion: bundles/v1alpha1
 kind: ImageName
+metadata:
+  name: Zed
 spec:
   image: %s
 `, imageVal)
-	imageCR, err := converter.CustomResourceYAMLToMap([]byte(imageCRYAML))
+	imageCR, err := converter.KubeResourceYAMLToMap([]byte(imageCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", imageCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", imageCRYAML, err)
 	}
 
-	apppb, err := converter.ClusterApplication.YAMLToProto([]byte(appYaml))
+	compPb, err := converter.ClusterComponent.YAMLToProto([]byte(compYAML))
 	if err != nil {
 		t.Fatalf("Error parsing cluster application: %v", err)
 	}
-	app := converter.ToClusterApplication(apppb)
+	comp := converter.ToClusterComponent(compPb)
 	patcher := &Patcher{
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
-	patched, err := patcher.PatchApplication(app, []map[string]interface{}{ipCR, imageCR})
+	patched, err := patcher.PatchComponent(comp, []map[string]interface{}{ipCR, imageCR})
 	if err != nil {
 		t.Fatalf("PatchApplication returned error: %v", err)
 	}
@@ -281,7 +284,7 @@ kind: ClusterBundle
 metadata:
   name: bundle-example
 spec:
-  clusterApps:
+  components:
   - name: my-app
     clusterObjects:
     - name: foo
@@ -290,13 +293,13 @@ spec:
         kind: Pod
         spec:
           fooVal: PLACEHOLDER
-      overlayCollection:
-        overlays:
-        - name: foo-overlay
-          customResourceKey:
-            group: bundles
-            version: v1alpha1
+      patchCollection:
+        patches:
+        - name: foo-patch
+          objectRef:
+            apiVersion: bundles/v1alpha1
             kind: Foo
+            name: Zed
           templateString: |
             spec:
               fooVal: '{{.spec.fooVal}}'
@@ -308,13 +311,13 @@ spec:
         kind: Pod
         spec:
           barVal: PLACEHOLDER
-      overlayCollection:
-        overlays:
-        - name: bar-overlay
-          customResourceKey:
-            group: bundles
-            version: v1alpha1
+      patchCollection:
+        patches:
+        - name: bar-patch
+          objectRef:
+            apiVersion: bundles/v1alpha1
             kind: Bar
+            name: Zod
           templateString: |
             spec:
               barVal: '{{.spec.barVal}}'
@@ -329,29 +332,33 @@ spec:
 	fooCRYAML := fmt.Sprintf(`
 apiVersion: bundles/v1alpha1
 kind: Foo
+metadata:
+  name: Zed
 spec:
   fooVal: %s
 `, fooVal)
-	fooCR, err := converter.CustomResourceYAMLToMap([]byte(fooCRYAML))
+	fooCR, err := converter.KubeResourceYAMLToMap([]byte(fooCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", fooCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", fooCRYAML, err)
 	}
 
 	barVal := "xyz"
 	barCRYAML := fmt.Sprintf(`
 apiVersion: bundles/v1alpha1
 kind: Bar
+metadata:
+  name: Zod
 spec:
   barVal: %s
 `, barVal)
-	barCR, err := converter.CustomResourceYAMLToMap([]byte(barCRYAML))
+	barCR, err := converter.KubeResourceYAMLToMap([]byte(barCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", barCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", barCRYAML, err)
 	}
 
 	patcher := &Patcher{
 		Bundle: bp,
-		Scheme: DefaultPatcherScheme(),
+		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	patched, err := patcher.PatchBundle([]map[string]interface{}{fooCR, barCR})
 	if err != nil {
@@ -366,78 +373,5 @@ spec:
 	}
 	if !strings.Contains(string(out), barVal) {
 		t.Errorf("yaml did not contain %v", barVal)
-	}
-}
-
-func TestGVKFromCustomResource(t *testing.T) {
-	testCases := []struct {
-		desc        string
-		cr          string
-		gvk         schema.GroupVersionKind
-		errContains string
-	}{
-		{
-			desc: "success case",
-			cr: `
-apiVersion: bundles/v1alpha1
-kind: BundleOptions
-foo: Bar
-`,
-			gvk: schema.GroupVersionKind{
-				Group:   "bundles",
-				Version: "v1alpha1",
-				Kind:    "BundleOptions",
-			},
-		},
-		{
-			desc: "bad apiVersion format",
-			cr: `
-apiVersion: bundles
-kind: BundleOptions
-foo: Bar
-`,
-			errContains: "not formatted as group/version",
-		},
-		{
-			desc: "missing apiVersion",
-			cr: `
-kind: BundleOptions
-foo: Bar
-`,
-			errContains: "no apiVersion field",
-		},
-		{
-			desc: "missing kind",
-			cr: `
-apiVersion: bundles/v1alpha1
-foo: Bar"
-`,
-			errContains: "no kind field",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			cr, err := converter.CustomResourceYAMLToMap([]byte(tc.cr))
-			if err != nil {
-				t.Fatalf("CustomResourceYAMLToMap(%s) returned err: %v", tc.cr, err)
-			}
-			gvk, err := gvkFromCustomResource(cr)
-			if !reflect.DeepEqual(gvk, tc.gvk) {
-				t.Errorf("gvkFromCustomResource(%v) returned %+v, want %+v", tc.cr, gvk, tc.gvk)
-			}
-			if tc.errContains != "" {
-				if err == nil {
-					t.Fatalf("gvkFromCustomResource(%v) should have returned an error but error was nil", tc.cr)
-				}
-				if !strings.Contains(err.Error(), tc.errContains) {
-					t.Fatalf("gvkFromCustomResource(%v) error message should have contained: %v, Got: %v", tc.cr, tc.errContains, err)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("gvkFromCustomResource(%v) returned unexpected error: %v", tc.cr, err)
-			}
-		})
 	}
 }
