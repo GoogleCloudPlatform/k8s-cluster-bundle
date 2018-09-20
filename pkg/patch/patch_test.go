@@ -36,6 +36,10 @@ func applyPatch(ex *patchExample) (*structpb.Struct, error) {
 		Scheme: scheme.DefaultPatcherScheme(),
 	}
 	o, err := converter.Struct.YAMLToProto([]byte(ex.obj))
+	if err != nil {
+		return nil, err
+	}
+
 	var patches []*bpb.Patch
 	for _, pstr := range ex.patches {
 		p, err := converter.Patch.YAMLToProto([]byte(pstr))
@@ -43,10 +47,6 @@ func applyPatch(ex *patchExample) (*structpb.Struct, error) {
 			return nil, fmt.Errorf("Error parsing patch %s: %v", pstr, err)
 		}
 		patches = append(patches, converter.ToPatch(p))
-	}
-
-	if err != nil {
-		return nil, err
 	}
 	return patcher.ApplyToClusterObjects(patches, ex.customResource, converter.ToStruct(o))
 }
@@ -155,7 +155,10 @@ templateString: |
 	if out == nil {
 		t.Errorf("Patch file was unexpectedly nil")
 	}
-	outby, _ := converter.Struct.ProtoToYAML(out)
+	outby, err := converter.Struct.ProtoToYAML(out)
+	if err != nil {
+		t.Fatalf("error converting proto to YAML: %v", err)
+	}
 	if val := "cloudconfigmount"; strings.Contains(string(outby), val) {
 		t.Errorf("yaml contained %q", val)
 	}
@@ -263,7 +266,10 @@ spec:
 	if patched == nil {
 		t.Fatalf("Patched application was unexpectedly nil")
 	}
-	out, _ := converter.Struct.ProtoToYAML(patched)
+	out, err := converter.Struct.ProtoToYAML(patched)
+	if err != nil {
+		t.Fatalf("error converting proto to YAML: %v", err)
+	}
 	if !strings.Contains(string(out), ipVal) {
 		t.Errorf("yaml did not contain %v", ipVal)
 	}

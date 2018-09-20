@@ -107,6 +107,7 @@ foo: Bar"
 			}
 		})
 
+		// These two methods of creating object refs should be identical. So, ensure they are.
 		t.Run(tc.desc+" via Structpb", func(t *testing.T) {
 			s, err := Struct.YAMLToProto([]byte(tc.cr))
 			if err != nil {
