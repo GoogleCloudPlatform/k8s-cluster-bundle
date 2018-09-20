@@ -21,11 +21,11 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/scheme"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 	log "github.com/golang/glog"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	corev1 "k8s.io/api/core/v1"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -198,7 +198,7 @@ func (t *Patcher) PatchComponent(comp *bpb.ClusterComponent, customResources []m
 // always returning a new component copy of the original component with the patches (if any)
 // applied. It takes in a map from custom resource kind to custom resource instance for ease of
 // lookup.
-func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[corev1.ObjectReference]interface{}) (*bpb.ClusterComponent, error) {
+func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[core.ObjectReference]interface{}) (*bpb.ClusterComponent, error) {
 	clonedComponent := converter.CloneClusterComponent(comp)
 	for _, co := range clonedComponent.GetClusterObjects() {
 		obj := co.GetInlined()
@@ -208,7 +208,7 @@ func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[corev1.Ob
 		for _, pat := range co.GetPatchCollection().GetPatches() {
 			var err error
 			// Pass each patch separately to update the cluster object along with the corresponding CR.
-			cr, found := crMap[converter.ToObjectReference(pat.GetObjectRef())]
+			cr, found := crMap[core.ObjectReferenceFromProto(pat.GetObjectRef())]
 			if !found {
 				return nil, fmt.Errorf("could not patch object %q: no custom resource found for %q", co.GetName(), pat.GetObjectRef())
 			}

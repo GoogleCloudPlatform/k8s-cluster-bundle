@@ -43,3 +43,34 @@ func (k ClusterObjectKey) ToProto() *bpb.ClusterObjectKey {
 		ObjectName:    k.ObjectName,
 	}
 }
+
+// ObjectReference is a stripped-down version of the Kubernetes corev1.ObjectReference type.
+type ObjectReference struct {
+	// The API Version for an Object
+	APIVersion string
+
+	// The Kind for an Object
+	Kind string
+
+	// The Name of an Object
+	Name string
+}
+
+// ClusterObjectKeyFromProto creates a non-pointer ClusterObjectKey from a
+// proto.
+func ObjectReferenceFromProto(k *bpb.ObjectReference) ObjectReference {
+	return ObjectReference{
+		APIVersion: k.GetApiVersion(),
+		Kind:       k.GetKind(),
+		Name:       k.GetName(),
+	}
+}
+
+// ToProto creates a ObjectReference proto from a ObjectReference value.
+func (k ObjectReference) ToProto() *bpb.ObjectReference {
+	return &bpb.ObjectReference{
+		ApiVersion: k.APIVersion,
+		Kind:       k.Kind,
+		Name:       k.Name,
+	}
+}

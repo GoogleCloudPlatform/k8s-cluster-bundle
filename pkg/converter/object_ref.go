@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"regexp"
 
-	corev1 "k8s.io/api/core/v1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 // KubeResourceMap creates a map from a Kubernetes resource object reference to
 // the instance.
-func KubeResourceMap(resources []map[string]interface{}) (map[corev1.ObjectReference]interface{}, error) {
-	crMap := make(map[corev1.ObjectReference]interface{})
+func KubeResourceMap(resources []map[string]interface{}) (map[core.ObjectReference]interface{}, error) {
+	crMap := make(map[core.ObjectReference]interface{})
 	for _, cr := range resources {
 		ref, err := ObjectRefFromRawKubeResource(cr)
 		if err != nil {
@@ -24,9 +24,9 @@ func KubeResourceMap(resources []map[string]interface{}) (map[corev1.ObjectRefer
 // ObjectRefFromRawKubeResource extracts the ObjectReference out of a Kubernetes resource.
 // - returns an error if there is no apiVersion or kind field in the resource
 // - returns an error if the apiVersion value is not of the format "group/version"
-func ObjectRefFromRawKubeResource(cr map[string]interface{}) (corev1.ObjectReference, error) {
-	nullResp := corev1.ObjectReference{}
-	ref := corev1.ObjectReference{}
+func ObjectRefFromRawKubeResource(cr map[string]interface{}) (core.ObjectReference, error) {
+	nullResp := core.ObjectReference{}
+	ref := core.ObjectReference{}
 	apiVersion := cr["apiVersion"]
 	if apiVersion == nil {
 		return nullResp, fmt.Errorf("no apiVersion field was found for Kubernetes resource %v", cr)

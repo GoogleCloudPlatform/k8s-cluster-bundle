@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	corev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -69,22 +68,12 @@ func ToStruct(msg proto.Message) *structpb.Struct {
 	return msg.(*structpb.Struct)
 }
 
-// ToObjectReference converts a Bundle ObjectReference proto to the Kubernetes
-// ObjectReference type.
-func ToObjectReference(pb *bpb.ObjectReference) corev1.ObjectReference {
-	return corev1.ObjectReference{
-		APIVersion: pb.GetApiVersion(),
-		Kind:       pb.GetKind(),
-		Name:       pb.GetName(),
-	}
-}
-
-// CustomResourceYAMLToMap converts a Custom Resource YAML to a map of string to interface.
+// KubeResourceYAMLToMap converts a Kubernetes Resource YAML to a map of string to interface.
 // Custom Resources can have arbitrary fields, and we will not have defined structs for each
 // options CR to decouple the existence of options CRs from the bundle library. The YAML will be
 // parsed into a map so it allows for accessing arbitrary fields.
 // TODO: parse CustomResource into a RawExtension instead of a map.
-func CustomResourceYAMLToMap(contents []byte) (map[string]interface{}, error) {
+func KubeResourceYAMLToMap(contents []byte) (map[string]interface{}, error) {
 	var cr map[string]interface{}
 	err := yaml.Unmarshal([]byte(contents), &cr)
 	return cr, err

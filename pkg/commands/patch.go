@@ -233,7 +233,7 @@ func readAllOptions(optionsCRs []string, or OptionsReader) ([]map[string]interfa
 		if err != nil {
 			return nil, fmt.Errorf("error reading options from %s: %v", opath, err)
 		}
-		cr, err := converter.CustomResourceYAMLToMap(bytes)
+		cr, err := converter.KubeResourceYAMLToMap(bytes)
 		if err != nil {
 			return nil, err
 		}

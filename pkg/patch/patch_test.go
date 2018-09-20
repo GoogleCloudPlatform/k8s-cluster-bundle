@@ -108,9 +108,9 @@ templateString: |
 kind: ApiServerAddress
 advertiseAddress: %s
 `, val)
-	cr, err := converter.CustomResourceYAMLToMap([]byte(crYAML))
+	cr, err := converter.KubeResourceYAMLToMap([]byte(crYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", crYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", crYAML, err)
 	}
 	ex := &patchExample{
 		patches:        []string{patchBase},
@@ -229,9 +229,9 @@ metadata:
 spec:
   ip: %s
 `, ipVal)
-	ipCR, err := converter.CustomResourceYAMLToMap([]byte(ipCRYAML))
+	ipCR, err := converter.KubeResourceYAMLToMap([]byte(ipCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", ipCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", ipCRYAML, err)
 	}
 
 	imageVal := "path/to/image"
@@ -243,9 +243,9 @@ metadata:
 spec:
   image: %s
 `, imageVal)
-	imageCR, err := converter.CustomResourceYAMLToMap([]byte(imageCRYAML))
+	imageCR, err := converter.KubeResourceYAMLToMap([]byte(imageCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", imageCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", imageCRYAML, err)
 	}
 
 	compPb, err := converter.ClusterComponent.YAMLToProto([]byte(compYAML))
@@ -337,9 +337,9 @@ metadata:
 spec:
   fooVal: %s
 `, fooVal)
-	fooCR, err := converter.CustomResourceYAMLToMap([]byte(fooCRYAML))
+	fooCR, err := converter.KubeResourceYAMLToMap([]byte(fooCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", fooCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", fooCRYAML, err)
 	}
 
 	barVal := "xyz"
@@ -351,9 +351,9 @@ metadata:
 spec:
   barVal: %s
 `, barVal)
-	barCR, err := converter.CustomResourceYAMLToMap([]byte(barCRYAML))
+	barCR, err := converter.KubeResourceYAMLToMap([]byte(barCRYAML))
 	if err != nil {
-		t.Fatalf("CustomResourceYAMLToMap(%v) returned error: %v", barCRYAML, err)
+		t.Fatalf("KubeResourceYAMLToMap(%v) returned error: %v", barCRYAML, err)
 	}
 
 	patcher := &Patcher{

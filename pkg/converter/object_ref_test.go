@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 func TestObjectRefFromCustomResource(t *testing.T) {
 	testCases := []struct {
 		desc        string
 		cr          string
-		ref         corev1.ObjectReference
+		ref         core.ObjectReference
 		errContains string
 	}{
 		{
@@ -24,7 +24,7 @@ metadata:
   name: Zoinks
 foo: Bar
 `,
-			ref: corev1.ObjectReference{
+			ref: core.ObjectReference{
 				APIVersion: "bundles/v1alpha1",
 				Kind:       "BundleOptions",
 				Name:       "Zoinks",
@@ -84,26 +84,49 @@ foo: Bar"
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			cr, err := CustomResourceYAMLToMap([]byte(tc.cr))
+		t.Run(tc.desc+" via Raw", func(t *testing.T) {
+			cr, err := KubeResourceYAMLToMap([]byte(tc.cr))
 			if err != nil {
-				t.Fatalf("CustomResourceYAMLToMap(%s) returned err: %v", tc.cr, err)
+				t.Fatalf("KubeResourceYAMLToMap(%s) returned err: %v", tc.cr, err)
 			}
 			ref, err := ObjectRefFromRawKubeResource(cr)
 			if !reflect.DeepEqual(ref, tc.ref) {
-				t.Errorf("objectRefFromCustomResource(%v) returned %+v, want %+v", tc.cr, ref, tc.ref)
+				t.Errorf("ObjectRefFromRawKubeResource(%v) returned %+v, want %+v", tc.cr, ref, tc.ref)
 			}
 			if tc.errContains != "" {
 				if err == nil {
-					t.Fatalf("objectRefFromCustomResource(%v) should have returned an error but error was nil", tc.cr)
+					t.Fatalf("ObjectRefFromRawKubeResource(%v) should have returned an error but error was nil", tc.cr)
 				}
 				if !strings.Contains(err.Error(), tc.errContains) {
-					t.Fatalf("objectRefFromCustomResource(%v) error message should have contained: %v, Got: %v", tc.cr, tc.errContains, err)
+					t.Fatalf("ObjectRefFromRawKubeResource(%v) error message should have contained: %v, Got: %v", tc.cr, tc.errContains, err)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("objectRefFromCustomResource(%v) returned unexpected error: %v", tc.cr, err)
+				t.Fatalf("ObjectRefFromRawKubeResource(%v) returned unexpected error: %v", tc.cr, err)
+			}
+		})
+
+		t.Run(tc.desc+" via Structpb", func(t *testing.T) {
+			s, err := Struct.YAMLToProto([]byte(tc.cr))
+			if err != nil {
+				t.Fatalf("Error converting yaml to struct: %v", err)
+			}
+			ref, err := FromStruct(ToStruct(s)).ToObjectRef()
+			if !reflect.DeepEqual(ref, tc.ref) {
+				t.Errorf("ToObjectRef(%v) returned %+v, want %+v", tc.cr, ref, tc.ref)
+			}
+			if tc.errContains != "" {
+				if err == nil {
+					t.Fatalf("ToObjectRef(%v) should have returned an error but error was nil", tc.cr)
+				}
+				if !strings.Contains(err.Error(), tc.errContains) {
+					t.Fatalf("ToObjectRef(%v) error message should have contained: %v, Got: %v", tc.cr, tc.errContains, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ToObjectRef(%v) returned unexpected error: %v", tc.cr, err)
 			}
 		})
 	}
