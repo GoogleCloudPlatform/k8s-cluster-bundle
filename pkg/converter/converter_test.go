@@ -38,7 +38,7 @@ spec:
     - sh
     - -c
     - exec /rescheduler --running-in-cluster=false 1>>/var/log/rescheduler.log 2>&1
-    image: gcr.io/google-containers/rescheduler:v0.3.1
+    image: k8s.gcr.io/rescheduler:v0.3.1
     name: rescheduler
     resources:
       requests:

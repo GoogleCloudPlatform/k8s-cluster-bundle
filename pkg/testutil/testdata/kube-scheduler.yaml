@@ -27,7 +27,7 @@ spec:
     - -c
     - exec /usr/local/bin/kube-scheduler --v=2  --kubeconfig=/etc/srv/kubernetes/kube-scheduler/kubeconfig
       1>>/var/log/kube-scheduler.log 2>&1
-    image: gcr.io/google_containers/kube-scheduler:v1.9.7
+    image: k8s.gcr.io/kube-scheduler:v1.9.7
     livenessProbe:
       httpGet:
         host: 127.0.0.1

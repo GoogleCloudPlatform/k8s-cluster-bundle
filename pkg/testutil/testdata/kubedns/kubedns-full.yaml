@@ -85,7 +85,7 @@ spec:
           optional: true
       containers:
       - name: kubedns
-        image: gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.10
+        image: k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.10
         resources:
           limits:
             memory: 170Mi
@@ -130,7 +130,7 @@ spec:
         - name: kube-dns-config
           mountPath: /kube-dns-config
       - name: dnsmasq
-        image: gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.10
+        image: k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.10
         livenessProbe:
           httpGet:
             path: /healthcheck/dnsmasq
@@ -168,7 +168,7 @@ spec:
         - name: kube-dns-config
           mountPath: /etc/k8s/dns/dnsmasq-nanny
       - name: sidecar
-        image: gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.10
+        image: k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.10
         livenessProbe:
           httpGet:
             path: /metrics
@@ -193,7 +193,7 @@ spec:
             cpu: 10m
       # CUSTOM PORTION
       - name: prometheus-to-sd
-        image: gcr.io/google-containers/prometheus-to-sd:v0.2.3
+        image: k8s.gcr.io/prometheus-to-sd:v0.2.3
         command:
           - /monitor
           - --component=kubedns

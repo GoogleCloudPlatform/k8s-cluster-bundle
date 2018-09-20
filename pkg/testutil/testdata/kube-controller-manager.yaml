@@ -38,7 +38,7 @@ spec:
       --allocate-node-cidrs=true
       --terminated-pod-gc-threshold=1000
       1>>/var/log/kube-controller-manager.log 2>&1
-    image: gcr.io/google_containers/kube-controller-manager:v1.9.7
+    image: k8s.gcr.io/kube-controller-manager:v1.9.7
     livenessProbe:
       httpGet:
         host: 127.0.0.1
