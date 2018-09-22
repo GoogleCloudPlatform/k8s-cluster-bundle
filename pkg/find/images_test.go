@@ -271,7 +271,7 @@ spec:
   - name: 'ubuntu-control-plane'
     initFile: "echo 'I'm a script'"
     osImage:
-      url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
     envVars:
       - name: FOO_VAR
         value: 'foo-val'
@@ -322,6 +322,8 @@ spec:
         spec:
           containers:
           - name: dapper
+            image: gcr.io/floof/dapper
+          - name: verydapper
             image: gcr.io/floof/dapper`
 
 func TestImageFinder_AllFlattened(t *testing.T) {
@@ -331,16 +333,17 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found, err := finder.NodeImages()
+	found, err := finder.AllImages()
 	if err != nil {
 		t.Fatalf("error finding images: %v", err)
 	}
-	expected := []*NodeImage{
-		&NodeImage{"ubuntu-control-plane", "gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
-		&NodeImage{"ubuntu-cluster-node", "gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+	expected := &AllImagesFlattened{
+		NodeImages:      []string{"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+		ContainerImages: []string{"gcr.io/floof/logger", "gcr.io/floof/chopper", "gcr.io/floof/dapper"},
 	}
 
-	if !reflect.DeepEqual(found, expected) {
-		t.Errorf("For finding node images, got %v, but wanted %v", found, expected)
+	flat := found.Flattened()
+	if !reflect.DeepEqual(flat, expected) {
+		t.Errorf("For finding all images, got %v, but wanted %v", flat, expected)
 	}
 }

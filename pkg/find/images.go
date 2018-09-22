@@ -137,21 +137,41 @@ type AllImages struct {
 }
 
 // FindAllImages finds both container and node images.
-func (b *ImageFinder) FindAllImages() {
-	return &AllImages{
-		NodeImages:      b.NodeImages(),
-		ContainerImages: b.ContainerImages(),
+func (b *ImageFinder) AllImages() (*AllImages, error) {
+	ni, err := b.NodeImages()
+	if err != nil {
+		return nil, err
 	}
+	ci, err := b.ContainerImages()
+	if err != nil {
+		return nil, err
+	}
+
+	return &AllImages{
+		NodeImages:      ni,
+		ContainerImages: ci,
+	}, nil
 }
 
+// Flattened turns an AllImages struct with image information into a struct
+// containing lists of strings. All duplicates are removed.
 func (a *AllImages) Flattened() *AllImagesFlattened {
 	var nodeImages []string
-	for _, val := range a.NodeImages() {
-		nodeImages = append(nodeImages, val.Image)
+	seen := make(map[string]bool)
+	for _, val := range a.NodeImages {
+		if !seen[val.Image] {
+			nodeImages = append(nodeImages, val.Image)
+		}
+		seen[val.Image] = true
 	}
+
 	var containerImages []string
-	for _, val := range a.ContainerImages() {
-		containerImages = append(containerImages, val.Image)
+	seen = make(map[string]bool)
+	for _, val := range a.ContainerImages {
+		if !seen[val.Image] {
+			containerImages = append(containerImages, val.Image)
+		}
+		seen[val.Image] = true
 	}
 	return &AllImagesFlattened{
 		NodeImages:      nodeImages,
@@ -163,20 +183,4 @@ func (a *AllImages) Flattened() *AllImagesFlattened {
 type AllImagesFlattened struct {
 	NodeImages      []string
 	ContainerImages []string
-}
-
-// FindAllImagesFlattened finds both container and node images, as lists of strings.
-func (b *ImageFinder) FindAllImages() {
-	var nodeImages []string
-	for _, val := range b.NodeImages() {
-		nodeImages = append(nodeImages, val.Image)
-	}
-	var containerImages []string
-	for _, val := range b.ContainerImages() {
-		containerImages = append(containerImages, val.Image)
-	}
-	return &AllImagesFlattened{
-		NodeImages:      nodeImages,
-		ContainerImages: containerImages,
-	}
 }
