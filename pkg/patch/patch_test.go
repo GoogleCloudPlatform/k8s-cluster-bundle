@@ -66,7 +66,7 @@ spec:
     - exec /usr/local/bin/kube-apiserver
       --advertise-address=$(ADVERTISE_ADDRESS)
       --storage-backend=$(ETCD_BACKEND)
-    image: gcr.io/google_containers/kube-apiserver:v1.9.7
+    image: k8s.gcr.io/kube-apiserver:v1.9.7
     env:
     - name: ADVERTISE_ADDRESS
       value: 10.0.0.1
