@@ -46,15 +46,15 @@ func TestImageFinder_Found(t *testing.T) {
 	key := core.ClusterObjectKey{"foo", "bar"}
 	found := findImagesInKubeObj(key, converter.ToStruct(s))
 
-	if found.Key != key {
-		t.Errorf("Got found.Key %v, but wanted key %v", found.Key, key)
+	if len(found) != 1 {
+		t.Fatalf("Got found %v, but wanted exactly 1", len(found))
 	}
-	if len(found.Images) != 1 {
-		t.Fatalf("Got found.Images %v, but wanted exactly 1", found.Images)
+	if found[0].Key != key {
+		t.Errorf("Got found[0].Key %v, but wanted key %v", found[0].Key, key)
 	}
 	wantImage := "gcr.io/google_containers/kube-scheduler:v1.9.7"
-	if found.Images[0] != wantImage {
-		t.Errorf("Got found.Images[0] %q, but wanted %q", found.Images[0], wantImage)
+	if found[0].Image != wantImage {
+		t.Errorf("Got found[0].Images %q, but wanted %q", found[0].Image, wantImage)
 	}
 }
 
@@ -87,12 +87,8 @@ func TestImageFinder_NotFound(t *testing.T) {
 	}
 	key := core.ClusterObjectKey{"foo", "biff"}
 	found := findImagesInKubeObj(key, converter.ToStruct(s))
-
-	if found.Key != key {
-		t.Errorf("Got found.Key %v, but wanted key %v", found.Key, key)
-	}
-	if len(found.Images) != 0 {
-		t.Fatalf("Got found.Images %v, but wanted none", found.Images)
+	if len(found) != 0 {
+		t.Fatalf("Got len(found)=%d, but wanted none", len(found))
 	}
 }
 
@@ -122,20 +118,24 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 	}
 	key := core.ClusterObjectKey{"gloo", "logger"}
 	found := findImagesInKubeObj(key, converter.ToStruct(s))
-
-	if found.Key != key {
-		t.Errorf("Got found.Key %v, but wanted key %v", found.Key, key)
+	if len(found) != 2 {
+		t.Fatalf("Got len(found)=%v, but wanted exactly 2", len(found))
 	}
-	if len(found.Images) != 2 {
-		t.Fatalf("Got found.Images %v, but wanted exactly 1", found.Images)
+
+	if found[0].Key != key {
+		t.Errorf("Got found[0].Key %v, but wanted key %v", found[0].Key, key)
 	}
 	wantImage := "gcr.io/floof/logger"
-	if found.Images[0] != wantImage {
-		t.Errorf("Got found.Images[0] %q, but wanted %q", found.Images[0], wantImage)
+	if found[0].Image != wantImage {
+		t.Errorf("Got found[0].Image %q, but wanted %q", found[0].Image, wantImage)
+	}
+
+	if found[1].Key != key {
+		t.Errorf("Got found[1].Key %v, but wanted key %v", found[0].Key, key)
 	}
 	wantImage = "gcr.io/floof/chopper"
-	if found.Images[1] != wantImage {
-		t.Errorf("Got found.Images[P] %q, but wanted %q", found.Images[1], wantImage)
+	if found[1].Image != wantImage {
+		t.Errorf("Got found[1].Image %q, but wanted %q", found[1].Image, wantImage)
 	}
 }
 
@@ -195,18 +195,22 @@ func TestImageFinder_Bundle(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found, err := finder.ClusterObjectImages()
+	found, err := finder.ContainerImages()
 	if err != nil {
 		t.Fatalf("error finding images: %v", err)
 	}
-	expected := []*ClusterObjectImages{
-		&ClusterObjectImages{
+	expected := []*ContainerImage{
+		&ContainerImage{
 			core.ClusterObjectKey{"logger", "logger-pod"},
-			[]string{"gcr.io/floof/logger", "gcr.io/floof/chopper"},
+			"gcr.io/floof/logger",
 		},
-		&ClusterObjectImages{
+		&ContainerImage{
+			core.ClusterObjectKey{"logger", "logger-pod"},
+			"gcr.io/floof/chopper",
+		},
+		&ContainerImage{
 			core.ClusterObjectKey{"dap", "dap"},
-			[]string{"gcr.io/floof/dapper"},
+			"gcr.io/floof/dapper",
 		},
 	}
 
@@ -238,6 +242,90 @@ spec:
 
 func TestImageFinder_NodeImages(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleNodeConfig))
+	if err != nil {
+		t.Fatalf("error converting bundle: %v", err)
+	}
+
+	finder := &ImageFinder{converter.ToBundle(s)}
+	found, err := finder.NodeImages()
+	if err != nil {
+		t.Fatalf("error finding images: %v", err)
+	}
+	expected := []*NodeImage{
+		&NodeImage{"ubuntu-control-plane", "gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+		&NodeImage{"ubuntu-cluster-node", "gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+	}
+
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("For finding node images, got %v, but wanted %v", found, expected)
+	}
+}
+
+var bundleExampleAll = `
+apiVersion: 'bundle.k8s.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  nodeConfigs:
+  - name: 'ubuntu-control-plane'
+    initFile: "echo 'I'm a script'"
+    osImage:
+      url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+    envVars:
+      - name: FOO_VAR
+        value: 'foo-val'
+  - name: 'ubuntu-cluster-node'
+    initFile: "echo 'I'm another script'"
+    osImage:
+      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+  - name: 'ubuntu-cluster-node-no-image'
+    initFile: "echo 'I'm another script'"
+  components:
+  - name: logger
+    clusterObjects:
+    - name: logger-pod
+      inlined:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: logger-pod
+        spec:
+          dnsPolicy: Default
+          containers:
+          - name: logger
+            image: gcr.io/floof/logger
+            command:
+               - /logger
+               - --logtostderr
+          - name: chopper
+            image: gcr.io/floof/chopper
+            command:
+               - /chopper
+               - --logtostderr
+  - name: zap
+    clusterObjects:
+    - name: zap
+      inlined:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: zap-pod
+  - name: dap
+    clusterObjects:
+    - name: dap
+      inlined:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: dap-pod
+        spec:
+          containers:
+          - name: dapper
+            image: gcr.io/floof/dapper`
+
+func TestImageFinder_AllFlattened(t *testing.T) {
+	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleAll))
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}

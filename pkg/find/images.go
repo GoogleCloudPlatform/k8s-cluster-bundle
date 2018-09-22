@@ -14,24 +14,25 @@ type ImageFinder struct {
 	Bundle *bpb.ClusterBundle
 }
 
-// ClusterObjectImages is a helper struct for returning found images for cluster objects.
-type ClusterObjectImages struct {
-	// Key represents the key for this component.
+// ContainerImage is a helper struct for returning found container images for cluster objects.
+type ContainerImage struct {
+	// Key represents the key for representing the specific cluster object that
+	// this is from.
 	Key core.ClusterObjectKey
 
 	// Image are the images used by the cluster object. Usually having the form
 	// `<registry>/<repository>/<image>:<tag>`. For example:
 	// `gcr.io/google_containers/etcd:3.1.11`
-	Images []string
+	Image string
 }
 
-func (c *ClusterObjectImages) String() string {
-	return fmt.Sprintf("{Key:%q, Images:%v}", c.Key, c.Images)
+func (c *ContainerImage) String() string {
+	return fmt.Sprintf("{Key:%q, Image:%q}", c.Key, c.Image)
 }
 
-// ClusterObjectImages returns all the images from the components
-func (b *ImageFinder) ClusterObjectImages() ([]*ClusterObjectImages, error) {
-	var images []*ClusterObjectImages
+// ContainerImages returns all the images from the cluster components in a Bundle.
+func (b *ImageFinder) ContainerImages() ([]*ContainerImage, error) {
+	var images []*ContainerImage
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		compName := ca.GetName()
 		if compName == "" {
@@ -51,18 +52,16 @@ func (b *ImageFinder) ClusterObjectImages() ([]*ClusterObjectImages, error) {
 				ComponentName: compName,
 				ObjectName:    objName,
 			}
-			if found := findImagesInKubeObj(key, obj); len(found.Images) > 0 {
-				images = append(images, found)
+			if found := findImagesInKubeObj(key, obj); len(found) > 0 {
+				images = append(images, found...)
 			}
 		}
 	}
 	return images, nil
 }
 
-func findImagesInKubeObj(key core.ClusterObjectKey, s *structpb.Struct) *ClusterObjectImages {
-	obj := &ClusterObjectImages{
-		Key: key,
-	}
+func findImagesInKubeObj(key core.ClusterObjectKey, s *structpb.Struct) []*ContainerImage {
+	var images []*ContainerImage
 	// It would be more robust to just be aware of Pods, Deployments, and the
 	// various K8S types that have container images rather then recursing through
 	// everything.  It's possible, for example, that we that we might encouncer
@@ -70,10 +69,13 @@ func findImagesInKubeObj(key core.ClusterObjectKey, s *structpb.Struct) *Cluster
 	ImageRecurser("", "", &structpb.Value{
 		Kind: &structpb.Value_StructValue{s},
 	}, func(val *structpb.Value) {
-		obj.Images = append(obj.Images, val.GetStringValue())
+		images = append(images, &ContainerImage{
+			Key:   key,
+			Image: val.GetStringValue(),
+		})
 	})
 
-	return obj
+	return images
 }
 
 // ImageRecurser is a function that looks through a struct pb for fields named
@@ -106,6 +108,7 @@ func ImageRecurser(fieldName string, parentFieldName string, st *structpb.Value,
 	}
 }
 
+// NodeImage represents an OS image coming from NodeConfig.
 type NodeImage struct {
 	ConfigName string
 	Image      string
@@ -125,4 +128,55 @@ func (b *ImageFinder) NodeImages() ([]*NodeImage, error) {
 		}
 	}
 	return images, nil
+}
+
+// AllImages returns all images found -- both container images and OS images for nodes.
+type AllImages struct {
+	NodeImages      []*NodeImage
+	ContainerImages []*ContainerImage
+}
+
+// FindAllImages finds both container and node images.
+func (b *ImageFinder) FindAllImages() {
+	return &AllImages{
+		NodeImages:      b.NodeImages(),
+		ContainerImages: b.ContainerImages(),
+	}
+}
+
+func (a *AllImages) Flattened() *AllImagesFlattened {
+	var nodeImages []string
+	for _, val := range a.NodeImages() {
+		nodeImages = append(nodeImages, val.Image)
+	}
+	var containerImages []string
+	for _, val := range a.ContainerImages() {
+		containerImages = append(containerImages, val.Image)
+	}
+	return &AllImagesFlattened{
+		NodeImages:      nodeImages,
+		ContainerImages: containerImages,
+	}
+}
+
+// AllImagesFlattened returns all images found, but flattened into lists of strings.
+type AllImagesFlattened struct {
+	NodeImages      []string
+	ContainerImages []string
+}
+
+// FindAllImagesFlattened finds both container and node images, as lists of strings.
+func (b *ImageFinder) FindAllImages() {
+	var nodeImages []string
+	for _, val := range b.NodeImages() {
+		nodeImages = append(nodeImages, val.Image)
+	}
+	var containerImages []string
+	for _, val := range b.ContainerImages() {
+		containerImages = append(containerImages, val.Image)
+	}
+	return &AllImagesFlattened{
+		NodeImages:      nodeImages,
+		ContainerImages: containerImages,
+	}
 }
