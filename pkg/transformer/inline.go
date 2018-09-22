@@ -42,7 +42,8 @@ type Inliner struct {
 func NewInliner(cwd string) *Inliner {
 	return &Inliner{
 		LocalReader: &localReader{cwd},
-		// TODO: Add more readers for remote filesystems here.
+		// TODO: Add more readers for remote filesystems here or add some way to
+		// plug-in other reader types.
 	}
 }
 

@@ -26,11 +26,16 @@ func CloneBundle(b *bpb.ClusterBundle) *bpb.ClusterBundle {
 }
 
 // CloneClusterComponent creates a copy of a object collection proto.
-func CloneClusterComponent(a *bpb.ClusterComponent) *bpb.ClusterComponent {
-	return proto.Clone(a).(*bpb.ClusterComponent)
+func CloneClusterComponent(b *bpb.ClusterComponent) *bpb.ClusterComponent {
+	return proto.Clone(b).(*bpb.ClusterComponent)
 }
 
 // CloneStruct creates a copy of a struct proto.
 func CloneStruct(b *structpb.Struct) *structpb.Struct {
 	return proto.Clone(b).(*structpb.Struct)
+}
+
+// CloneFile creates a copy of a file proto **but not the actual file**.
+func CloneFile(b *bpb.File) *bpb.File {
+	return proto.Clone(b).(*bpb.File)
 }

@@ -1,7 +1,22 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package find
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
@@ -44,7 +59,9 @@ func TestImageFinder_Found(t *testing.T) {
 		t.Fatalf("error converting obj: %v", err)
 	}
 	key := core.ClusterObjectKey{"foo", "bar"}
-	found := findImagesInKubeObj(key, converter.ToStruct(s))
+
+	f := ImageFinder{}
+	found := f.ContainerImages(key, converter.ToStruct(s))
 
 	if len(found) != 1 {
 		t.Fatalf("Got found %v, but wanted exactly 1", len(found))
@@ -86,7 +103,9 @@ func TestImageFinder_NotFound(t *testing.T) {
 		t.Fatalf("error converting obj: %v", err)
 	}
 	key := core.ClusterObjectKey{"foo", "biff"}
-	found := findImagesInKubeObj(key, converter.ToStruct(s))
+
+	f := ImageFinder{}
+	found := f.ContainerImages(key, converter.ToStruct(s))
 	if len(found) != 0 {
 		t.Fatalf("Got len(found)=%d, but wanted none", len(found))
 	}
@@ -117,7 +136,8 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 		t.Fatalf("error converting obj: %v", err)
 	}
 	key := core.ClusterObjectKey{"gloo", "logger"}
-	found := findImagesInKubeObj(key, converter.ToStruct(s))
+	f := ImageFinder{}
+	found := f.ContainerImages(key, converter.ToStruct(s))
 	if len(found) != 2 {
 		t.Fatalf("Got len(found)=%v, but wanted exactly 2", len(found))
 	}
@@ -195,7 +215,7 @@ func TestImageFinder_Bundle(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found, err := finder.ContainerImages()
+	found := finder.AllContainerImages()
 	if err != nil {
 		t.Fatalf("error finding images: %v", err)
 	}
@@ -247,7 +267,7 @@ func TestImageFinder_NodeImages(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found, err := finder.NodeImages()
+	found := finder.NodeImages()
 	if err != nil {
 		t.Fatalf("error finding images: %v", err)
 	}
@@ -333,17 +353,52 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found, err := finder.AllImages()
-	if err != nil {
-		t.Fatalf("error finding images: %v", err)
-	}
+	found := finder.AllImages().Flattened()
 	expected := &AllImagesFlattened{
-		NodeImages:      []string{"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
-		ContainerImages: []string{"gcr.io/floof/logger", "gcr.io/floof/chopper", "gcr.io/floof/dapper"},
+		NodeImages:      []string{
+			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"
+		},
+		ContainerImages: []string{
+			"gcr.io/floof/logger",
+			"gcr.io/floof/chopper",
+			"gcr.io/floof/dapper"
+		},
+	}
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("For finding all images, got %v, but wanted %v", found, expected)
+	}
+}
+
+func TestImageFinder_WalkTransform(t *testing.T) {
+	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleAll))
+	if err != nil {
+		t.Fatalf("error converting bundle: %v", err)
 	}
 
-	flat := found.Flattened()
-	if !reflect.DeepEqual(flat, expected) {
-		t.Errorf("For finding all images, got %v, but wanted %v", flat, expected)
+	finder := &ImageFinder{converter.ToBundle(s)}
+	finder.WalkAllImages(func(nc string, key core.ClusterObjectKey, img string) string {
+		if nc == "ubuntu-control-plane" && strings.HasPrefix(img, "gs://") {
+			return "go://" + strings.TrimPrefix(img, "gs://")
+		}
+		if key.ComponentName == "dap" && strings.HasPrefix(img, "gcr.io") {
+			return "k8s.io" + strings.TrimPrefix(img, "gcr.io")
+		}
+		return img
+	})
+	found := finder.AllImages().Flattened()
+
+	expected := &AllImagesFlattened{
+		NodeImages: []string{
+			"go://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
+			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
+		},
+		ContainerImages: []string{
+			"gcr.io/floof/logger",
+			"gcr.io/floof/chopper",
+			"k8s.io/floof/dapper",
+		},
+	}
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("For finding all images, got %v, but wanted %v", found, expected)
 	}
 }

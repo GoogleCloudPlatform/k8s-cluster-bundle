@@ -27,6 +27,8 @@ type ClusterObjectKey struct {
 	ObjectName string
 }
 
+var EmptyClusterObjectKey = ClusterObjectKey{}
+
 // ClusterObjectKeyFromProto creates a non-pointer ClusterObjectKey from a
 // proto.
 func ClusterObjectKeyFromProto(k *bpb.ClusterObjectKey) ClusterObjectKey {

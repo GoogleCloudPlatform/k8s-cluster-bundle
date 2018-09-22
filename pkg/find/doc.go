@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package find provides methods for searching Bundles and other sub-resources.
+// Package find provides methods for searching through Bundles the contained
+// components and configuration.
 package find

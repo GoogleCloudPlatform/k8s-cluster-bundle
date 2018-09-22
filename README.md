@@ -18,6 +18,23 @@ The Cluster Bundle has three components:
 *   **Library**: Go-library code for interacting with the Cluster Bundle
 *   **CLI**: A minimal CLI for interacting with Cluster Bundles.
 
+## Usage
+
+### Bundler CLI
+
+Bundler is the name for the Bundle CLI and is the standard way for interacting
+with Bundles.
+
+### Validation
+
+Bundles have various constraints that must be validated. For functions in the
+Bundle library to work, the Bundle is generalled assumed to have already been
+validated. To validate a Bundle, run:
+
+```
+bundle validate <bundle>
+```
+
 ## Directory Structure
 
 This directory should follow the structure the standard Go package layout

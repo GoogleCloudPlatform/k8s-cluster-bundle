@@ -19,11 +19,11 @@ go_library(
 
 go_test(
     name = "go_default_test",
+    size = "small",
     srcs = [
         "finder_test.go",
         "images_test.go",
     ],
-    size = "small",
     embed = [":go_default_library"],
     deps = [
         "//pkg/converter:go_default_library",
