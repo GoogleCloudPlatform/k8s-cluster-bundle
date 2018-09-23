@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package inline
 
 import (
 	"strings"
@@ -21,16 +21,7 @@ import (
 	"context"
 	test "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/testing"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
-
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
-
-// Fake implementation of FileReader to create a fake Inliner for unit tests.
-type fakeFileReader struct{}
-
-func (f *fakeFileReader) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
-	return nil, nil
-}
 
 func TestRunInline(t *testing.T) {
 	validFile := "/bundle.yaml"
@@ -38,19 +29,19 @@ func TestRunInline(t *testing.T) {
 
 	var testcases = []struct {
 		testName          string
-		opts              *inlineOptions
+		opts              *options
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			opts: &inlineOptions{
+			opts: &options{
 				bundle: validFile,
 				output: validFile,
 			},
 		},
 		{
 			testName: "bundle read error",
-			opts: &inlineOptions{
+			opts: &options{
 				bundle: invalidFile,
 				output: validFile,
 			},
@@ -58,7 +49,7 @@ func TestRunInline(t *testing.T) {
 		},
 		{
 			testName: "bundle write error",
-			opts: &inlineOptions{
+			opts: &options{
 				bundle: validFile,
 				output: invalidFile,
 			},
@@ -69,7 +60,7 @@ func TestRunInline(t *testing.T) {
 	// Override the createInlinerFn to return a fake Inliner.
 	createInlinerFn = func(cwd string) *transformer.Inliner {
 		return &transformer.Inliner{
-			LocalReader: &fakeFileReader{},
+			LocalReader: &test.FakeFileReader{},
 		}
 	}
 	brw := test.NewFakeReaderWriter(validFile)
@@ -77,7 +68,7 @@ func TestRunInline(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
-			err := runInline(ctx, tc.opts, brw)
+			err := run(ctx, tc.opts, brw)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
 				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
 			}
@@ -85,7 +76,7 @@ func TestRunInline(t *testing.T) {
 				return
 			}
 			if !strings.Contains(err.Error(), tc.expectErrContains) {
-				t.Errorf("runInline(opts: %+v) returned unexpected error message: %v, Should contain: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("run(opts: %+v) returned unexpected error message: %v, Should contain: %v", tc.opts, err, tc.expectErrContains)
 			}
 		})
 	}

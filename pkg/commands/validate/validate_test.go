@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package validate
 
 import (
 	"errors"
@@ -36,19 +36,19 @@ func TestRunValidate(t *testing.T) {
 
 	var testcases = []struct {
 		testName          string
-		opts              *validateOptions
+		opts              *options
 		errors            []error
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			opts: &validateOptions{
+			opts: &options{
 				bundle: validFile,
 			},
 		},
 		{
 			testName: "bundle validation errors",
-			opts: &validateOptions{
+			opts: &options{
 				bundle: validFile,
 			},
 			errors:            []error{errors.New("yarr")},
@@ -60,7 +60,7 @@ func TestRunValidate(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 
-			// Override the createValidatorFn to return a fake validator
+			// Override the createValidatorFn to return a fake bundleValidator
 			createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}

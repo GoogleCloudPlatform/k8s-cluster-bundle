@@ -18,6 +18,9 @@ The Cluster Bundle has three components:
 *   **Library**: Go-library code for interacting with the Cluster Bundle
 *   **CLI**: A minimal CLI for interacting with Cluster Bundles.
 
+[![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/k8s-cluster-bundle?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/k8s-cluster-bundle)
+
+
 ## Usage
 
 ### Bundler CLI

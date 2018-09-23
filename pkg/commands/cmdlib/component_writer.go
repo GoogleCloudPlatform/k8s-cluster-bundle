@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package cmdlib
 
 import (
 	"io/ioutil"
 	"os"
 
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 )
 
-// compWriter is an interface for writing applications.
-// This interface is used by the export and patch commands in this package.
-// There is a fake implementation in the testing package.
-type compWriter interface {
+// ComponentWriter is an interface for writing components. This interface is
+// used by the export and patch commands in this package. There is a fake
+// implementation in the testing package.
+type ComponentWriter interface {
 	// WriteComponentToFile writes a ClusterComponent to the given file path.
 	WriteComponentToFile(comp *bpb.ClusterComponent, path string, permissions os.FileMode) error
 }
 
-// localFileSystemWriter implements the appWriter interface and writes apps to the local filesystem.
-type localFileSystemWriter struct{}
+// LocalFileSystemWriter implements the ComponentWriter interface and writes
+// apps to the local filesystem.
+type LocalFileSystemWriter struct{}
 
-func (*localFileSystemWriter) WriteComponentToFile(comp *bpb.ClusterComponent, path string, permissions os.FileMode) error {
+func (*LocalFileSystemWriter) WriteComponentToFile(comp *bpb.ClusterComponent, path string, permissions os.FileMode) error {
 	yaml, err := converter.Struct.ProtoToYAML(comp)
 	if err != nil {
 		return err

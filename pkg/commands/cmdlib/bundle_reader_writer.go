@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package cmdlib
 
 import (
 	"io"
@@ -26,19 +26,20 @@ import (
 
 // BundleReaderWriter is a bundle file i/o interface for bundler commands to use.
 type BundleReaderWriter interface {
-	// ReadBundleFile reads in a ClusterBundle from a yaml file found at the given filepath.
+	// ReadBundleFile reads in a ClusterBundle from a yaml file found at the
+	// given filepath.
 	ReadBundleFile(filepath string) (*bpb.ClusterBundle, error)
 
-	// WriteBundleFile writes a given ClusterBundle proto to a yaml file at the specified filepath
-	// with given permissions.
+	// WriteBundleFile writes a given ClusterBundle proto to a yaml file at the
+	// specified filepath with given permissions.
 	WriteBundleFile(filepath string, bundle *bpb.ClusterBundle, permissions os.FileMode) error
 }
 
-// realReaderWriter implements the BundleReaderWriter interface and
+// RealReaderWriter implements the BundleReaderWriter interface and
 // reads/writes a bundle using the local filesystem.
-type realReaderWriter struct{}
+type RealReaderWriter struct{}
 
-func (r *realReaderWriter) ReadBundleFile(filepath string) (*bpb.ClusterBundle, error) {
+func (r *RealReaderWriter) ReadBundleFile(filepath string) (*bpb.ClusterBundle, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -59,7 +60,7 @@ func parseBundleYAML(reader io.Reader) (*bpb.ClusterBundle, error) {
 	return converter.ToBundle(b), nil
 }
 
-func (r *realReaderWriter) WriteBundleFile(filepath string, bundle *bpb.ClusterBundle, permissions os.FileMode) error {
+func (r *RealReaderWriter) WriteBundleFile(filepath string, bundle *bpb.ClusterBundle, permissions os.FileMode) error {
 	yaml, err := converter.Bundle.ProtoToYAML(bundle)
 	if err != nil {
 		return err

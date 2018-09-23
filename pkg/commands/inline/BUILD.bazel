@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["inline.go"],
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/transformer:go_default_library",
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["inline_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/commands/testing:go_default_library",
+        "//pkg/transformer:go_default_library",
+    ],
+)

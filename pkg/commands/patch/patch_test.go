@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package patch
 
 import (
 	"errors"
@@ -86,7 +86,7 @@ func TestRunPatchBundle(t *testing.T) {
 	}{
 		{
 			testName: "success case",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				output:     validBundleFile,
@@ -96,7 +96,7 @@ func TestRunPatchBundle(t *testing.T) {
 		},
 		{
 			testName: "bundle read error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: invalidFile,
 				optionsCRs: []string{validOptionsFile},
 				output:     validBundleFile,
@@ -106,7 +106,7 @@ func TestRunPatchBundle(t *testing.T) {
 		},
 		{
 			testName: "options read error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile, invalidFile},
 				output:     validBundleFile,
@@ -116,7 +116,7 @@ func TestRunPatchBundle(t *testing.T) {
 		},
 		{
 			testName: "bundle patching error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				output:     validBundleFile,
@@ -126,7 +126,7 @@ func TestRunPatchBundle(t *testing.T) {
 		},
 		{
 			testName: "bundle write error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				output:     invalidFile,
@@ -165,13 +165,13 @@ func TestRunPatchApp(t *testing.T) {
 
 	testCases := []struct {
 		testName string
-		opts     *patchOptions
+		opts     *options
 		patcher  *fakePatcher
 		wantErr  bool
 	}{
 		{
 			testName: "success case",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validApp,
@@ -182,7 +182,7 @@ func TestRunPatchApp(t *testing.T) {
 		},
 		{
 			testName: "bundle read error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: invalidFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validApp,
@@ -193,7 +193,7 @@ func TestRunPatchApp(t *testing.T) {
 		},
 		{
 			testName: "options read error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile, invalidFile},
 				component:  validApp,
@@ -204,7 +204,7 @@ func TestRunPatchApp(t *testing.T) {
 		},
 		{
 			testName: "app not found error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  "invalid-app",
@@ -215,7 +215,7 @@ func TestRunPatchApp(t *testing.T) {
 		},
 		{
 			testName: "app patching error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validApp,
@@ -226,7 +226,7 @@ func TestRunPatchApp(t *testing.T) {
 		},
 		{
 			testName: "app write error",
-			opts: &patchOptions{
+			opts: &options{
 				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validApp,
