@@ -15,13 +15,13 @@
 package patch
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/patch"
 	log "github.com/golang/glog"
@@ -35,19 +35,6 @@ import (
 type patcher interface {
 	PatchBundle(customResources []map[string]interface{}) (*bpb.ClusterBundle, error)
 	PatchComponent(component *bpb.ClusterComponent, customResources []map[string]interface{}) (*bpb.ClusterComponent, error)
-}
-
-// optionsResourceReader is an interface for reading options custom resources.
-type optionsResourceReader interface {
-	ReadOptions(filepath string) ([]byte, error)
-}
-
-// localFileSystemReader implements the optionsResourceReader interface and reads
-// options custom resources from the local filesystem.
-type localFileSystemReader struct{}
-
-func (r *localFileSystemReader) ReadOptions(filepath string) ([]byte, error) {
-	return ioutil.ReadFile(filepath)
 }
 
 // componentFinder is an interface for finding a cluster component in a bundle.
@@ -77,23 +64,25 @@ func validateBaseFlags() error {
 	return nil
 }
 
-func bundleAction(cmd *cobra.Command, _ []string) {
+func bundleAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if err := validateBaseFlags(); err != nil {
 		cmdlib.ExitWithHelp(cmd, err.Error())
 	}
 
-	if err := runPatchBundle(opts, &cmdlib.RealReaderWriter{}, &localFileSystemReader{}); err != nil {
+	if err := runPatchBundle(ctx, opts, &core.LocalFileSystemReaderWriter{}); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runPatchBundle(opts *options, brw cmdlib.BundleReaderWriter, reader optionsResourceReader) error {
-	b, err := readBundle(opts.bundlePath, brw)
+func runPatchBundle(ctx context.Context, opts *options, reader core.FileReaderWriter) error {
+	brw := &converter.BundleReaderWriter{reader}
+
+	b, err := brw.ReadBundleFile(ctx, opts.bundlePath)
 	if err != nil {
 		return err
 	}
 
-	crs, err := readAllOptions(opts.optionsCRs, reader)
+	crs, err := readAllOptions(ctx, opts.optionsCRs, reader)
 	if err != nil {
 		return err
 	}
@@ -107,10 +96,10 @@ func runPatchBundle(opts *options, brw cmdlib.BundleReaderWriter, reader options
 	if err != nil {
 		return err
 	}
-	return brw.WriteBundleFile(opts.output, patched, cmdlib.DefaultFilePermissions)
+	return brw.WriteBundleFile(ctx, opts.output, patched, cmdlib.DefaultFilePermissions)
 }
 
-func componentAction(cmd *cobra.Command, _ []string) {
+func componentAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if err := validateBaseFlags(); err != nil {
 		cmdlib.ExitWithHelp(cmd, err.Error())
 	}
@@ -119,18 +108,20 @@ func componentAction(cmd *cobra.Command, _ []string) {
 		cmdlib.ExitWithHelp(cmd, "the name of the component to patch must be specified.")
 	}
 
-	if err := runPatchComponent(opts, &cmdlib.RealReaderWriter{}, &localFileSystemReader{}, &localFileSystemWriter{}); err != nil {
+	if err := runPatchComponent(ctx, opts, &core.LocalFileSystemReaderWriter{}); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runPatchComponent(opts *options, brw cmdlib.BundleReaderWriter, reader optionsResourceReader, aw cmdlib.ComponentWriter) error {
-	b, err := readBundle(opts.bundlePath, brw)
+func runPatchComponent(ctx context.Context, opts *options, rw core.FileReaderWriter) error {
+	brw := &converter.BundleReaderWriter{rw}
+
+	b, err := brw.ReadBundleFile(ctx, opts.bundlePath)
 	if err != nil {
 		return err
 	}
 
-	crs, err := readAllOptions(opts.optionsCRs, reader)
+	crs, err := readAllOptions(ctx, opts.optionsCRs, rw)
 	if err != nil {
 		return err
 	}
@@ -154,11 +145,16 @@ func runPatchComponent(opts *options, brw cmdlib.BundleReaderWriter, reader opti
 	if err != nil {
 		return err
 	}
-	return aw.WriteComponentToFile(patched, opts.output, patchedFilePermissions)
+
+	yaml, err := converter.Struct.ProtoToYAML(patched)
+	if err != nil {
+		return err
+	}
+	return rw.WriteFile(ctx, opts.output, yaml, cmdlib.DefaultFilePermissions)
 }
 
-// createFinderFn creates an compFinder that operates on the given ClusterBundle.
-var createFinderFn = func(b *bpb.ClusterBundle) (compFinder, error) {
+// createFinderFn creates an componentFinder that operates on the given ClusterBundle.
+var createFinderFn = func(b *bpb.ClusterBundle) (componentFinder, error) {
 	return find.NewBundleFinder(b)
 }
 
@@ -167,33 +163,15 @@ var createPatcherFn = func(b *bpb.ClusterBundle) (patcher, error) {
 	return patch.NewPatcherFromBundle(b)
 }
 
-// Read a bundle file from disk.
-func readBundle(path string, brw cmdlib.BundleReaderWriter) (*bpb.ClusterBundle, error) {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := brw.ReadBundleFile(absPath)
-	if err != nil {
-		return nil, fmt.Errorf("error reading bundle from %s: %v", absPath, err)
-	}
-	return b, err
-}
-
 // readAllOptions reads the options custome resources from the given list of
 // yaml files. It returns a list of CRs in a map representation, where the CR
 // fields are the map keys.
-func readAllOptions(optionsCRs []string, reader optionsResourceReader) ([]map[string]interface{}, error) {
+func readAllOptions(ctx context.Context, optionsCRs []string, rw core.FileReaderWriter) ([]map[string]interface{}, error) {
 	crs := make([]map[string]interface{}, 0, len(optionsCRs))
 	for _, o := range optionsCRs {
-		opath, err := filepath.Abs(o)
+		bytes, err := rw.ReadFile(ctx, o)
 		if err != nil {
-			return nil, err
-		}
-		bytes, err := reader.ReadOptions(opath)
-		if err != nil {
-			return nil, fmt.Errorf("error reading options from %s: %v", opath, err)
+			return nil, fmt.Errorf("error reading options from %s: %v", o, err)
 		}
 		cr, err := converter.KubeResourceYAMLToMap(bytes)
 		if err != nil {

@@ -15,79 +15,55 @@
 package export
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
+	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
-
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// exportedCompFilePermissions is the permission used for the exported
-// component output files (rw-r--r--).
-const exportedCompFilePermissions = os.FileMode(0644)
-
-// Exporter provides an interface for exporting ClusterComponents from a ClusterBundle.
-type Exporter interface {
+// exporter provides an interface for exporting ClusterComponents from a
+// ClusterBundle.
+type exporter interface {
 	Export(b *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error)
 }
 
-type exportOptions struct {
+type options struct {
 	bundlePath string
 	components []string
 	outputDir  string
 }
 
-var exportOpts = &exportOptions{}
+var opts = &options{}
 
-func addExportCommand() {
-	exportCmd := &cobra.Command{
-		Use:   "export",
-		Short: "Export component(s) from a bundle",
-		Long:  `Export the specified components(s) from the given bundle yaml into their own yamls`,
-		Run:   exportAction,
+func action(ctx context.Context, cmd *cobra.Command, _ []string) {
+	if opts.bundlePath == "" {
+		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
 	}
-
-	// Required flags
-	// Note: the path to the bundle must be absolute when running with bazel.
-	exportCmd.Flags().StringVarP(&exportOpts.bundlePath, "bundle", "b", "", "The path to the bundle to inline")
-	exportCmd.Flags().StringSliceVarP(&exportOpts.components, "components", "c", nil, "The components(s) to extract from the bundle (comma separated)")
-
-	// Optional flags
-	// Note: the output directory path is required when running with bazel, and it must be absolute.
-	exportCmd.Flags().StringVarP(&exportOpts.outputDir, "output", "o", "",
-		"Where to write the extracted components. By default writes to current working directory")
-
-	rootCmd.AddCommand(exportCmd)
-}
-
-func exportAction(cmd *cobra.Command, _ []string) {
-	if exportOpts.bundlePath == "" {
-		exitWithHelp(cmd, "Please provide yaml file for bundle.")
+	if opts.components == nil {
+		cmdlib.ExitWithHelp(cmd, "Please provide at least one component to extract.")
 	}
-	if exportOpts.components == nil {
-		exitWithHelp(cmd, "Please provide at least one component to extract.")
-	}
-	if err := runExport(exportOpts, &realReaderWriter{}, &localFileSystemWriter{}); err != nil {
+	rw := &core.LocalFileSystemReaderWriter{}
+	if err := run(ctx, opts, rw); err != nil {
 		log.Exit(err)
 	}
 }
 
-// createExporterFn creates an Exporter that operates on the given ClusterBundle.
-var createExporterFn = func(b *bpb.ClusterBundle) (Exporter, error) {
+// createExporterFn creates an exporter that operates on the given ClusterBundle.
+var createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
 	return transformer.NewComponentExporter(b)
 }
 
-func runExport(opts *exportOptions, brw BundleReaderWriter, aw compWriter) error {
-	path, err := filepath.Abs(opts.bundlePath)
-	if err != nil {
-		return err
-	}
+func run(ctx context.Context, o *options, rw core.FileReaderWriter) error {
+	brw := converter.BundleReaderWriter{rw}
 
-	b, err := brw.ReadBundleFile(path)
+	b, err := brw.ReadBundleFile(ctx, o.bundlePath)
 	if err != nil {
 		return err
 	}
@@ -97,28 +73,27 @@ func runExport(opts *exportOptions, brw BundleReaderWriter, aw compWriter) error
 		return err
 	}
 
-	for _, comp := range opts.components {
+	for _, comp := range o.components {
 		ea, err := exporter.Export(b, comp)
 		if err != nil {
 			return err
 		}
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
-		if err := writeComp(ea, opts.outputDir, exportedCompFilePermissions, aw); err != nil {
+		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.Name)
+		outComp := &bpb.ClusterComponent{
+			Name:           ea.Name,
+			ClusterObjects: ea.Objects,
+		}
+		bytes, err := converter.ClusterComponent.ProtoToYAML(outComp)
+		if err != nil {
+			return err
+		}
+		err = rw.WriteFile(ctx, path, bytes, cmdlib.DefaultFilePermissions)
+		if err != nil {
 			return err
 		}
 		log.Infof("Wrote file %q", ea.Name)
 	}
 	return nil
-}
-
-// writeComp writes an exported component to the given directory
-// and names the file by the component name.
-func writeComp(ea *transformer.ExportedComponent, dir string, permissions os.FileMode, aw compWriter) error {
-	path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(dir), ea.Name)
-	comp := bpb.ClusterComponent{
-		Name:           ea.Name,
-		ClusterObjects: ea.Objects,
-	}
-	return aw.WriteComponentToFile(&comp, path, permissions)
 }

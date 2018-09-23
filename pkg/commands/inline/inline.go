@@ -15,10 +15,12 @@
 package inline
 
 import (
+	"context"
 	"path/filepath"
 
-	"context"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -37,32 +39,29 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if opts.bundle == "" {
 		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
 	}
-	if err := run(ctx, opts, &cmdlib.RealReaderWriter{}); err != nil {
+
+	brw := converter.NewFileSystemBundleReaderWriter()
+	fpb := core.NewLocalFilePBReader(filepath.Dir(opts.bundle))
+	if err := run(ctx, opts, brw, fpb); err != nil {
 		log.Exit(err)
 	}
 }
 
 // createInlinerFn creates an Inliner that works with the given current working
 // directory for the purposes of dependency injection.
-var createInlinerFn = func(cwd string) *transformer.Inliner {
-	return transformer.NewInliner(cwd)
+var createInlinerFn = func(pbr core.FilePBReader) *transformer.Inliner {
+	return &transformer.Inliner{pbr}
 }
 
-func run(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter) error {
-	path, err := filepath.Abs(opts.bundle)
+func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, pbr core.FilePBReader) error {
+	b, err := brw.ReadBundleFile(ctx, o.bundle)
 	if err != nil {
 		return err
 	}
 
-	b, err := brw.ReadBundleFile(path)
+	inlined, err := createInlinerFn(pbr).Inline(ctx, b)
 	if err != nil {
 		return err
 	}
-
-	inliner := createInlinerFn(filepath.Dir(path))
-	inlined, err := inliner.Inline(ctx, b)
-	if err != nil {
-		return err
-	}
-	return brw.WriteBundleFile(opts.output, inlined, cmdlib.DefaultFilePermissions)
+	return brw.WriteBundleFile(ctx, o.output, inlined, cmdlib.DefaultFilePermissions)
 }

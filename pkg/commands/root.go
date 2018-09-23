@@ -15,13 +15,12 @@
 package commands
 
 import (
-	"os"
-
 	"context"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
-	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
@@ -39,10 +38,10 @@ var (
 // Each subcommand should implement an addCommand function to be called here.
 // This allows context to be passed down to subcommands.
 func AddCommands(ctx context.Context) error {
-	addExportCommand()
-	inline.Register(ctx, rootCmd)
-	patch.Register(rootCmd)
-	validate.Register(rootCmd)
+	export.AddCommandsTo(ctx, rootCmd)
+	inline.AddCommandsTo(ctx, rootCmd)
+	patch.AddCommandsTo(ctx, rootCmd)
+	validate.AddCommandsTo(ctx, rootCmd)
 	return nil
 }
 

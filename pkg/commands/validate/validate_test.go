@@ -15,12 +15,14 @@
 package validate
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	test "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/testing"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	testutil "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
 type fakeBundleValidator struct {
@@ -56,16 +58,19 @@ func TestRunValidate(t *testing.T) {
 		},
 	}
 
-	brw := test.NewFakeReaderWriter(validFile)
+	brw := &converter.BundleReaderWriter{
+		testutil.NewFakeReaderWriterFromPairs(&testutil.FilePair{validFile, testutil.FakeBundle}),
+	}
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
+			ctx := context.Background()
 
 			// Override the createValidatorFn to return a fake bundleValidator
 			createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}
 
-			err := runValidate(tc.opts, brw)
+			err := runValidate(ctx, tc.opts, brw)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
 				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
 			}

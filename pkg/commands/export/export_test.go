@@ -15,21 +15,22 @@
 package export
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
-	test "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/testing"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
-
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	testutil "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 )
 
 const (
 	invalidComponent = "not-a-component"
 )
 
-// Fake implementation of Exporter for unit tests.
+// Fake implementation of exporter for unit tests.
 type fakeExporter struct{}
 
 func (f *fakeExporter) Export(_ *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error) {
@@ -47,12 +48,12 @@ func TestRunExport(t *testing.T) {
 
 	var testcases = []struct {
 		testName          string
-		opts              *exportOptions
+		opts              *options
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			opts: &exportOptions{
+			opts: &options{
 				bundlePath: validBundle,
 				outputDir:  validDir,
 				components: []string{"kube-apiserver", "kube-scheduler"},
@@ -60,7 +61,7 @@ func TestRunExport(t *testing.T) {
 		},
 		{
 			testName: "bundle read error",
-			opts: &exportOptions{
+			opts: &options{
 				bundlePath: invalidBundle,
 				outputDir:  validDir,
 			},
@@ -68,7 +69,7 @@ func TestRunExport(t *testing.T) {
 		},
 		{
 			testName: "extract component error",
-			opts: &exportOptions{
+			opts: &options{
 				bundlePath: validBundle,
 				outputDir:  validDir,
 				components: []string{invalidComponent},
@@ -77,7 +78,7 @@ func TestRunExport(t *testing.T) {
 		},
 		{
 			testName: "component write error",
-			opts: &exportOptions{
+			opts: &options{
 				bundlePath: validBundle,
 				outputDir:  invalidDir,
 				components: []string{"kube-apiserver"},
@@ -86,24 +87,40 @@ func TestRunExport(t *testing.T) {
 		},
 	}
 
-	// Override the createExporterFn to return a fake Exporter.
-	createExporterFn = func(b *bpb.ClusterBundle) (Exporter, error) {
+	// Override the createExporterFn to return a fake exporter.
+	createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
 		return &fakeExporter{}, nil
 	}
-	brw := test.NewFakeReaderWriter(validBundle)
-	aw := test.NewFakeComponentWriterForDir(validDir)
 
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
-			err := runExport(tc.opts, brw, aw)
+			ctx := context.Background()
+
+			// Kinda yucky setup. Probably means it's not testing the right stuff.
+			var pairs []*testutil.FilePair
+			if tc.opts.bundlePath == validBundle {
+				pairs = append(pairs, &testutil.FilePair{tc.opts.bundlePath, testutil.FakeBundle})
+
+				for _, c := range tc.opts.components {
+					// output file depends on output dir + input file.
+					if c != invalidComponent && tc.opts.outputDir == validDir {
+						pairs = append(pairs, &testutil.FilePair{
+							filepath.Join(tc.opts.outputDir, c) + ".yaml", "",
+						})
+					}
+				}
+			}
+			rw := testutil.NewFakeReaderWriterFromPairs(pairs...)
+
+			err := run(ctx, tc.opts, rw)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
-				t.Errorf("runExport(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("run(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
 			}
 			if err == nil {
 				return
 			}
 			if !strings.Contains(err.Error(), tc.expectErrContains) {
-				t.Errorf("runExport(opts: %+v) returned unexpected error message: %v, Should contain: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("run(opts: %+v) returned unexpected error message: %v, Should contain: %v", tc.opts, err, tc.expectErrContains)
 			}
 		})
 	}

@@ -5,11 +5,13 @@ go_library(
     srcs = [
         "doc.go",
         "root.go",
-        "validate.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/commands/export:go_default_library",
+        "//pkg/commands/inline:go_default_library",
+        "//pkg/commands/patch:go_default_library",
         "//pkg/commands/validate:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",

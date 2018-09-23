@@ -1,22 +1,15 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "go_default_library",
     srcs = [
-        "bundle_reader_writer.go",
-        "component_writer.go",
+        "cmdlib.go",
         "doc.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/apis/bundle/v1alpha1:go_default_library",
-        "//pkg/converter:go_default_library",
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
     ],
-)
-
-go_test(
-    name = "go_default_test",
-    srcs = ["bundle_reader_writer_test.go"],
-    embed = [":go_default_library"],
 )

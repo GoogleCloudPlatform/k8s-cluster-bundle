@@ -15,12 +15,12 @@
 package inline
 
 import (
+	"context"
 	"strings"
 	"testing"
 
-	"context"
-	test "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/testing"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
 func TestRunInline(t *testing.T) {
@@ -35,42 +35,43 @@ func TestRunInline(t *testing.T) {
 		{
 			testName: "success case",
 			opts: &options{
-				bundle: validFile,
-				output: validFile,
+				bundle: "in" + validFile,
+				output: "out" + validFile,
 			},
 		},
 		{
 			testName: "bundle read error",
 			opts: &options{
-				bundle: invalidFile,
-				output: validFile,
+				bundle: "in" + invalidFile,
+				output: "out" + validFile,
 			},
 			expectErrContains: "error reading",
 		},
 		{
 			testName: "bundle write error",
 			opts: &options{
-				bundle: validFile,
-				output: invalidFile,
+				bundle: "in" + validFile,
+				output: "out" + invalidFile,
 			},
 			expectErrContains: "error writing",
 		},
 	}
 
-	// Override the createInlinerFn to return a fake Inliner.
-	createInlinerFn = func(cwd string) *transformer.Inliner {
-		return &transformer.Inliner{
-			LocalReader: &test.FakeFileReader{},
-		}
-	}
-	brw := test.NewFakeReaderWriter(validFile)
 	ctx := context.Background()
-
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
-			err := run(ctx, tc.opts, brw)
+			var pairs []*testutil.FilePair
+			if strings.Contains(tc.opts.bundle, validFile) {
+				pairs = append(pairs, &testutil.FilePair{tc.opts.bundle, testutil.FakeBundle})
+			}
+			if strings.Contains(tc.opts.output, validFile) {
+				pairs = append(pairs, &testutil.FilePair{tc.opts.output, testutil.FakeBundle})
+			}
+
+			frw := testutil.NewFakeReaderWriterFromPairs(pairs...)
+			err := run(ctx, tc.opts, &converter.BundleReaderWriter{frw}, frw)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
-				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %q", tc.opts, err, tc.expectErrContains)
 			}
 			if err == nil {
 				return

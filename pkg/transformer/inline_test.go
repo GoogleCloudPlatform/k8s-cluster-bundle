@@ -58,7 +58,7 @@ const (
 
 type fakeLocalReader struct{}
 
-func (*fakeLocalReader) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
+func (*fakeLocalReader) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error) {
 	url := file.GetUrl()
 	if strings.HasPrefix(url, "file://") {
 		url = strings.TrimPrefix(url, "file://")
@@ -85,7 +85,7 @@ func TestInlineBundle(t *testing.T) {
 	}
 	bp := converter.ToBundle(b)
 	inliner := &Inliner{
-		LocalReader: &fakeLocalReader{},
+		Reader: &fakeLocalReader{},
 	}
 
 	newpb, err := inliner.Inline(ctx, bp)

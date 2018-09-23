@@ -15,11 +15,15 @@
 package patch
 
 import (
+	"context"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/spf13/cobra"
 )
 
-func Register(root *cobra.Command) {
-	// patchCmd is the parent patch command, and is unrunnable by itself.
+// AddCommandsTo adds commands to a root cobra command.
+func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+	// cmd is the parent patch command, and is unrunnable by itself.
 	// Patch subcommands should be added to it.
 	cmd := &cobra.Command{
 		Use:   "patch",
@@ -42,19 +46,19 @@ func Register(root *cobra.Command) {
 		Use:   "bundle",
 		Short: "Apply patches to the entire bundle",
 		Long:  "Apply all the patches found in a bundle to customize it with the given options custom resources",
-		Run:   bundleAction,
+		Run:   cmdlib.ContextAction(ctx, bundleAction),
 	}
 
 	componentCmd := &cobra.Command{
 		Use:   "component",
 		Short: "Apply patches to a component in the bundle",
 		Long:  "Apply all the patches found in the given component in the bundle to customize it with the given options custom resources",
-		Run:   componentAction,
+		Run:   cmdlib.ContextAction(ctx, componentAction),
 	}
 
 	// Required patch component flags
 	componentCmd.Flags().StringVarP(&opts.component, "component", "c", "", "The component in the bundle to patch")
 
 	cmd.AddCommand(bundleCmd, componentCmd)
-	root.AddCommand(patchCmd)
+	root.AddCommand(cmd)
 }

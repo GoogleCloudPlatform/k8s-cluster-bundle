@@ -15,15 +15,19 @@
 package validate
 
 import (
+	"context"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/spf13/cobra"
 )
 
-func Register(root *cobra.Command) {
+// AddCommandsTo adds commands to a root cobra command.
+func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "validate",
 		Short: "Validate a bundle file",
 		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
-		Run:   action,
+		Run:   cmdlib.ContextAction(ctx, action),
 	}
 
 	// Required flags

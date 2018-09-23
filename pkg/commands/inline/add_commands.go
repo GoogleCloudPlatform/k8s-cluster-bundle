@@ -21,7 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Register(ctx context.Context, root *cobra.Command) {
+// AddCommandsTo adds commands to a root cobra command.
+func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "inline",
 		Short: "Inline the bundle files",

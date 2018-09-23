@@ -20,6 +20,17 @@ The Cluster Bundle has three components:
 
 [![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/k8s-cluster-bundle?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/k8s-cluster-bundle)
 
+## Terminology
+
+The Cluster Bundle tries to use familiar terminology wherever possible. That
+being said, the terms might be used in slightly or more precise was that you
+are used to:
+
+* **Object or Cluster Object**: A Kubernetes configuration object. These are
+  also sometimes referred to as *manifests* or *yamls*.
+* **Component**: A versioned collection of Kubernetes objects.
+* **NodeConfig**: A versioned set of configuration options for Kubernetes nodes.
+* **Bundle**: A versioned collection of Kubernetes components and node configs.
 
 ## Usage
 

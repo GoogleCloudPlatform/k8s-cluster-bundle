@@ -15,20 +15,20 @@
 package validate
 
 import (
+	"context"
 	"fmt"
-	"path/filepath"
-
-	log "github.com/golang/glog"
-	"github.com/spf13/cobra"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
+	log "github.com/golang/glog"
+	"github.com/spf13/cobra"
 )
 
 // options contain options flags for the bundle validation command.
 type options struct {
-	// A raw bundle-string.
+	// bundle is a filepath to a bundle
 	bundle string
 }
 
@@ -37,11 +37,11 @@ type options struct {
 var opts = &options{}
 
 // Action is the cobra command action for bundle validation.
-func action(cmd *cobra.Command, _ []string) {
+func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if opts.bundle == "" {
 		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
 	}
-	if err := runValidate(opts, &cmdlib.RealReaderWriter{}); err != nil {
+	if err := runValidate(ctx, opts, converter.NewFileSystemBundleReaderWriter()); err != nil {
 		log.Exit(err)
 	}
 }
@@ -56,13 +56,8 @@ var createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 	return validation.NewBundleValidator(b)
 }
 
-func runValidate(opts *options, brw cmdlib.BundleReaderWriter) error {
-	path, err := filepath.Abs(opts.bundle)
-	if err != nil {
-		return err
-	}
-
-	b, err := brw.ReadBundleFile(path)
+func runValidate(ctx context.Context, opts *options, brw *converter.BundleReaderWriter) error {
+	b, err := brw.ReadBundleFile(ctx, opts.bundle)
 	if err != nil {
 		return err
 	}

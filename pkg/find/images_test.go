@@ -355,13 +355,13 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 	finder := &ImageFinder{converter.ToBundle(s)}
 	found := finder.AllImages().Flattened()
 	expected := &AllImagesFlattened{
-		NodeImages:      []string{
-			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"
+		NodeImages: []string{
+			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
 		},
 		ContainerImages: []string{
 			"gcr.io/floof/logger",
 			"gcr.io/floof/chopper",
-			"gcr.io/floof/dapper"
+			"gcr.io/floof/dapper",
 		},
 	}
 	if !reflect.DeepEqual(found, expected) {

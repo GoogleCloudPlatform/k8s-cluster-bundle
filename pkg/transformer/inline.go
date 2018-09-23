@@ -15,52 +15,30 @@
 package transformer
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 	"strings"
 
-	"context"
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
-
-// FileReader provides a generic file-reading interface for the Inliner to use.
-type FileReader interface {
-	ReadFile(ctx context.Context, file *bpb.File) ([]byte, error)
-}
 
 // Inliner inlines bundle files by reading them from the local or a remote
 // filesystem.
 type Inliner struct {
 	// Local reader reads from the local filesystem.
-	LocalReader FileReader
+	Reader core.FilePBReader
 }
 
 // NewInliner creates a new inliner. If the bundle is stored on disk, the cwd
 // should be the absolute path to the directory containing the bundle file on disk.
 func NewInliner(cwd string) *Inliner {
 	return &Inliner{
-		LocalReader: &localReader{cwd},
+		Reader: &core.LocalFilePBReader{cwd, &core.LocalFileSystemReader{}},
 		// TODO: Add more readers for remote filesystems here or add some way to
 		// plug-in other reader types.
 	}
-}
-
-// localReader reads from the local filesystem.
-type localReader struct {
-	WorkingDir string
-}
-
-func (l *localReader) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
-	url := file.GetUrl()
-	if url == "" {
-		return nil, fmt.Errorf("file %v was specified but no file url was provided", file)
-	}
-	if strings.HasPrefix(url, "file://") {
-		url = strings.TrimPrefix(url, "file://")
-	}
-	return ioutil.ReadFile(filepath.Join(l.WorkingDir, url))
 }
 
 // Inline converts dereferences File-references in a bundle and turns them into
@@ -81,7 +59,7 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 	for _, v := range spec.GetNodeConfigs() {
 		k := v.GetName()
 		if v.GetExternalInitFile() != nil {
-			contents, err := n.ReadFile(ctx, v.GetExternalInitFile())
+			contents, err := n.ReadFilePB(ctx, v.GetExternalInitFile())
 			if err != nil {
 				return nil, fmt.Errorf("error processing init script for node bootstrap config %q: %v", k, err)
 			}
@@ -103,7 +81,7 @@ func (n *Inliner) processClusterComponent(ctx context.Context, k string, b *bpb.
 	for _, co := range b.GetClusterObjects() {
 		kco := co.GetName()
 		if co.GetFile() != nil {
-			contents, err := n.ReadFile(ctx, co.GetFile())
+			contents, err := n.ReadFilePB(ctx, co.GetFile())
 			if err != nil {
 				return fmt.Errorf("error reading cluster app object for app %q and object %q: %v", k, kco, err)
 			}
@@ -115,7 +93,7 @@ func (n *Inliner) processClusterComponent(ctx context.Context, k string, b *bpb.
 		}
 
 		if co.GetPatchFile() != nil {
-			contents, err := n.ReadFile(ctx, co.GetPatchFile())
+			contents, err := n.ReadFilePB(ctx, co.GetPatchFile())
 			if err != nil {
 				return fmt.Errorf("error reading patch file for app %q and object %q: %v", k, kco, err)
 			}
@@ -129,8 +107,8 @@ func (n *Inliner) processClusterComponent(ctx context.Context, k string, b *bpb.
 	return nil
 }
 
-// ReadFile from either a local or remote location.
-func (n *Inliner) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) {
+// ReadFilePB from either a local or remote location.
+func (n *Inliner) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error) {
 	url := file.GetUrl()
 	if url == "" {
 		return nil, fmt.Errorf("file %v was specified but no file path/url was provided", file)
@@ -142,9 +120,9 @@ func (n *Inliner) ReadFile(ctx context.Context, file *bpb.File) ([]byte, error) 
 	case strings.HasPrefix("https://", url) || strings.HasPrefix("http://", url):
 		return nil, fmt.Errorf("url-type (HTTP[S]) not supported; file was %q", url)
 	case strings.HasPrefix("file://", url):
-		return n.LocalReader.ReadFile(ctx, file)
+		return n.Reader.ReadFilePB(ctx, file)
 	default:
 		// By default, assume that the user expects to read from the local filesystem.
-		return n.LocalReader.ReadFile(ctx, file)
+		return n.Reader.ReadFilePB(ctx, file)
 	}
 }

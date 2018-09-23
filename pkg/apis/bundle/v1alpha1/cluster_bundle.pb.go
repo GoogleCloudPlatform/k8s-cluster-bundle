@@ -24,7 +24,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Cluster Bundle can be thought of as a cookie cutter for creating Kubernetes
 // clusters.
 type ClusterBundle struct {
-	// API Version for the Bundle. Should have the form <namespace>/<phase>.
+	// API Version for the Bundle.
 	ApiVersion string `protobuf:"bytes,1,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
 	// The Kubernetes `kind` for this object. Should be 'ClusterBundle'.
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
