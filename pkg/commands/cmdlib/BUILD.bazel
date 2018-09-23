@@ -3,16 +3,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
+        "cmdlib.go",
         "doc.go",
-        "root.go",
     ],
-    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands",
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/commands/export:go_default_library",
-        "//pkg/commands/inline:go_default_library",
-        "//pkg/commands/patch:go_default_library",
-        "//pkg/commands/validate:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",
     ],

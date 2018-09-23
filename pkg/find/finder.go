@@ -19,13 +19,8 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
-
-// Key representing a specific cluster object.
-type compObjKey struct {
-	compName string
-	objName  string
-}
 
 // BundleFinder is a wrapper which allows for efficient searching through
 // bundles. The BundleFinder is intended to be readonly; if modifications are
@@ -34,7 +29,7 @@ type BundleFinder struct {
 	bundle        *bpb.ClusterBundle
 	nodeLookup    map[string]*bpb.NodeConfig
 	compLookup    map[string]*bpb.ClusterComponent
-	compObjLookup map[compObjKey]*bpb.ClusterObject
+	compObjLookup map[core.ClusterObjectKey]*bpb.ClusterObject
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
@@ -52,7 +47,7 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	}
 
 	compConfigs := make(map[string]*bpb.ClusterComponent)
-	compObjLookup := make(map[compObjKey]*bpb.ClusterObject)
+	compObjLookup := make(map[core.ClusterObjectKey]*bpb.ClusterObject)
 	for _, ca := range b.GetSpec().GetComponents() {
 		n := ca.GetName()
 		if n == "" {
@@ -64,7 +59,7 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 			if con == "" {
 				return nil, fmt.Errorf("cluster component objects must always have a name. was empty for object %v in component %q", co, n)
 			}
-			compObjLookup[compObjKey{n, con}] = co
+			compObjLookup[core.ClusterObjectKey{n, con}] = co
 		}
 	}
 
@@ -88,5 +83,5 @@ func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 
 // ClusterComponentObject returns a ClusterComponent's Cluster object or nil.
 func (b *BundleFinder) ClusterComponentObject(compName string, objName string) *bpb.ClusterObject {
-	return b.compObjLookup[compObjKey{compName, objName}]
+	return b.compObjLookup[core.ClusterObjectKey{compName, objName}]
 }

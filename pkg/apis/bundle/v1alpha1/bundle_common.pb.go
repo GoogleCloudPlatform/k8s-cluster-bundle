@@ -81,7 +81,7 @@ func (m *File) GetHash() string {
 //     name: foo
 //   spec: ...
 //
-// The corresponding GroupVersionKind (or GVK) would be:
+// The corresponding ObjectReferenc (or ObjectRef) would be:
 //
 //   {apiVersion: 'apps/v1', kind: 'StatefulSet', name: 'foo'}
 type ObjectReference struct {

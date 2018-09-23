@@ -12,45 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package validate
 
 import (
+	"context"
 	"fmt"
-	"path/filepath"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
-type validateOptions struct {
+// options contain options flags for the bundle validation command.
+type options struct {
+	// bundle is a filepath to a bundle
 	bundle string
 }
 
-var validateOpts = &validateOptions{}
+// opts is a global options flags instance for reference via the cobra command
+// installation.
+var opts = &options{}
 
-func addValidateCommand() {
-	validateCmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate a bundle file",
-		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
-		Run:   validateAction,
+// Action is the cobra command action for bundle validation.
+func action(ctx context.Context, cmd *cobra.Command, _ []string) {
+	if opts.bundle == "" {
+		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
 	}
-
-	// Required flags
-	// Note: the path to the bundle must be absolute when running with bazel.
-	validateCmd.Flags().StringVarP(&validateOpts.bundle, "bundle", "b", "",
-		"The path to the bundle to validate")
-
-	rootCmd.AddCommand(validateCmd)
-}
-
-func validateAction(cmd *cobra.Command, _ []string) {
-	if validateOpts.bundle == "" {
-		exitWithHelp(cmd, "Please provide yaml file for bundle.")
-	}
-	if err := runValidate(validateOpts, &realReaderWriter{}); err != nil {
+	if err := runValidate(ctx, opts, converter.NewFileSystemBundleReaderWriter()); err != nil {
 		log.Exit(err)
 	}
 }
@@ -60,24 +51,19 @@ type bundleValidator interface {
 }
 
 // createValidatorFn creates BundleValidator that works with the given current
-// working directory.
+// working directory and allows for dependency injection.
 var createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 	return validation.NewBundleValidator(b)
 }
 
-func runValidate(opts *validateOptions, brw BundleReaderWriter) error {
-	path, err := filepath.Abs(opts.bundle)
+func runValidate(ctx context.Context, opts *options, brw *converter.BundleReaderWriter) error {
+	b, err := brw.ReadBundleFile(ctx, opts.bundle)
 	if err != nil {
 		return err
 	}
 
-	b, err := brw.ReadBundleFile(path)
-	if err != nil {
-		return err
-	}
-
-	validator := createValidatorFn(b)
-	if errs := validator.Validate(); len(errs) > 0 {
+	val := createValidatorFn(b)
+	if errs := val.Validate(); len(errs) > 0 {
 		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", validation.JoinErrors(errs))
 	}
 	log.Info("No errors found")

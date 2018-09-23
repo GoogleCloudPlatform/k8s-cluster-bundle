@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testing contains fake implementations of interfaces for unit test purposes.
-package testing
+// Package cmdlib contains shared functions for the bundle CLI commands.
+package cmdlib

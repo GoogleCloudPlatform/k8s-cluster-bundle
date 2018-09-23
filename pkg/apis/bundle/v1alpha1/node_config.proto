@@ -25,21 +25,24 @@ message NodeConfig {
   // The name of this image configuration.
   string name = 1;
 
+  // The version for this node configuration.
+  string version = 2;
+
   // Initialization file to run on VM startup. The contents of this init file
   // will depend a great deal on the specific environment and operation system.
   oneof init_data {
     // The file specified inline as a UTF-8 encoded byte string.
-    string init_file = 2;
+    string init_file = 3;
 
     // An external init file.
-    File external_init_file = 3;
+    File external_init_file = 4;
   }
 
   // Envirnoment variables to set before startup to configure the init script.
-  repeated EnvVar env_vars = 4;
+  repeated EnvVar env_vars = 5;
 
   // The OS image to use for VM creation.
-  File os_image = 5;
+  File os_image = 6;
 }
 
 // An environment variable specified for node startup.

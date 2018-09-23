@@ -17,15 +17,15 @@ package patch
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"text/template"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/scheme"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 	log "github.com/golang/glog"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	corev1 "k8s.io/api/core/v1"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -40,7 +40,7 @@ type Patcher struct {
 	CustomResourceValidator *validation.CustomResourceValidator
 
 	// Scheme wraps the Runtime Kubernetes schema.
-	Scheme *PatcherScheme
+	Scheme *scheme.PatcherScheme
 }
 
 // NewPatcherFromBundleYAML creates a patcher object from a Bundle YAML.
@@ -89,7 +89,7 @@ func NewPatcherFromBundle(bundle *bpb.ClusterBundle) (*Patcher, error) {
 	return &Patcher{
 		Bundle:                  bundle,
 		CustomResourceValidator: crdValidator,
-		Scheme:                  DefaultPatcherScheme(),
+		Scheme:                  scheme.DefaultPatcherScheme(),
 	}, nil
 }
 
@@ -187,7 +187,7 @@ func (t *Patcher) ApplyToClusterObjects(patches []*bpb.Patch, customResource int
 // always returning a new component copy of the original component with the patches (if any)
 // applied.
 func (t *Patcher) PatchComponent(comp *bpb.ClusterComponent, customResources []map[string]interface{}) (*bpb.ClusterComponent, error) {
-	crMap, err := createCustomResourceMap(customResources)
+	crMap, err := converter.KubeResourceMap(customResources)
 	if err != nil {
 		return nil, fmt.Errorf("could not patch component%q: %v", comp.GetName(), err)
 	}
@@ -198,7 +198,7 @@ func (t *Patcher) PatchComponent(comp *bpb.ClusterComponent, customResources []m
 // always returning a new component copy of the original component with the patches (if any)
 // applied. It takes in a map from custom resource kind to custom resource instance for ease of
 // lookup.
-func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[corev1.ObjectReference]interface{}) (*bpb.ClusterComponent, error) {
+func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[core.ObjectReference]interface{}) (*bpb.ClusterComponent, error) {
 	clonedComponent := converter.CloneClusterComponent(comp)
 	for _, co := range clonedComponent.GetClusterObjects() {
 		obj := co.GetInlined()
@@ -208,7 +208,7 @@ func (t *Patcher) patchComponent(comp *bpb.ClusterComponent, crMap map[corev1.Ob
 		for _, pat := range co.GetPatchCollection().GetPatches() {
 			var err error
 			// Pass each patch separately to update the cluster object along with the corresponding CR.
-			cr, found := crMap[converter.ToObjectReference(pat.GetObjectRef())]
+			cr, found := crMap[core.ObjectReferenceFromProto(pat.GetObjectRef())]
 			if !found {
 				return nil, fmt.Errorf("could not patch object %q: no custom resource found for %q", co.GetName(), pat.GetObjectRef())
 			}
@@ -229,7 +229,7 @@ func (t *Patcher) PatchBundle(customResources []map[string]interface{}) (*bpb.Cl
 	bundle := converter.CloneBundle(t.Bundle)
 	comps := bundle.GetSpec().GetComponents()[:]
 
-	crMap, err := createCustomResourceMap(customResources)
+	crMap, err := converter.KubeResourceMap(customResources)
 	if err != nil {
 		return nil, fmt.Errorf("could not patch bundle: %s", err)
 	}
@@ -244,57 +244,4 @@ func (t *Patcher) PatchBundle(customResources []map[string]interface{}) (*bpb.Cl
 	}
 	bundle.GetSpec().Components = comps
 	return bundle, nil
-}
-
-// createCustomResourceMap creates a map from the custom resource object
-// reference to the custom resource instance.
-func createCustomResourceMap(customResources []map[string]interface{}) (map[corev1.ObjectReference]interface{}, error) {
-	crMap := make(map[corev1.ObjectReference]interface{})
-	for _, cr := range customResources {
-		ref, err := objectRefFromCustomResource(cr)
-		if err != nil {
-			return nil, fmt.Errorf("error creating custom resource map: %v", err)
-		}
-		crMap[ref] = cr
-	}
-	return crMap, nil
-}
-
-// gvkFromCustomResource extracts the GroupVersionKind out of a custom resource.
-// - returns an error if there is no apiVersion or kind field in the custom resource
-// - returns an error if the apiVersion value is not of the format "group/version"
-// TODO: parse CustomResource into a RawExtension instead of a map.
-func objectRefFromCustomResource(cr map[string]interface{}) (corev1.ObjectReference, error) {
-	nullResp := corev1.ObjectReference{}
-	ref := corev1.ObjectReference{}
-	apiVersion := cr["apiVersion"]
-	if apiVersion == nil {
-		return nullResp, fmt.Errorf("no apiVersion field was found for custom resource %v", cr)
-	}
-	matches := regexp.MustCompile("(.+)/(.+)").FindStringSubmatch(apiVersion.(string))
-	// The number of matches should be 3 - FindSubstringMatch returns the full matched string in
-	// addition to the matched subexpressions.
-	if matches == nil || len(matches) != 3 {
-		return nullResp, fmt.Errorf("custom resource apiVersion is not formatted as group/version: got %q", apiVersion)
-	}
-	ref.APIVersion = apiVersion.(string)
-	kind := cr["kind"]
-	if kind == nil {
-		return nullResp, fmt.Errorf("no kind field was found for custom resource %v", cr)
-	}
-	ref.Kind = kind.(string)
-
-	md := cr["metadata"]
-	if md == nil {
-		return nullResp, fmt.Errorf("no metadata field was found for custom resource %v", cr)
-	}
-
-	metadata := md.(map[string]interface{})
-	name := metadata["name"]
-	if name == nil {
-		return nullResp, fmt.Errorf("no metadata.name field was found for custom resource %v", cr)
-	}
-
-	ref.Name = name.(string)
-	return ref, nil
 }

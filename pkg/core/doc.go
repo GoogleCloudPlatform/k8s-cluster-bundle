@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package find provides methods for searching through Bundles the contained
-// components and configuration.
-package find
+// Package core represents types and helpers that are used throughout the
+// bundle.
+package core
