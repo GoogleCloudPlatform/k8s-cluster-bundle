@@ -32,7 +32,7 @@ type options struct {
 	output string
 }
 
-// opts is a global Options instance for referenc via the
+// opts is a global options instance for reference via the add commands.
 var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {

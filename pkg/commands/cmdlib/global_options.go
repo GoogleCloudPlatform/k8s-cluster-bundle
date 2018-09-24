@@ -12,15 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command bundler is used for modifying bundles
-package main
+package cmdlib
 
-import (
-	"context"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
-)
+// GlobalOptions are options that apply to all commands
+type GlobalOptions struct {
+	// A path to a bundle file.
+	BundleFile string
 
-func main() {
-	commands.AddCommands(context.Background())
-	commands.Execute()
+	// Format for the input. By default, assumes YAML.
+	InputFormat string
+
+	// Path for an output file.
+	OutputFile string
+
+	// The format for any output. By default, assumes YAML.
+	OutputFormat string
+
+	// Whether to inline the bundle before doing any processing
+	Inline bool
 }
+
+// GlobalOptionsValues is a global tracker for global options (for command line
+// executions only).
+var GlobalOptionsValues = &GlobalOptions{}

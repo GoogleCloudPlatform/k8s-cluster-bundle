@@ -239,6 +239,6 @@ func (a *AllImages) Flattened() *AllImagesFlattened {
 // ImagesFlattened contains images found, but flattened into lists of
 // strings.
 type AllImagesFlattened struct {
-	NodeImages      []string
-	ContainerImages []string
+	NodeImages      []string `json:"nodeImages"`
+	ContainerImages []string `json:"containerImages"`
 }

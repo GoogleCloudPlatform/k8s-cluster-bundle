@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 
+	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
@@ -26,8 +27,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/patch"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
-
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
 // patcher provides an interface for patching overlays into a ClusterBundle for
