@@ -27,7 +27,7 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "find",
 		Short: "Search for objects inside the bundle",
-		Long:  "Provides functionality for searching for or modifying container or node images. See subcommands for patch usage.",
+		Long:  "Provides functionality for searching through cluster bundles. See subcommands usage.",
 	}
 
 	imagesCmd := &cobra.Command{

@@ -103,9 +103,14 @@ func (b *Converter) ProtoToTextProto(msg proto.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// ProtoToYAML converts a bundle into a YAML encoded bundle
+// ProtoToYAML converts a proto into a YAML encoded proto.
 func (b *Converter) ProtoToYAML(bun proto.Message) ([]byte, error) {
-	buf, err := b.ProtoToJSON(bun)
+	return ProtoToYAML(bun)
+}
+
+// ProtoToYAML converts a proto into a YAML encoded proto.
+func ProtoToYAML(b proto.Message) ([]byte, error) {
+	buf, err := ProtoToJSON(b)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +128,13 @@ func (b *Converter) YAMLToProto(contents []byte) (proto.Message, error) {
 
 // ProtoToJSON converts a bundle into a JSON encoded proto.
 func (b *Converter) ProtoToJSON(bun proto.Message) ([]byte, error) {
+	return ProtoToJSON(bun)
+}
+
+// ProtoToJSON converts a proto into a JSON encoded proto.
+func ProtoToJSON(b proto.Message) ([]byte, error) {
 	var buf bytes.Buffer
-	if err := (&jsonpb.Marshaler{}).Marshal(&buf, bun); err != nil {
+	if err := (&jsonpb.Marshaler{}).Marshal(&buf, b); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

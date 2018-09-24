@@ -22,7 +22,8 @@ import (
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	testutil "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 )
 
@@ -48,29 +49,30 @@ func TestRunExport(t *testing.T) {
 
 	var testcases = []struct {
 		testName          string
+		in                string
 		opts              *options
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
+			in:       validBundle,
 			opts: &options{
-				bundlePath: validBundle,
 				outputDir:  validDir,
 				components: []string{"kube-apiserver", "kube-scheduler"},
 			},
 		},
 		{
 			testName: "bundle read error",
+			in:       invalidBundle,
 			opts: &options{
-				bundlePath: invalidBundle,
-				outputDir:  validDir,
+				outputDir: validDir,
 			},
 			expectErrContains: "error reading",
 		},
 		{
 			testName: "extract component error",
+			in:       validBundle,
 			opts: &options{
-				bundlePath: validBundle,
 				outputDir:  validDir,
 				components: []string{invalidComponent},
 			},
@@ -78,8 +80,8 @@ func TestRunExport(t *testing.T) {
 		},
 		{
 			testName: "component write error",
+			in:       validBundle,
 			opts: &options{
-				bundlePath: validBundle,
 				outputDir:  invalidDir,
 				components: []string{"kube-apiserver"},
 			},
@@ -98,8 +100,8 @@ func TestRunExport(t *testing.T) {
 
 			// Kinda yucky setup. Probably means it's not testing the right stuff.
 			var pairs []*testutil.FilePair
-			if tc.opts.bundlePath == validBundle {
-				pairs = append(pairs, &testutil.FilePair{tc.opts.bundlePath, testutil.FakeBundle})
+			if tc.in == validBundle {
+				pairs = append(pairs, &testutil.FilePair{tc.in, testutil.FakeBundle})
 
 				for _, c := range tc.opts.components {
 					// output file depends on output dir + input file.
@@ -110,9 +112,15 @@ func TestRunExport(t *testing.T) {
 					}
 				}
 			}
+
+			globalOpts := &cmdlib.GlobalOptions{
+				BundleFile:   tc.in,
+				InputFormat:  "yaml",
+				OutputFormat: "yaml",
+			}
 			rw := testutil.NewFakeReaderWriterFromPairs(pairs...)
 
-			err := run(ctx, tc.opts, rw)
+			err := run(ctx, tc.opts, rw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
 				t.Errorf("run(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
 			}

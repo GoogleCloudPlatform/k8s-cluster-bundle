@@ -17,10 +17,10 @@ package patch
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
@@ -62,62 +62,65 @@ func (f *fakePatcher) PatchComponent(*bpb.ClusterComponent, []map[string]interfa
 }
 
 func TestRunPatchBundle(t *testing.T) {
-	validBundleFile := "/path/to/bundle.yaml"
+	validInBundleFile := "in/path/to/bundle.yaml"
+	validOutBundleFile := "out/path/to/bundle.yaml"
 	validOptionsFile := "/path/to/options.yaml"
 	invalidFile := "/invalid.yaml"
 
 	testCases := []struct {
 		testName string
+		in       string
+		out      string
 		opts     *options
 		patcher  *fakePatcher
 		wantErr  bool
 	}{
 		{
 			testName: "success case",
+			in:       validInBundleFile,
+			out:      validOutBundleFile,
 			opts: &options{
-				bundlePath: "in" + validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				output:     "out" + validBundleFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: false,
 		},
 		{
 			testName: "bundle read error",
+			in:       invalidFile,
+			out:      validOutBundleFile,
 			opts: &options{
-				bundlePath: "in" + invalidFile,
 				optionsCRs: []string{validOptionsFile},
-				output:     "out" + validBundleFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
 		},
 		{
 			testName: "options read error",
+			in:       validInBundleFile,
+			out:      validOutBundleFile,
 			opts: &options{
-				bundlePath: "in" + validBundleFile,
 				optionsCRs: []string{validOptionsFile, invalidFile},
-				output:     "out" + validBundleFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
 		},
 		{
 			testName: "bundle patching error",
+			in:       validInBundleFile,
+			out:      validOutBundleFile,
 			opts: &options{
-				bundlePath: "in" + validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				output:     "out" + validBundleFile,
 			},
 			patcher: &fakePatcher{throwsErr: true},
 			wantErr: true,
 		},
 		{
 			testName: "bundle write error",
+			in:       validInBundleFile,
+			out:      invalidFile,
 			opts: &options{
-				bundlePath: "out" + validBundleFile,
 				optionsCRs: []string{validOptionsFile},
-				output:     "out" + invalidFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
@@ -128,16 +131,22 @@ func TestRunPatchBundle(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			var pairs []*testutil.FilePair
-			if strings.Contains(tc.opts.bundlePath, validBundleFile) {
-				pairs = append(pairs, &testutil.FilePair{tc.opts.bundlePath, testutil.FakeBundle})
+			if tc.in == validInBundleFile {
+				pairs = append(pairs, &testutil.FilePair{tc.in, testutil.FakeBundle})
 			}
-			if strings.Contains(tc.opts.output, validBundleFile) {
-				pairs = append(pairs, &testutil.FilePair{tc.opts.output, testutil.FakeBundle})
+			if tc.out == validOutBundleFile {
+				pairs = append(pairs, &testutil.FilePair{tc.out, testutil.FakeBundle})
 			}
 			for _, o := range tc.opts.optionsCRs {
-				if strings.Contains(o, validOptionsFile) {
+				if o == validOptionsFile {
 					pairs = append(pairs, &testutil.FilePair{o, testutil.FakeBundle})
 				}
+			}
+			globalOpts := &cmdlib.GlobalOptions{
+				BundleFile:   tc.in,
+				OutputFile:   tc.out,
+				InputFormat:  "yaml",
+				OutputFormat: "yaml",
 			}
 
 			rw := testutil.NewFakeReaderWriterFromPairs(pairs...)
@@ -145,7 +154,7 @@ func TestRunPatchBundle(t *testing.T) {
 			createPatcherFn = func(b *bpb.ClusterBundle) (patcher, error) {
 				return tc.patcher, nil
 			}
-			err := runPatchBundle(ctx, tc.opts, rw)
+			err := runPatchBundle(ctx, tc.opts, rw, globalOpts)
 			if !tc.wantErr && err != nil {
 				t.Errorf("runPatchBundle(opts: %+v) = error %v, want no error", tc.opts, err)
 			}
@@ -165,72 +174,74 @@ func TestRunPatchComponent(t *testing.T) {
 
 	testCases := []struct {
 		testName string
+		in       string
+		out      string
 		opts     *options
 		patcher  *fakePatcher
 		wantErr  bool
 	}{
 		{
 			testName: "success case",
+			in:       validBundleFile,
+			out:      validOutFile,
 			opts: &options{
-				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validComponent,
-				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: false,
 		},
 		{
 			testName: "bundle read error",
+			in:       invalidFile,
+			out:      validOutFile,
 			opts: &options{
-				bundlePath: invalidFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validComponent,
-				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
 		},
 		{
 			testName: "options read error",
+			in:       validBundleFile,
+			out:      validOutFile,
 			opts: &options{
-				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile, invalidFile},
 				component:  validComponent,
-				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
 		},
 		{
 			testName: "component not found error",
+			in:       validBundleFile,
+			out:      validOutFile,
 			opts: &options{
-				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  "invalid-component",
-				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
 		},
 		{
 			testName: "component patching error",
+			in:       validBundleFile,
+			out:      validOutFile,
 			opts: &options{
-				bundlePath: validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validComponent,
-				output:     validOutFile,
 			},
 			patcher: &fakePatcher{throwsErr: true},
 			wantErr: true,
 		},
 		{
 			testName: "component write error",
+			in:       validBundleFile,
+			out:      invalidFile,
 			opts: &options{
-				bundlePath: "in" + validBundleFile,
 				optionsCRs: []string{validOptionsFile},
 				component:  validComponent,
-				output:     "out" + invalidFile,
 			},
 			patcher: &fakePatcher{throwsErr: false},
 			wantErr: true,
@@ -246,16 +257,22 @@ func TestRunPatchComponent(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			var pairs []*testutil.FilePair
-			if strings.Contains(tc.opts.bundlePath, validBundleFile) {
-				pairs = append(pairs, &testutil.FilePair{tc.opts.bundlePath, testutil.FakeBundle})
+			if tc.in == validBundleFile {
+				pairs = append(pairs, &testutil.FilePair{tc.in, testutil.FakeBundle})
 			}
-			if strings.Contains(tc.opts.output, validOutFile) {
-				pairs = append(pairs, &testutil.FilePair{tc.opts.output, testutil.FakeBundle})
+			if tc.out == validOutFile {
+				pairs = append(pairs, &testutil.FilePair{tc.out, testutil.FakeBundle})
 			}
 			for _, o := range tc.opts.optionsCRs {
-				if strings.Contains(o, validOptionsFile) {
+				if o == validOptionsFile {
 					pairs = append(pairs, &testutil.FilePair{o, testutil.FakeBundle})
 				}
+			}
+			globalOpts := &cmdlib.GlobalOptions{
+				BundleFile:   tc.in,
+				OutputFile:   tc.out,
+				InputFormat:  "yaml",
+				OutputFormat: "yaml",
 			}
 
 			rw := testutil.NewFakeReaderWriterFromPairs(pairs...)
@@ -264,7 +281,7 @@ func TestRunPatchComponent(t *testing.T) {
 			createPatcherFn = func(*bpb.ClusterBundle) (patcher, error) {
 				return tc.patcher, nil
 			}
-			err := runPatchComponent(ctx, tc.opts, rw)
+			err := runPatchComponent(ctx, tc.opts, rw, globalOpts)
 			if !tc.wantErr && err != nil {
 				t.Errorf("runPatchComponent(opts: %+v) = error %v, want no error", tc.opts, err)
 			}

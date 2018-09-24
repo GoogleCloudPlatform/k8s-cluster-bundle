@@ -30,17 +30,5 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 		Run:   cmdlib.ContextAction(ctx, action),
 	}
 
-	// Required flags
-	// Note: the path to the bundle must be absolute when running with bazel due
-	// to bazel sandboxing
-	cmd.Flags().StringVarP(&opts.bundle, "bundle", "b", "",
-		"The path to the bundle to inline")
-
-	// Optional flags
-	// Note: the path to the output bundle is required when running with bazel,
-	// and it must be absolute.
-	cmd.Flags().StringVarP(&opts.output, "output", "o", "bundle_inline.yaml",
-		"Where to output the inline bundle. By default it outputs to the current working directory")
-
 	root.AddCommand(cmd)
 }

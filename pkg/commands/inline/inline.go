@@ -16,7 +16,7 @@ package inline
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
@@ -27,22 +27,16 @@ import (
 )
 
 // options represents options flags for the inline command.
-type options struct {
-	bundle string
-	output string
-}
+type options struct{}
 
 // opts is a global options instance for reference via the add commands.
 var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
-	if opts.bundle == "" {
-		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
-	}
-
+	gopt := cmdlib.GlobalOptionsValues.Copy()
+	gopt.Inline = true
 	brw := converter.NewFileSystemBundleReaderWriter()
-	fpb := core.NewLocalFilePBReader(filepath.Dir(opts.bundle))
-	if err := run(ctx, opts, brw, fpb); err != nil {
+	if err := run(ctx, opts, brw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -53,15 +47,11 @@ var createInlinerFn = func(pbr core.FilePBReader) *transformer.Inliner {
 	return &transformer.Inliner{pbr}
 }
 
-func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, pbr core.FilePBReader) error {
-	b, err := brw.ReadBundleFile(ctx, o.bundle)
+func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadBundleContents(ctx, brw.RW, gopt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	inlined, err := createInlinerFn(pbr).Inline(ctx, b)
-	if err != nil {
-		return err
-	}
-	return brw.WriteBundleFile(ctx, o.output, inlined, cmdlib.DefaultFilePermissions)
+	return cmdlib.WriteStructuredContents(ctx, b, brw.RW, gopt)
 }

@@ -26,6 +26,7 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/commands/cmdlib:go_default_library",
         "//pkg/testutil:go_default_library",
     ],
 )

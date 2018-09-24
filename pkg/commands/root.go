@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/spf13/cobra"
@@ -57,6 +58,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	export.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
 	inline.AddCommandsTo(ctx, rootCmd)
+	modify.AddCommandsTo(ctx, rootCmd)
 	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
 

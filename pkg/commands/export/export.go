@@ -35,7 +35,6 @@ type exporter interface {
 }
 
 type options struct {
-	bundlePath string
 	components []string
 	outputDir  string
 }
@@ -43,14 +42,12 @@ type options struct {
 var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
-	if opts.bundlePath == "" {
-		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
-	}
 	if opts.components == nil {
 		cmdlib.ExitWithHelp(cmd, "Please provide at least one component to extract.")
 	}
+	gopt := cmdlib.GlobalOptionsValues.Copy()
 	rw := &core.LocalFileSystemReaderWriter{}
-	if err := run(ctx, opts, rw); err != nil {
+	if err := run(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -60,12 +57,10 @@ var createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
 	return transformer.NewComponentExporter(b)
 }
 
-func run(ctx context.Context, o *options, rw core.FileReaderWriter) error {
-	brw := converter.BundleReaderWriter{rw}
-
-	b, err := brw.ReadBundleFile(ctx, o.bundlePath)
+func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
 	exporter, err := createExporterFn(b)

@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	testutil "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
@@ -38,21 +39,17 @@ func TestRunValidate(t *testing.T) {
 
 	var testcases = []struct {
 		testName          string
-		opts              *options
+		bundle            string
 		errors            []error
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			opts: &options{
-				bundle: validFile,
-			},
+			bundle:   validFile,
 		},
 		{
-			testName: "bundle validation errors",
-			opts: &options{
-				bundle: validFile,
-			},
+			testName:          "bundle validation errors",
+			bundle:            validFile,
 			errors:            []error{errors.New("yarr")},
 			expectErrContains: "one or more errors",
 		},
@@ -61,24 +58,29 @@ func TestRunValidate(t *testing.T) {
 	brw := &converter.BundleReaderWriter{
 		testutil.NewFakeReaderWriterFromPairs(&testutil.FilePair{validFile, testutil.FakeBundle}),
 	}
+	opts := &options{}
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
+			globalOpts := &cmdlib.GlobalOptions{
+				BundleFile:  validFile,
+				InputFormat: "yaml",
+			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
 			createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}
 
-			err := runValidate(ctx, tc.opts, brw)
+			err := runValidate(ctx, opts, brw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
-				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("runInline() returned err: %v, Want Err: %v", err, tc.expectErrContains)
 			}
 			if err == nil {
 				return
 			}
 			if !strings.Contains(err.Error(), tc.expectErrContains) {
-				t.Errorf("runInline(opts: %+v) returned unexpected error message: %v, Should contain: %v", tc.opts, err, tc.expectErrContains)
+				t.Errorf("runInline() returned unexpected error message: %v, Should contain: %v", err, tc.expectErrContains)
 			}
 		})
 	}

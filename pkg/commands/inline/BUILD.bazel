@@ -23,6 +23,7 @@ go_test(
     srcs = ["inline_test.go"],
     embed = [":go_default_library"],
     deps = [
+        "//pkg/commands/cmdlib:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/testutil:go_default_library",
     ],

@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO(kashomon): Refactor this to take subcommands to export various components.
+
 // AddCommandsTo adds commands to a root cobra command.
 func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd := &cobra.Command{
@@ -30,14 +32,11 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 		Run:   cmdlib.ContextAction(ctx, action),
 	}
 
-	// Required flags
-	// Note: the path to the bundle must be absolute when running with bazel.
-	cmd.Flags().StringVarP(&opts.bundlePath, "bundle", "b", "", "The path to the bundle to inline")
+	// Required
 	cmd.Flags().StringSliceVarP(&opts.components, "components", "c", nil, "The components(s) to extract from the bundle (comma separated)")
 
 	// Optional flags
-	// Note: the output directory path is required when running with bazel, and it must be absolute.
-	cmd.Flags().StringVarP(&opts.outputDir, "output", "o", "",
+	cmd.Flags().StringVarP(&opts.outputDir, "output-dir", "", "",
 		"Where to write the extracted components. By default writes to current working directory")
 
 	root.AddCommand(cmd)

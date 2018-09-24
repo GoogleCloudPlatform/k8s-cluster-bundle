@@ -35,3 +35,13 @@ type GlobalOptions struct {
 // GlobalOptionsValues is a global tracker for global options (for command line
 // executions only).
 var GlobalOptionsValues = &GlobalOptions{}
+
+func (g *GlobalOptions) Copy() *GlobalOptions {
+	return &GlobalOptions{
+		BundleFile:   g.BundleFile,
+		InputFormat:  g.InputFormat,
+		OutputFile:   g.OutputFile,
+		OutputFormat: g.OutputFormat,
+		Inline:       g.Inline,
+	}
+}
