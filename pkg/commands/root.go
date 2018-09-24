@@ -50,7 +50,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 		&cmdlib.GlobalOptionsValues.OutputFile, "output-file", "o", "", "The path for any output file")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.OutputFormat, "out-format", "", "yaml", "The output file format. One of either 'json' or 'yaml'")
+		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "yaml", "The output file format. One of either 'json' or 'yaml'")
 
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline the bundle before processing")
