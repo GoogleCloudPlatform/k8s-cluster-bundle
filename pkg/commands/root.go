@@ -16,36 +16,59 @@ package commands
 
 import (
 	"context"
+	"flag"
 
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd = &cobra.Command{
+// AddCommands adds all subcommands to the root command.
+func AddCommands(ctx context.Context, args []string) *cobra.Command {
+	rootCmd := &cobra.Command{
 		Use:   "bundler",
 		Short: "bundler is tool for inspecting and modifying cluster bundles.",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
-)
 
-// AddCommands adds all subcommands to the root command.
-// Each subcommand should implement an addCommand function to be called here.
-// This allows context to be passed down to subcommands.
-func AddCommands(ctx context.Context) error {
+	// TODO(kashomon): Should the GlobalOptionsValues be de-globalized? It's
+	// certainly possible.
+	rootCmd.PersistentFlags().StringVarP(
+		&cmdlib.GlobalOptionsValues.BundleFile, "bundle-file", "f", "", "The path to a bundle file")
+
+	rootCmd.PersistentFlags().StringVarP(
+		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "yaml", "The input file format. One of either 'json' or 'yaml'")
+
+	rootCmd.PersistentFlags().StringVarP(
+		&cmdlib.GlobalOptionsValues.OutputFile, "output-file", "o", "", "The path for any output file")
+
+	rootCmd.PersistentFlags().StringVarP(
+		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "yaml", "The output file format. One of either 'json' or 'yaml'")
+
+	rootCmd.PersistentFlags().BoolVarP(
+		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline the bundle before processing")
+
 	export.AddCommandsTo(ctx, rootCmd)
+	find.AddCommandsTo(ctx, rootCmd)
 	inline.AddCommandsTo(ctx, rootCmd)
+	modify.AddCommandsTo(ctx, rootCmd)
 	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
-	return nil
-}
 
-// Execute invokes the root command and any subcommands that were called.
-func Execute() error {
-	return rootCmd.Execute()
+	// This is magic hackery I don't unherdstand but somehow this fixes
+	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
+	// https://github.com/kubernetes/kubernetes/issues/17162
+	// rootCmd.SetArgs(args)
+	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+	// pflag.Parse()
+	flag.CommandLine.Parse([]string{})
+
+	return rootCmd
 }

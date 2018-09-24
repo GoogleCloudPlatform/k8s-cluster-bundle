@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command bundler is used for modifying bundles
+// Command bundlectl is used for modifying bundles.
 package main
 
 import (
 	"context"
+	"flag"
+	"os"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
 )
 
 func main() {
-	commands.AddCommands(context.Background())
-	commands.Execute()
+	flag.Lookup("logtostderr").Value.Set("true")
+
+	root := commands.AddCommands(context.Background(), os.Args[1:])
+	if err := root.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

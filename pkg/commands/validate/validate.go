@@ -28,8 +28,6 @@ import (
 
 // options contain options flags for the bundle validation command.
 type options struct {
-	// bundle is a filepath to a bundle
-	bundle string
 }
 
 // opts is a global options flags instance for reference via the cobra command
@@ -38,10 +36,9 @@ var opts = &options{}
 
 // Action is the cobra command action for bundle validation.
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
-	if opts.bundle == "" {
-		cmdlib.ExitWithHelp(cmd, "Please provide yaml file for bundle.")
-	}
-	if err := runValidate(ctx, opts, converter.NewFileSystemBundleReaderWriter()); err != nil {
+	gopt := cmdlib.GlobalOptionsValues.Copy()
+	// TODO(kashomon): Replace the BundleReaderWriter with a FileReaderWriter
+	if err := runValidate(ctx, opts, converter.NewFileSystemBundleReaderWriter(), gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -56,10 +53,10 @@ var createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
 	return validation.NewBundleValidator(b)
 }
 
-func runValidate(ctx context.Context, opts *options, brw *converter.BundleReaderWriter) error {
-	b, err := brw.ReadBundleFile(ctx, opts.bundle)
+func runValidate(ctx context.Context, opts *options, brw *converter.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadBundleContents(ctx, brw.RW, gopt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
 	val := createValidatorFn(b)

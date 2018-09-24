@@ -31,16 +31,8 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 		Long:  "Apply patches for bundle customization provided the given options custom resources. See subcommands for patch usage.",
 	}
 
-	// Required patch flags
-	// Note: the paths to the bundle and options must be absolute when running with bazel.
-	cmd.PersistentFlags().StringVarP(&opts.bundlePath, "bundle", "b", "", "The path to the bundle to patch")
-	cmd.PersistentFlags().StringSliceVarP(&opts.optionsCRs, "options", "p", nil,
+	cmd.PersistentFlags().StringSliceVarP(&opts.optionsCRs, "options-resources", "p", nil,
 		"The yaml files containing the options custom resource(s) (comma separated)")
-
-	// Optional patch flags
-	// Note: the output directory path is required when running with bazel, and it must be absolute.
-	cmd.PersistentFlags().StringVarP(&opts.output, "output", "o", "bundle_patched.yaml",
-		"Where to output the patched bundle. By default it outputs to the current working directory")
 
 	bundleCmd := &cobra.Command{
 		Use:   "bundle",

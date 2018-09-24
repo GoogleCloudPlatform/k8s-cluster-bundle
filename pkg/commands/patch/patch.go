@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 
+	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
@@ -26,8 +27,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/patch"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
-
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
 // patcher provides an interface for patching overlays into a ClusterBundle for
@@ -44,10 +43,8 @@ type componentFinder interface {
 
 // options contain options flags for the bundle patch command.
 type options struct {
-	bundlePath string
 	optionsCRs []string
 	component  string
-	output     string
 }
 
 // opts is a global options flags instance for reference via the cobra command
@@ -55,9 +52,6 @@ type options struct {
 var opts = &options{}
 
 func validateBaseFlags() error {
-	if opts.bundlePath == "" {
-		return errors.New("a bundle yaml file must be specified")
-	}
 	if opts.optionsCRs == nil {
 		return errors.New("at least one yaml file for the options custom resources")
 	}
@@ -68,21 +62,19 @@ func bundleAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if err := validateBaseFlags(); err != nil {
 		cmdlib.ExitWithHelp(cmd, err.Error())
 	}
-
-	if err := runPatchBundle(ctx, opts, &core.LocalFileSystemReaderWriter{}); err != nil {
+	gopt := cmdlib.GlobalOptionsValues.Copy()
+	if err := runPatchBundle(ctx, opts, &core.LocalFileSystemReaderWriter{}, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runPatchBundle(ctx context.Context, opts *options, reader core.FileReaderWriter) error {
-	brw := &converter.BundleReaderWriter{reader}
-
-	b, err := brw.ReadBundleFile(ctx, opts.bundlePath)
+func runPatchBundle(ctx context.Context, opts *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	crs, err := readAllOptions(ctx, opts.optionsCRs, reader)
+	crs, err := readAllOptions(ctx, opts.optionsCRs, rw)
 	if err != nil {
 		return err
 	}
@@ -96,29 +88,27 @@ func runPatchBundle(ctx context.Context, opts *options, reader core.FileReaderWr
 	if err != nil {
 		return err
 	}
-	return brw.WriteBundleFile(ctx, opts.output, patched, cmdlib.DefaultFilePermissions)
+
+	return cmdlib.WriteStructuredContents(ctx, patched, rw, gopt)
 }
 
 func componentAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 	if err := validateBaseFlags(); err != nil {
 		cmdlib.ExitWithHelp(cmd, err.Error())
 	}
-
 	if opts.component == "" {
 		cmdlib.ExitWithHelp(cmd, "the name of the component to patch must be specified.")
 	}
-
-	if err := runPatchComponent(ctx, opts, &core.LocalFileSystemReaderWriter{}); err != nil {
+	gopt := cmdlib.GlobalOptionsValues.Copy()
+	if err := runPatchComponent(ctx, opts, &core.LocalFileSystemReaderWriter{}, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runPatchComponent(ctx context.Context, opts *options, rw core.FileReaderWriter) error {
-	brw := &converter.BundleReaderWriter{rw}
-
-	b, err := brw.ReadBundleFile(ctx, opts.bundlePath)
+func runPatchComponent(ctx context.Context, opts *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
 	crs, err := readAllOptions(ctx, opts.optionsCRs, rw)
@@ -146,11 +136,7 @@ func runPatchComponent(ctx context.Context, opts *options, rw core.FileReaderWri
 		return err
 	}
 
-	yaml, err := converter.Struct.ProtoToYAML(patched)
-	if err != nil {
-		return err
-	}
-	return rw.WriteFile(ctx, opts.output, yaml, cmdlib.DefaultFilePermissions)
+	return cmdlib.WriteStructuredContents(ctx, patched, rw, gopt)
 }
 
 // createFinderFn creates an componentFinder that operates on the given ClusterBundle.
