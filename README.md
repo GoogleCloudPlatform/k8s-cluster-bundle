@@ -34,10 +34,10 @@ are used to:
 
 ## Usage
 
-### Bundler CLI
+### Bundle CLI (bundlectl)
 
-Bundler is the name for the Bundle CLI and is the standard way for interacting
-with Bundles.
+`bundlectl` is the name for the Bundle CLI and is the standard way for interacting
+with Bundles. Install with `go install github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl`
 
 ### Validation
 
