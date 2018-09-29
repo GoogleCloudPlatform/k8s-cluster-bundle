@@ -14,7 +14,9 @@ go_library(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/core:go_default_library",
+        "//pkg/files:go_default_library",
         "//pkg/find:go_default_library",
+        "//vendor/github.com/golang/protobuf/proto:go_default_library",
     ],
 )
 
@@ -29,6 +31,8 @@ go_test(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
+        "//pkg/core:go_default_library",
         "//pkg/find:go_default_library",
+        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
     ],
 )

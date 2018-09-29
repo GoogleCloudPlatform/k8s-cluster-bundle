@@ -1,4 +1,4 @@
-#!/bin/bash
+# in the Go Language:!/bin/bash
 
 set -e
 

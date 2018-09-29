@@ -1,0 +1,7 @@
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+metadata:
+  name: 'ubuntu-cluster-node'
+kind: NodeConfig
+initFile: "echo 'I'm another script'"
+osImage:
+  url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'

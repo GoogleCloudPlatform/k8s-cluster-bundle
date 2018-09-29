@@ -24,7 +24,6 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 )
 
 const (
@@ -34,11 +33,15 @@ const (
 // Fake implementation of exporter for unit tests.
 type fakeExporter struct{}
 
-func (f *fakeExporter) Export(_ *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error) {
+func (f *fakeExporter) Export(compName string) (*bpb.ClusterComponent, error) {
 	if compName == invalidComponent {
 		return nil, fmt.Errorf("could not find cluster component named \"%v\"", compName)
 	}
-	return &transformer.ExportedComponent{Name: compName}, nil
+	return &bpb.ClusterComponent{
+		Metadata: &bpb.ObjectMeta{
+			Name: compName,
+		},
+	}, nil
 }
 
 func TestRunExport(t *testing.T) {

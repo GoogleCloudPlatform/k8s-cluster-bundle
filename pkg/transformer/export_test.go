@@ -20,8 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 const inlinedBundle = `
@@ -31,25 +32,23 @@ metadata:
   name: inlined-bundle
 spec:
   components:
-  - name: kubedns
+  - metadata:
+      name: kubedns
     clusterObjects:
-    - name: kubedns-service
-      inlined:
-        foo: bar
-    - name: kubedns-service-account
-      inlined:
-        biff: bam
-  - name: two-layer-app
+    - metadata:
+        name: kubedns-service
+    - metadata:
+        name: kubedns-service-account
+
+  - metadata:
+      name: two-layer-app
     clusterObjects:
-    - name: dynamic-control-plane-pod
-      inlined:
-        foo: bar
-    - name: user-space-pod-1
-      inlined:
-        biff: bam
-    - name: user-space-pod-2
-      inlined:
-        bar: baz
+    - metadata:
+        name: dynamic-control-plane-pod
+    - metadata:
+        name: user-space-pod-1
+    - metadata:
+        name: user-space-pod-2
 `
 
 const filesBundle = `
@@ -59,11 +58,10 @@ metadata:
   name: files-bundle
 spec:
   components:
-  - name: kube-apiserver
-    clusterObjects:
-    - name: kube-apiserver-pod
-      file:
-        url: 'file://path/to/kube_apiserver.yaml'
+  - metadata:
+      name: kube-apiserver
+    clusterObjectFiles:
+    - url: 'file://path/to/kube_apiserver.yaml'
 `
 
 func TestExport(t *testing.T) {
@@ -96,12 +94,6 @@ func TestExport(t *testing.T) {
 			compName:          "not-an-app",
 			expectErrContains: "not-an-app",
 		},
-		{
-			testName:          "bundle not inlined",
-			bundleYaml:        filesBundle,
-			compName:          "kube-apiserver",
-			expectErrContains: "not inlined",
-		},
 	}
 
 	for _, tc := range testcases {
@@ -116,7 +108,7 @@ func TestExport(t *testing.T) {
 				t.Fatalf("Error creating exporter for bundle %v: %v", bp, err)
 			}
 
-			comp, err := exporter.Export(bp, tc.compName)
+			comp, err := exporter.Export(tc.compName)
 			if tc.expectErrContains != "" {
 				if err == nil {
 					t.Fatalf("Export(%v, %q) should have returned an error but error was nil", bp, tc.compName)
@@ -130,23 +122,24 @@ func TestExport(t *testing.T) {
 				t.Fatalf("Export(%v, %v) returned unexpected error: %v", bp, tc.compName, err)
 			}
 
-			gotObjs := objectNames(comp.Objects)
+			gotObjs := objectNames(comp.ClusterObjects)
 			if len(gotObjs) != len(tc.expectedObjects) {
 				t.Errorf("Export(%v, %q) did not return the expected component, Got: %v, Want: %v", bp, tc.compName, gotObjs, tc.expectedObjects)
 			}
 
 			sort.Strings(gotObjs)
 			if !reflect.DeepEqual(gotObjs, tc.expectedObjects) {
-				t.Errorf("Export(%v, %q) did not return the expected objects for component %q, Got: %v, Want: %v", bp, tc.compName, comp.Name, gotObjs, tc.expectedObjects)
+				t.Errorf("Export(%v, %q) did not return the expected objects for component %q, Got: %v, Want: %v",
+					bp, tc.compName, comp.GetMetadata().GetName(), gotObjs, tc.expectedObjects)
 			}
 		})
 	}
 }
 
-func objectNames(obj []*bpb.ClusterObject) []string {
+func objectNames(obj []*structpb.Struct) []string {
 	var out []string
 	for _, o := range obj {
-		out = append(out, o.GetName())
+		out = append(out, core.ObjectName(o))
 	}
 	return out
 }

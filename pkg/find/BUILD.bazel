@@ -28,5 +28,6 @@ go_test(
     deps = [
         "//pkg/converter:go_default_library",
         "//pkg/core:go_default_library",
+        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
     ],
 )

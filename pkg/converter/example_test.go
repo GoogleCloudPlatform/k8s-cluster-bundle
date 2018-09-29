@@ -25,14 +25,14 @@ metadata:
   name: test-bundle
 spec:
   nodeConfigs:
-  - name: master
+  - metadata:
+      name: master
     initFile: "echo 'making a control plane'"
   components:
-  - name: kube-apiserver
-    clusterObjects:
-    - name: pod
-      file:
-        url: 'file://path/to/kube_apiserver.yaml'
+  - metadata:
+      name: kube-apiserver
+    clusterObjectFiles:
+    - url: 'file://path/to/kube_apiserver.yaml'
 `
 
 func TestBundleParse(t *testing.T) {

@@ -22,7 +22,7 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -31,7 +31,7 @@ import (
 // exporter provides an interface for exporting ClusterComponents from a
 // ClusterBundle.
 type exporter interface {
-	Export(b *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error)
+	Export(compName string) (*bpb.ClusterComponent, error)
 }
 
 type options struct {
@@ -46,7 +46,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 		cmdlib.ExitWithHelp(cmd, "Please provide at least one component to extract.")
 	}
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &core.LocalFileSystemReaderWriter{}
+	rw := &files.LocalFileSystemReaderWriter{}
 	if err := run(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
@@ -57,7 +57,7 @@ var createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
 	return transformer.NewComponentExporter(b)
 }
 
-func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
@@ -69,18 +69,14 @@ func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib
 	}
 
 	for _, comp := range o.components {
-		ea, err := exporter.Export(b, comp)
+		ea, err := exporter.Export(comp)
 		if err != nil {
 			return err
 		}
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
-		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.Name)
-		outComp := &bpb.ClusterComponent{
-			Name:           ea.Name,
-			ClusterObjects: ea.Objects,
-		}
-		bytes, err := converter.ClusterComponent.ProtoToYAML(outComp)
+		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())
+		bytes, err := converter.ClusterComponent.ProtoToYAML(ea)
 		if err != nil {
 			return err
 		}
@@ -88,7 +84,7 @@ func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib
 		if err != nil {
 			return err
 		}
-		log.Infof("Wrote file %q", ea.Name)
+		log.Infof("Wrote file %q", path)
 	}
 	return nil
 }

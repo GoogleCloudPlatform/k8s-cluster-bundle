@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(kashomon): This will probably need to be put in someplace different
-// than core, especially as we add more types of file readers. Perhaps 'files'.
-
-package core
+package files
 
 import (
 	"context"

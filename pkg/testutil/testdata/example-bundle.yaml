@@ -12,77 +12,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  optionsExamples:
-  - componentName: 'cluster-options'
-    objectName: 'options-defaults'
-
   nodeConfigs:
-  - name: 'ubuntu-control-plane'
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ClusterComponent
+    metadata:
+      name: 'ubuntu-control-plane'
     initFile: "echo 'I'm a script'"
     osImage:
       url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
     envVars:
       - name: FOO_VAR
         value: 'foo-val'
-  - name: 'ubuntu-cluster-node'
-    initFile: "echo 'I'm another script'"
-    osImage:
-      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+
+  # Externalized node configurations
+  nodeConfigFiles:
+  - url: 'file://ubuntu-cluster-node.yaml'
+
+  # Externalized components
+  componentFiles:
+  - url: 'file://etcd-component.yaml'
 
   components:
   #====================#
   # Core control plane #
   #====================#
-  - name: kubernetes-control-plane
-    version: '1.0'
-    clusterObjects:
-    - name: etcd-server-pod
-      file:
-        url: 'file://etcd-server.yaml'
-      patchFile:
-        url: 'file://etcd-server-patches.yaml'
-    - name: kube-apiserver-pod
-      file:
-        url: 'file://kube-apiserver.yaml'
-    - name: kube-scheduler-pod
-      file:
-        url: 'file://kube-scheduler.yaml'
-    - name: kube-controller-manager-pod
-      file:
-        url: 'file://kube-controller-manager.yaml'
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ClusterComponent
+    metadata:
+      name: kubernetes-control-plane
+    version: '11.0.0'
+    componentApiVersion: '1.9.7'
+    clusterObjectFiles:
+    - url: 'file://kube-apiserver.yaml'
+    - url: 'file://kube-scheduler.yaml'
+    - url: 'file://kube-controller-manager.yaml'
 
   #========#
   # Addons #
   #========#
-  - name: kubedns
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ClusterComponent
+    metadata:
+      name: kubedns
     version: '2.0'
-    clusterObjects:
-    - name: kubedns-service
-      file:
-        url: 'file://kubedns/service.yaml'
-    - name: kubedns-service-account
-      file:
-        url: 'file://kubedns/service-account.yaml'
-    - name: kubedns-config-map
-      file:
-        url: 'file://kubedns/config-map.yaml'
-    - name: kubedns-deployment
-      file:
-        url: 'file://kubedns/deployment.yaml'
+    clusterObjectFiles:
+    - url: 'file://kubedns/service.yaml'
+    - url: 'file://kubedns/service-account.yaml'
+    - url: 'file://kubedns/config-map.yaml'
+    - url: 'file://kubedns/deployment.yaml'
 
   #=========#
-  # Options #
+  # options #
   #=========#
-  - name: 'cluster-options'
-    clusterObjects:
-    - name: 'options-example'
-      file:
-        url: 'file://options-example.yaml'
-    - name: 'options-crd'
-      file:
-        url: 'file://options-crd.yaml'
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ClusterComponent
+    metadata:
+      name: options
+    version: '2.0'
+    clusterObjectFiles:
+    - url: 'file://options-example.yaml'
+    - url: 'file://options-crd.yaml'

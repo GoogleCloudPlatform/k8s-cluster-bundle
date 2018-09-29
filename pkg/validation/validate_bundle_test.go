@@ -45,8 +45,10 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   nodeConfigs:
-  - name: masterNode
-  - name: masterNode`,
+  - metadata:
+      name: masterNode
+  - metadata:
+      name: masterNode`,
 			errSubstring: "duplicate node config",
 		},
 
@@ -58,41 +60,67 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - name: coolApp
-  - name: coolApp`,
+  - metadata:
+      name: coolApp
+  - metadata:
+      name: coolApp`,
 			errSubstring: "duplicate cluster component key",
 		},
 
 		{
-			desc: "fail: duplicated cluster component key",
+			desc: "fail: api version on cluster obj",
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - name: coolApp1
+  - metadata:
+      name: coolApp1
     clusterObjects:
-    - name: pod
-    - name: pod`,
-			errSubstring: "duplicate cluster component object key",
+    - metadata:
+        name: pod
+      kind: zed`,
+			errSubstring: "must always have an API Version",
 		},
 
 		{
-			desc: "fail: no options custom resource",
+			desc: "fail: no kind on cluster obj",
 			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  optionsExamples:
-  - componentName: foo
-    objectName: bar
   components:
-  - name: coolApp1
+  - metadata:
+      name: coolApp1
     clusterObjects:
-    - name: pod`,
-			errSubstring: "options specified with cluster component",
+    - metadata:
+        name: pod
+      apiVersion: zed`,
+			errSubstring: "must always have a kind",
+		},
+
+		{
+			desc: "fail: duplicate object ref",
+			bundle: `apiVersion: 'bundle.k8s.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  components:
+  - metadata:
+      name: coolApp1
+    clusterObjects:
+    - metadata:
+        name: pod
+      apiVersion: zed,
+      kind: zork
+    - metadata:
+        name: pod
+      apiVersion: zed,
+      kind: zork`,
+			errSubstring: "duplicate cluster object found",
 		},
 	}
 

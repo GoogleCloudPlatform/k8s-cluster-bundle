@@ -8,13 +8,13 @@ go_library(
         "converter.go",
         "doc.go",
         "kube.go",
-        "object_ref.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/core:go_default_library",
+        "//pkg/files:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/golang/protobuf/jsonpb:go_default_library",
         "//vendor/github.com/golang/protobuf/proto:go_default_library",
@@ -30,14 +30,10 @@ go_test(
         "converter_test.go",
         "example_test.go",
         "kube_test.go",
-        "object_ref_test.go",
     ],
     data = [
         "//pkg/testutil:bundle_testdata",
     ],
     embed = [":go_default_library"],
-    deps = [
-        "//pkg/core:go_default_library",
-        "//pkg/testutil:go_default_library",
-    ],
+    deps = ["//pkg/testutil:go_default_library"],
 )

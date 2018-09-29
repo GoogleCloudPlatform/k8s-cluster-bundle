@@ -93,10 +93,9 @@ func (b *ImageFinder) WalkContainerImages(st *structpb.Struct, fn func(img strin
 // recommend that the Bundle be cloned.
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		compName := ca.GetName()
-		for _, co := range ca.GetClusterObjects() {
-			objName := co.GetName()
-			obj := co.GetInlined()
+		compName := ca.GetMetadata().GetName()
+		for _, obj := range ca.GetClusterObjects() {
+			objName := core.ObjectName(obj)
 			if obj == nil {
 				continue
 			}
@@ -169,7 +168,7 @@ func (b *ImageFinder) NodeImages() []*NodeImage {
 // recommend that the Bundle be cloned.
 func (b *ImageFinder) WalkNodeImages(fn func(configName string, img string) string) {
 	for _, config := range b.Bundle.GetSpec().GetNodeConfigs() {
-		configName := config.GetName()
+		configName := config.GetMetadata().GetName()
 		if url := config.GetOsImage().GetUrl(); url != "" {
 			ret := fn(configName, url)
 			if ret != url {
