@@ -26,18 +26,26 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   nodeConfigs:
-  - name: masterNode
+  - metadata:
+      name: masterNode
     initFile: "echo 'I'm a script'"
-  - name: userNode
+  - metadata:
+      name: userNode
     initFile: "echo 'I'm another script'"
   components:
-  - name: etcd-server
+  - metadata:
+      name: etcd-server
     clusterObjects:
-    - name: pod
-    - name: dwerp
-  - name: kube-apiserver
+    - metadata:
+        name: pod
+    - metadata:
+        name: dwerp
+
+  - metadata:
+      name: kube-apiserver
     clusterObjects:
-    - name: pod
+    - metadata:
+        name: pod
 `
 
 func TestBundleFinder(t *testing.T) {

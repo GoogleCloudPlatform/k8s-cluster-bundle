@@ -99,10 +99,10 @@ func TestInlineBundle(t *testing.T) {
 	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
-	if got := finder.ClusterComponentObject("kube-apiserver", "pod").GetInlined().GetFields()["biff"].GetStringValue(); got != "bam" {
+	if got := finder.ClusterComponentObject("kube-apiserver", "pod").GetInline().GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
-	if got := finder.ClusterComponentObject("kubelet-config", "kubelet-config-pod").GetInlined().GetFields()["foo"].GetStringValue(); got != "bar" {
+	if got := finder.ClusterComponentObject("kubelet-config", "kubelet-config-pod").GetInline().GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bar")
 	}
 }

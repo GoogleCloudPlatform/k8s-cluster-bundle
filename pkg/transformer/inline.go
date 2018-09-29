@@ -17,11 +17,13 @@ package transformer
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/golang/protobuf/proto"
 )
 
 // Inliner inlines bundle files by reading them from the local or a remote
@@ -55,9 +57,19 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 		// Everything is trivially inlined!
 		return b, nil
 	}
+
+	// First, process any cluster component files or node config files.
+	if err := n.processClusterComponentFiles(ctx, b); err != nil {
+		return nil, err
+	}
+
+	if err := n.processNodeConfigFiles(ctx, b); err != nil {
+		return nil, err
+	}
+
 	// Process all node-bootstrap files.
 	for _, v := range spec.GetNodeConfigs() {
-		k := v.GetName()
+		k := v.Metadata().GetName()
 		if v.GetExternalInitFile() != nil {
 			contents, err := n.ReadFilePB(ctx, v.GetExternalInitFile())
 			if err != nil {
@@ -67,43 +79,68 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 		}
 	}
 
-	// Process all the cluster component files.
+	// Process all the cluster object files.
 	for _, v := range spec.GetComponents() {
-		k := v.GetName()
-		if err := n.processClusterComponent(ctx, k, v); err != nil {
+		k := v.GetMetadata().GetName()
+		if err := n.processClusterObjects(ctx, k, v); err != nil {
 			return nil, err
 		}
 	}
 	return b, nil
 }
 
-func (n *Inliner) processClusterComponent(ctx context.Context, k string, b *bpb.ClusterComponent) error {
-	for _, co := range b.GetClusterObjects() {
-		kco := co.GetName()
-		if co.GetFile() != nil {
-			contents, err := n.ReadFilePB(ctx, co.GetFile())
-			if err != nil {
-				return fmt.Errorf("error reading cluster app object for app %q and object %q: %v", k, kco, err)
-			}
-			pb, err := converter.Struct.YAMLToProto(contents)
-			if err != nil {
-				return fmt.Errorf("error converting cluster app object for app %q and object %q: %v", k, kco, err)
-			}
-			co.KubeData = &bpb.ClusterObject_Inlined{converter.ToStruct(pb)}
-		}
-
-		if co.GetPatchFile() != nil {
-			contents, err := n.ReadFilePB(ctx, co.GetPatchFile())
-			if err != nil {
-				return fmt.Errorf("error reading patch file for app %q and object %q: %v", k, kco, err)
-			}
-			pb, err := converter.PatchCollection.YAMLToProto(contents)
-			if err != nil {
-				return fmt.Errorf("error converting patch collection for app %q and object %q: %v", k, kco, err)
-			}
-			co.PatchData = &bpb.ClusterObject_PatchCollection{converter.ToPatchCollection(pb)}
-		}
+func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *converter.Converter) (proto.Message, error) {
+	contents, err := n.ReadFilePB(ctx, file)
+	if err != nil {
+		return fmt.Errorf("error reading file %q: %v", file.GetUrl(), err)
 	}
+	ext := filepath.Ext(file.GetUrl())
+	switch ext {
+	case ext == ".yaml":
+		return conv.YAMLToProto(contents)
+	case ext == ".json":
+		return conv.JSONToProto(contents)
+	default:
+		return conv.YAMLToProto(contents)
+	}
+}
+
+func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ClusterComponent) error {
+	for _, cf := range b.GetClusterObjectFiles() {
+		pb, err := n.readFileToProto(ctx, cf, converter.Struct)
+		if err != nil {
+			return fmt.Errorf("error reading component object for component %q: %v", compName, err)
+		}
+		b.ClusterObjects = append(b.ClusterObjects, converter.ToStruct(pb))
+	}
+	var emptyFiles []*bpb.File
+	b.ClusterObjectFiles = emptyFiles
+	return nil
+}
+
+func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+	for _, cf := range b.GetComponentFiles() {
+		pb, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
+		if err != nil {
+			return fmt.Errorf("error reading component: %v", err)
+		}
+		b.Components = append(b.components, converter.ToClusterComponent(pb))
+	}
+	var emptyFiles []*bpb.File
+	b.ComponentFiles = emptyFiles
+	return nil
+}
+
+func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+	for _, cf := range b.GetNodeConfigFiles() {
+		pb, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
+		if err != nil {
+			return fmt.Errorf("error reading node config: %v", err)
+		}
+		b.Components = append(b.components, converter.ToClusterComponent(pb))
+	}
+	var emptyFiles []*bpb.File
+	b.NodeConfigFiles = emptyFiles
 	return nil
 }
 

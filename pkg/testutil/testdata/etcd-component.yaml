@@ -1,0 +1,8 @@
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: etcd-component
+version: '30.0.2'
+componentApiVersion: '3.1'
+clusterObjectFiles:
+- url: 'file://etcd-server.yaml'

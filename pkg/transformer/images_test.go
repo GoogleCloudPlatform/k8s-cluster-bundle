@@ -43,10 +43,11 @@ spec:
   - name: 'ubuntu-cluster-node-no-image'
     initFile: "echo 'I'm another script'"
   components:
-  - name: logger
+  - metadata:
+      name: logger
     clusterObjects:
     - name: logger-pod
-      inlined:
+      inline:
         apiVersion: v1
         kind: Pod
         metadata:
@@ -64,18 +65,18 @@ spec:
             command:
                - /chopper
                - --logtostderr
-  - name: zap
+  - metadata:
+      name: zap
     clusterObjects:
-    - name: zap
-      inlined:
+    - inline:
         apiVersion: v1
         kind: Pod
         metadata:
-          name: zap-pod
-  - name: dap
+          name: zap
+  - metadata:
+      name: dap
     clusterObjects:
-    - name: dap
-      inlined:
+    - inline:
         apiVersion: v1
         kind: Pod
         metadata:

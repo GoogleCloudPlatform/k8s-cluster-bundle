@@ -19,6 +19,7 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 // ExportedComponent is a ClusterComponent that has been extracted from a ClusterBundle.
@@ -27,7 +28,7 @@ type ExportedComponent struct {
 	Name string
 
 	// Objects represent the cluster objects.
-	Objects []*bpb.ClusterObject
+	Objects []*structpb.Struct
 }
 
 // ComponentExporter is a struct that exports cluster components.
@@ -61,11 +62,7 @@ func (e *ComponentExporter) Export(b *bpb.ClusterBundle, compName string) (*Expo
 		return nil, fmt.Errorf("no cluster objects found for component %q", compName)
 	}
 
-	for _, co := range objs {
-		if co.GetInlined() == nil {
-			return nil, fmt.Errorf("cluster object %q is not inlined for component %q", co.GetName(), compName)
-		}
-	}
+	// TODO(kashomon): Should this also inline and deal with these files.?
 
 	return &ExportedComponent{
 		Name:    compName,

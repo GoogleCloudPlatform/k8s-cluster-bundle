@@ -32,11 +32,8 @@ var (
 	// ClusterComponent is a converter for ClusterComponent protos.
 	ClusterComponent = &Converter{&bpb.ClusterComponent{}}
 
-	// Patch is a converter for Patch protos.
-	Patch = &Converter{&bpb.Patch{}}
-
-	// PatchCollection is a converter for Patch protos.
-	PatchCollection = &Converter{&bpb.PatchCollection{}}
+	// NodeConfig is a converter for NodeConfig protos.
+	NodeConfig = &Converter{&bpb.NodeConfig{}}
 
 	// Struct is a converter for Struct protos.
 	Struct = &Converter{&structpb.Struct{}}
@@ -52,31 +49,14 @@ func ToClusterComponent(msg proto.Message) *bpb.ClusterComponent {
 	return msg.(*bpb.ClusterComponent)
 }
 
-// ToPatch is a type converter for converting a proto to an Patch.
-func ToPatch(msg proto.Message) *bpb.Patch {
-	return msg.(*bpb.Patch)
-}
-
-// ToPatchCollection is a type converter for converting a proto to an
-// PatchCollection.
-func ToPatchCollection(msg proto.Message) *bpb.PatchCollection {
-	return msg.(*bpb.PatchCollection)
-}
-
-// ToStruct is a type converter for converting a proto to an Struct.
+// ToStruct is a type converter for converting a proto to a Struct.
 func ToStruct(msg proto.Message) *structpb.Struct {
 	return msg.(*structpb.Struct)
 }
 
-// KubeResourceYAMLToMap converts a Kubernetes Resource YAML to a map of string to interface.
-// Custom Resources can have arbitrary fields, and we will not have defined structs for each
-// options CR to decouple the existence of options CRs from the bundle library. The YAML will be
-// parsed into a map so it allows for accessing arbitrary fields.
-// TODO: parse CustomResource into a RawExtension instead of a map.
-func KubeResourceYAMLToMap(contents []byte) (map[string]interface{}, error) {
-	var cr map[string]interface{}
-	err := yaml.Unmarshal([]byte(contents), &cr)
-	return cr, err
+// ToNodeConfig is a type converter for converting a proto to a NodeConfig.
+func ToNodeConfig(msg proto.Message) *bpb.NodeConfig {
+	return msg.(*bpb.NodeConfig)
 }
 
 // Converter is a generic struct that knows how to convert between textpb,

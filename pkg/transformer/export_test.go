@@ -22,6 +22,7 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 const inlinedBundle = `
@@ -31,25 +32,27 @@ metadata:
   name: inlined-bundle
 spec:
   components:
-  - name: kubedns
+  - metadata:
+      name: kubedns
     clusterObjects:
-    - name: kubedns-service
-      inlined:
-        foo: bar
-    - name: kubedns-service-account
-      inlined:
-        biff: bam
-  - name: two-layer-app
+    - inline:
+        metadata:
+          name: kubedns-service
+    - inline:
+        metadata:
+          name: kubedns-service-account
+  - metadata:
+      name: two-layer-app
     clusterObjects:
-    - name: dynamic-control-plane-pod
-      inlined:
-        foo: bar
-    - name: user-space-pod-1
-      inlined:
-        biff: bam
-    - name: user-space-pod-2
-      inlined:
-        bar: baz
+    - inline:
+        metadata:
+          name: dynamic-control-plane-pod
+    - inline:
+        metadata:
+          name: user-space-pod-1
+    - inline:
+        metadata:
+          name: user-space-pod-2
 `
 
 const filesBundle = `
@@ -59,10 +62,10 @@ metadata:
   name: files-bundle
 spec:
   components:
-  - name: kube-apiserver
+  - metadata:
+      name: kube-apiserver
     clusterObjects:
-    - name: kube-apiserver-pod
-      file:
+    - file:
         url: 'file://path/to/kube_apiserver.yaml'
 `
 
@@ -146,7 +149,7 @@ func TestExport(t *testing.T) {
 func objectNames(obj []*bpb.ClusterObject) []string {
 	var out []string
 	for _, o := range obj {
-		out = append(out, o.GetName())
+		out = append(out, core.ObjectName(o))
 	}
 	return out
 }

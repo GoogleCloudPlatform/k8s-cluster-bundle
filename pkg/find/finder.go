@@ -20,6 +20,7 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 // BundleFinder is a wrapper which allows for efficient searching through
@@ -29,35 +30,33 @@ type BundleFinder struct {
 	bundle        *bpb.ClusterBundle
 	nodeLookup    map[string]*bpb.NodeConfig
 	compLookup    map[string]*bpb.ClusterComponent
-	compObjLookup map[core.ClusterObjectKey]*bpb.ClusterObject
+	compObjLookup map[core.ClusterObjectKey]*structpb.Struct
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
 func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	b = converter.CloneBundle(b)
-	// TODO: we assume the bundle is in a correct state at this point.
-	// should we? Should we validate here?
 	nodeConfigs := make(map[string]*bpb.NodeConfig)
 	for _, nc := range b.GetSpec().GetNodeConfigs() {
-		n := nc.GetName()
+		n := nc.GetMetadata().GetName()
 		if n == "" {
-			return nil, fmt.Errorf("node bootstrap configs must always have a name. was empty for %v", nc)
+			return nil, fmt.Errorf("node bootstrap configs must always have a metadata.name. was empty for %v", nc)
 		}
 		nodeConfigs[n] = nc
 	}
 
 	compConfigs := make(map[string]*bpb.ClusterComponent)
-	compObjLookup := make(map[core.ClusterObjectKey]*bpb.ClusterObject)
+	compObjLookup := make(map[core.ClusterObjectKey]*structpb.Struct)
 	for _, ca := range b.GetSpec().GetComponents() {
-		n := ca.GetName()
+		n := ca.GetMetadata().GetName()
 		if n == "" {
-			return nil, fmt.Errorf("cluster components must always have a name. was empty for %v", ca)
+			return nil, fmt.Errorf("cluster components must always have a metadata.name. was empty for %v", ca)
 		}
 		compConfigs[n] = ca
 		for _, co := range ca.GetClusterObjects() {
-			con := co.GetName()
+			con := core.ObjectName(co)
 			if con == "" {
-				return nil, fmt.Errorf("cluster component objects must always have a name. was empty for object %v in component %q", co, n)
+				return nil, fmt.Errorf("cluster component objects must always have a metadata.name. was empty for object %v in component %q", co, n)
 			}
 			compObjLookup[core.ClusterObjectKey{n, con}] = co
 		}
@@ -82,6 +81,6 @@ func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 }
 
 // ClusterComponentObject returns a ClusterComponent's Cluster object or nil.
-func (b *BundleFinder) ClusterComponentObject(compName string, objName string) *bpb.ClusterObject {
+func (b *BundleFinder) ClusterComponentObject(compName string, objName string) *structpb.Struct {
 	return b.compObjLookup[core.ClusterObjectKey{compName, objName}]
 }

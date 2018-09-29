@@ -166,47 +166,44 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - name: logger
+  - metadata:
+      name: logger
     clusterObjects:
-    - name: logger-pod
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: logger-pod
-        spec:
-          dnsPolicy: Default
-          containers:
-          - name: logger
-            image: gcr.io/floof/logger
-            command:
-               - /logger
-               - --logtostderr
-          - name: chopper
-            image: gcr.io/floof/chopper
-            command:
-               - /chopper
-               - --logtostderr
-  - name: zap
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: Default
+        containers:
+        - name: logger
+          image: gcr.io/floof/logger
+          command:
+             - /logger
+             - --logtostderr
+        - name: chopper
+          image: gcr.io/floof/chopper
+          command:
+             - /chopper
+             - --logtostderr
+  - metadata:
+      name: zap
     clusterObjects:
-    - name: zap
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: zap-pod
-  - name: dap
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap-pod
+  - metadata:
+      name: dap
     clusterObjects:
-    - name: dap
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: dap-pod
-        spec:
-          containers:
-          - name: dapper
-            image: gcr.io/floof/dapper`
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: dap
+      spec:
+        containers:
+        - name: dapper
+          image: gcr.io/floof/dapper`
 
 func TestImageFinder_Bundle(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExample))
@@ -246,18 +243,21 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   nodeConfigs:
-  - name: 'ubuntu-control-plane'
+  - metadata:
+      name: 'ubuntu-control-plane'
     initFile: "echo 'I'm a script'"
     osImage:
       url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
     envVars:
       - name: FOO_VAR
         value: 'foo-val'
-  - name: 'ubuntu-cluster-node'
+  - metadata:
+      name: 'ubuntu-cluster-node'
     initFile: "echo 'I'm another script'"
     osImage:
       url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-  - name: 'ubuntu-cluster-node-no-image'
+  - metadata:
+      name: 'ubuntu-cluster-node-no-image'
     initFile: "echo 'I'm another script'"`
 
 func TestImageFinder_NodeImages(t *testing.T) {
@@ -288,63 +288,64 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   nodeConfigs:
-  - name: 'ubuntu-control-plane'
+  - metadata:
+      name: 'ubuntu-control-plane'
     initFile: "echo 'I'm a script'"
     osImage:
       url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
     envVars:
       - name: FOO_VAR
         value: 'foo-val'
-  - name: 'ubuntu-cluster-node'
+  - metadata:
+      name: 'ubuntu-cluster-node'
     initFile: "echo 'I'm another script'"
     osImage:
       url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-  - name: 'ubuntu-cluster-node-no-image'
+  - metadata:
+      name: 'ubuntu-cluster-node-no-image'
     initFile: "echo 'I'm another script'"
+
   components:
-  - name: logger
+  - metadata:
+      name: logger
     clusterObjects:
-    - name: logger-pod
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: logger-pod
-        spec:
-          dnsPolicy: Default
-          containers:
-          - name: logger
-            image: gcr.io/floof/logger
-            command:
-               - /logger
-               - --logtostderr
-          - name: chopper
-            image: gcr.io/floof/chopper
-            command:
-               - /chopper
-               - --logtostderr
-  - name: zap
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: Default
+        containers:
+        - name: logger
+          image: gcr.io/floof/logger
+          command:
+             - /logger
+             - --logtostderr
+        - name: chopper
+          image: gcr.io/floof/chopper
+          command:
+             - /chopper
+             - --logtostderr
+  - metadata:
+      name: zap
     clusterObjects:
-    - name: zap
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: zap-pod
-  - name: dap
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap-pod
+  - metadata:
+      name: dap
     clusterObjects:
-    - name: dap
-      inlined:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: dap-pod
-        spec:
-          containers:
-          - name: dapper
-            image: gcr.io/floof/dapper
-          - name: verydapper
-            image: gcr.io/floof/dapper`
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: dap
+      spec:
+        containers:
+        - name: dapper
+          image: gcr.io/floof/dapper
+        - name: verydapper
+          image: gcr.io/floof/dapper`
 
 func TestImageFinder_AllFlattened(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleAll))

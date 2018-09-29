@@ -15,7 +15,7 @@
 package core
 
 import (
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 // ClusterObjectKey is a key representing a specific cluster object.
@@ -29,50 +29,46 @@ type ClusterObjectKey struct {
 
 var EmptyClusterObjectKey = ClusterObjectKey{}
 
-// ClusterObjectKeyFromProto creates a non-pointer ClusterObjectKey from a
-// proto.
-func ClusterObjectKeyFromProto(k *bpb.ClusterObjectKey) ClusterObjectKey {
-	return ClusterObjectKey{
-		ComponentName: k.GetComponentName(),
-		ObjectName:    k.GetObjectName(),
-	}
-}
-
-// ToProto creates a ClusterObjectKey proto from a ClusterObjectKey value.
-func (k ClusterObjectKey) ToProto() *bpb.ClusterObjectKey {
-	return &bpb.ClusterObjectKey{
-		ComponentName: k.ComponentName,
-		ObjectName:    k.ObjectName,
-	}
-}
-
 // ObjectReference is a stripped-down version of the Kubernetes corev1.ObjectReference type.
 type ObjectReference struct {
-	// The API Version for an Object
+	// The API Version for an Object.
 	APIVersion string
 
-	// The Kind for an Object
+	// The Kind for an Object.
 	Kind string
 
-	// The Name of an Object
+	// The Name of an Object.
 	Name string
 }
 
-// ClusterObjectKeyFromProto creates a non-pointer ClusterObjectKey from a
-// proto.
-func ObjectReferenceFromProto(k *bpb.ObjectReference) ObjectReference {
-	return ObjectReference{
-		APIVersion: k.GetApiVersion(),
-		Kind:       k.GetKind(),
-		Name:       k.GetName(),
+// ObjectName gets the Object name from a cluster object.
+func ObjectName(obj *structpb.Struct) string {
+	meta := obj.GetFields()["metadata"]
+	if meta == nil {
+		return ""
 	}
+	metaval := meta.GetStructValue()
+	name := metaval.GetFields()["name"]
+	if name == nil {
+		return ""
+	}
+	return name.GetStringValue()
 }
 
-// ToProto creates a ObjectReference proto from a ObjectReference value.
-func (k ObjectReference) ToProto() *bpb.ObjectReference {
-	return &bpb.ObjectReference{
-		ApiVersion: k.APIVersion,
-		Kind:       k.Kind,
-		Name:       k.Name,
+// ObjectName gets the Object name from a cluster object.
+func ObjectKind(obj *structpb.Struct) string {
+	kind := obj.GetFields()["kind"]
+	if kind == nil {
+		return ""
 	}
+	return kind.GetStringValue()
+}
+
+// ObjectName gets the Object name from a cluster object.
+func ObjectAPIVersion(obj *structpb.Struct) string {
+	apiVersion := obj.GetFields()["apiVersion"]
+	if apiVersion == nil {
+		return ""
+	}
+	return apiVersion.GetStringValue()
 }

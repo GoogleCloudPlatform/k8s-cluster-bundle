@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 // BundleValidator validates bundles.
@@ -61,7 +62,7 @@ func (b *BundleValidator) validateClusterComponentNames() []error {
 	var errs []error
 	objCollect := make(map[string]*bpb.ClusterComponent)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		n := ca.GetName()
+		n := ca.GetMetadata().GetName()
 		if n == "" {
 			errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for config %v", ca))
 			continue
@@ -85,12 +86,12 @@ func (b *BundleValidator) validateClusterObjNames() []error {
 	var errs []error
 	compObjects := make(map[compObjKey]*bpb.ClusterObject)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		compName := ca.GetName()
+		compName := ca.GetMetadata().GetName()
 		objCollect := make(map[string]*bpb.ClusterObject)
 		for _, obj := range ca.GetClusterObjects() {
-			n := obj.GetName()
+			n := core.ObjectName(obj)
 			if n == "" {
-				errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for component %q", compName))
+				errs = append(errs, fmt.Errorf("cluster components must always have a metadata.name. was empty for component %q", compName))
 				continue
 			}
 			if _, ok := objCollect[n]; ok {
@@ -104,18 +105,6 @@ func (b *BundleValidator) validateClusterObjNames() []error {
 			}
 			objCollect[n] = obj
 			compObjects[compObjKey{compName: compName, objName: n}] = obj
-		}
-	}
-	return append(errs, b.validateClusterOptionsKeys(compObjects)...)
-}
-
-func (b *BundleValidator) validateClusterOptionsKeys(compObjects map[compObjKey]*bpb.ClusterObject) []error {
-	var errs []error
-	for _, key := range b.Bundle.GetSpec().GetOptionsExamples() {
-		compObjKey := compObjKey{key.GetComponentName(), key.GetObjectName()}
-		if _, ok := compObjects[compObjKey]; !ok {
-			errs = append(errs, fmt.Errorf("options specified with cluster component name %q and object name %q was not found", key.GetComponentName(), key.GetObjectName()))
-			continue
 		}
 	}
 	return errs

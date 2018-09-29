@@ -28,30 +28,3 @@ message File {
   // binary/file.
   string hash = 2;
 }
-
-// Object reference for Kubernetes types. For example, if a Kubernetes
-// object begins with:
-//
-//   apiVersion: apps/v1
-//   kind: StatefulSet
-//   metadata: ...
-//     name: foo
-//   spec: ...
-//
-// The corresponding ObjectReferenc (or ObjectRef) would be:
-//
-//   {apiVersion: 'apps/v1', kind: 'StatefulSet', name: 'foo'}
-message ObjectReference {
-  string api_version = 1;
-  string kind = 2;
-  string name = 3;
-}
-
-// A key for retrieving a specific cluster object.
-message ClusterObjectKey {
-  // Name of the cluster component.
-  string component_name = 1;
-
-  // Name of the cluster object within the component.
-  string object_name = 2;
-}
