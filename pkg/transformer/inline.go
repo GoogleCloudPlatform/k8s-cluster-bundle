@@ -33,6 +33,13 @@ type Inliner struct {
 	Reader core.FilePBReader
 }
 
+// InlineOptions are options to give to the inliner.
+type InlineOptions struct {
+	// TopLayerOnly inlines the components and node configuration files and stops
+	// there.
+	TopLayerOnly bool
+}
+
 // NewInliner creates a new inliner. If the bundle is stored on disk, the cwd
 // should be the absolute path to the directory containing the bundle file on disk.
 func NewInliner(cwd string) *Inliner {
@@ -47,7 +54,7 @@ func NewInliner(cwd string) *Inliner {
 // inline-references. Thus, the returned bundle is a copy with the
 // file-references removed. This doesn't apply to binary images, which are left
 // as-is.
-func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.ClusterBundle, error) {
+func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineOptions) (*bpb.ClusterBundle, error) {
 	// TODO: Rewrite this so it can be inlined concurrently. This is less
 	// important for inlining local files and more important for inlining
 	// external files.
@@ -65,6 +72,10 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 
 	if err := n.processNodeConfigFiles(ctx, b); err != nil {
 		return nil, err
+	}
+
+	if opt.TopLayerOnly {
+		return b, nil
 	}
 
 	// Process all node-bootstrap files.
@@ -123,7 +134,7 @@ func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.Clust
 			compUrl := cf.GetUrl()
 			objUrl := ocf.GetUrl()
 			if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
-				ocf.Url = "file://" + filepath.Join(shortFileUrl(compUrl), shortFileUrl(objUrl))
+				ocf.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(objUrl))
 			}
 		}
 
@@ -150,7 +161,7 @@ func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBund
 		cfgUrl := cf.GetUrl()
 		extInit := cfg.GetExternalInitFile()
 		if extInit != nil && strings.HasPrefix(cfgUrl, "file://") && strings.HasPrefix(extInit.GetUrl(), "file://") {
-			extInit.Url = "file://" + filepath.Join(shortFileUrl(cfgUrl), shortFileUrl(extInit.GetUrl()))
+			extInit.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(cfgUrl)), shortFileUrl(extInit.GetUrl()))
 		}
 		b.GetSpec().NodeConfigs = append(b.GetSpec().NodeConfigs, cfg)
 	}

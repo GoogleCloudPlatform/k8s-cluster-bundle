@@ -53,6 +53,8 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline the bundle before processing")
+	rootCmd.PersistentFlags().BoolVarP(
+		&cmdlib.GlobalOptionsValues.TopLayerInlineOnly, "only-inline-top", "", false, "Whether to inline just the top layer of the bundle (node config and component files)")
 
 	export.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)

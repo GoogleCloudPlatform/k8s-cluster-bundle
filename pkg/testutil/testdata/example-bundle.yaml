@@ -67,12 +67,12 @@ spec:
     - url: 'file://kubedns/deployment.yaml'
 
   #=========#
-  # ptions #
+  # options #
   #=========#
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
     kind: ClusterComponent
     metadata:
-      name: kubedns
+      name: options
     version: '2.0'
     clusterObjectFiles:
     - url: 'file://options-example.yaml'

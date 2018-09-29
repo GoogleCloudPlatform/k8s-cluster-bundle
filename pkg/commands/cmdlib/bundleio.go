@@ -51,7 +51,6 @@ func ReadBundleContents(ctx context.Context, rw core.FileReaderWriter, g *Global
 		if err := scanner.Err(); err != nil {
 			return nil, err
 		}
-		// fmt.Printf("----------STDIN-------\n%v\n", string(bytes))
 	}
 
 	b, err := convertBundle(ctx, bytes, rw, g)
@@ -61,7 +60,10 @@ func ReadBundleContents(ctx context.Context, rw core.FileReaderWriter, g *Global
 
 	// For now, we can only inline bundle files because we need the path context.
 	if g.Inline && g.BundleFile != "" {
-		return inlineBundle(ctx, b, g.BundleFile, rw)
+		opts := &transformer.InlineOptions{
+			TopLayerOnly: g.TopLayerInlineOnly,
+		}
+		return inlineBundle(ctx, b, g.BundleFile, rw, opts)
 	}
 	return b, nil
 }
@@ -85,14 +87,14 @@ func convertBundle(ctx context.Context, bytes []byte, rw core.FileReaderWriter, 
 }
 
 // inlineBundle inlines a cluster bundle before processing
-func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw core.FileReaderWriter) (*bpb.ClusterBundle, error) {
+func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw core.FileReaderWriter, opts *transformer.InlineOptions) (*bpb.ClusterBundle, error) {
 	inliner := &transformer.Inliner{
 		&core.LocalFilePBReader{
 			WorkingDir: filepath.Dir(path),
 			Rdr:        rw,
 		},
 	}
-	return inliner.Inline(ctx, b)
+	return inliner.Inline(ctx, b, opts)
 }
 
 // WriteContentsStructured writes some structured contents. The contents must be serializable to both JSON and YAML.

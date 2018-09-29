@@ -52,6 +52,12 @@ const (
 	kubeletConfigFile = "path/to/kubelet/config.yaml"
 	kubeAPIServerFile = "path/to/kube_apiserver.yaml"
 
+	parentInitScriptFile    = "parent/path/to/init-script.sh"
+	parentKubeAPIServerFile = "parent/path/to/kube_apiserver.yaml"
+
+	nodeCfgFile = "parent/some_node_config.yaml"
+	compFile    = "parent/kube_apiserver_component.yaml"
+
 	initScriptContents = "#!/bin/bash\necho foo"
 )
 
@@ -62,15 +68,34 @@ func (*fakeLocalReader) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte,
 	if strings.HasPrefix(url, "file://") {
 		url = strings.TrimPrefix(url, "file://")
 	}
-	switch {
-	case url == initScriptFile:
+	switch url {
+	case parentInitScriptFile:
+		fallthrough
+	case initScriptFile:
 		return []byte(initScriptContents), nil
 
-	case url == kubeletConfigFile:
+	case kubeletConfigFile:
 		return []byte("{\"metadata\": { \"name\": \"foobar\"}, \"foo\": \"bar\"}"), nil
 
-	case url == kubeAPIServerFile:
+	case parentKubeAPIServerFile:
+		fallthrough
+	case kubeAPIServerFile:
 		return []byte("{\"metadata\": { \"name\": \"biffbam\"}, \"biff\": \"bam\"}"), nil
+
+	case nodeCfgFile:
+		return []byte(`
+metadata:
+  name: master
+externalInitFile:
+  url: 'file://path/to/init-script.sh'`), nil
+
+	case compFile:
+		return []byte(`
+metadata:
+  name: kube-apiserver
+clusterObjectFiles:
+- url: 'file://path/to/kube_apiserver.yaml'`), nil
+
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
 	}
@@ -87,7 +112,7 @@ func TestInlineBundle(t *testing.T) {
 		Reader: &fakeLocalReader{},
 	}
 
-	newpb, err := inliner.Inline(ctx, bp)
+	newpb, err := inliner.Inline(ctx, bp, &InlineOptions{})
 	if err != nil {
 		t.Fatalf("Error inlining bundle: %v", err)
 	}
@@ -103,5 +128,68 @@ func TestInlineBundle(t *testing.T) {
 	}
 	if got := finder.ClusterComponentObject("kubelet-config", "foobar")[0].GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bar")
+	}
+}
+
+const twoLayerBundle = `
+apiVersion: 'bundle.k8s.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: test-bundle
+spec:
+  nodeConfigFiles:
+  - url: 'file://parent/some_node_config.yaml'
+  componentFiles:
+  - url: 'file://parent/kube_apiserver_component.yaml'
+`
+
+func TestTwoLayerInline(t *testing.T) {
+	ctx := context.Background()
+	b, err := converter.Bundle.YAMLToProto([]byte(twoLayerBundle))
+	if err != nil {
+		t.Fatalf("Error parsing bundle: %v", err)
+	}
+	bp := converter.ToBundle(b)
+	inliner := &Inliner{
+		Reader: &fakeLocalReader{},
+	}
+
+	newpb, err := inliner.Inline(ctx, bp, &InlineOptions{})
+	if err != nil {
+		t.Fatalf("Error inlining bundle: %v", err)
+	}
+
+	finder, err := find.NewBundleFinder(newpb)
+	if err != nil {
+		t.Fatalf("Error creating bundle finder: %v", err)
+	}
+	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
+		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
+	}
+	found := finder.ClusterComponentObject("kube-apiserver", "biffbam")
+	comp := finder.ClusterComponent("kube-apiserver")
+	if len(found) == 0 {
+		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
+	}
+	if got := found[0].GetFields()["biff"].GetStringValue(); got != "bam" {
+		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
+	}
+
+	// Now try with only inlining the top-layer
+	toppb, err := inliner.Inline(ctx, bp, &InlineOptions{TopLayerOnly: true})
+	if err != nil {
+		t.Fatalf("Error inlining bundle: %v", err)
+	}
+	finder, err = find.NewBundleFinder(toppb)
+	if err != nil {
+		t.Fatalf("Error creating bundle finder: %v", err)
+	}
+	comp = finder.ClusterComponent("kube-apiserver")
+	if len(found) == 0 {
+		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
+	}
+	found = finder.ClusterComponentObject("kube-apiserver", "biffbam")
+	if len(found) != 0 {
+		t.Fatalf("found %v but did not expect to find anything", found)
 	}
 }

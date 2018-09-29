@@ -30,6 +30,10 @@ type GlobalOptions struct {
 
 	// Whether to inline the bundle before doing any processing
 	Inline bool
+
+	// Whether to inline just the top layer of the bundle. Only used when Inline
+	// is set to true.
+	TopLayerInlineOnly bool
 }
 
 // GlobalOptionsValues is a global tracker for global options (for command line
@@ -38,10 +42,11 @@ var GlobalOptionsValues = &GlobalOptions{}
 
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
-		BundleFile:   g.BundleFile,
-		InputFormat:  g.InputFormat,
-		OutputFile:   g.OutputFile,
-		OutputFormat: g.OutputFormat,
-		Inline:       g.Inline,
+		BundleFile:         g.BundleFile,
+		InputFormat:        g.InputFormat,
+		OutputFile:         g.OutputFile,
+		OutputFormat:       g.OutputFormat,
+		Inline:             g.Inline,
+		TopLayerInlineOnly: g.TopLayerInlineOnly,
 	}
 }
