@@ -20,7 +20,7 @@ import (
 	"os"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 )
 
 // FakeBundle is simple fake bundle string that should always parse.
@@ -99,4 +99,4 @@ func (f *FakeReaderWriter) WriteFile(_ context.Context, path string, bytes []byt
 	return nil
 }
 
-var _ core.FileReaderWriter = &FakeReaderWriter{}
+var _ files.FileReaderWriter = &FakeReaderWriter{}

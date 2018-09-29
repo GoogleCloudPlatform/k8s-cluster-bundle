@@ -22,7 +22,7 @@ import (
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -46,7 +46,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 		cmdlib.ExitWithHelp(cmd, "Please provide at least one component to extract.")
 	}
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &core.LocalFileSystemReaderWriter{}
+	rw := &files.LocalFileSystemReaderWriter{}
 	if err := run(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
@@ -57,7 +57,7 @@ var createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
 	return transformer.NewComponentExporter(b)
 }
 
-func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)

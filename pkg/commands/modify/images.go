@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -37,14 +37,14 @@ type options struct {
 var opts = &options{}
 
 func modifyImagesAction(ctx context.Context, cmd *cobra.Command, _ []string) {
-	rw := &core.LocalFileSystemReaderWriter{}
+	rw := &files.LocalFileSystemReaderWriter{}
 	gopts := cmdlib.GlobalOptionsValues.Copy()
 	if err := runModifyImages(ctx, opts, rw, gopts); err != nil {
 		log.Exitf("error in runModifyImages: %v", err)
 	}
 }
 
-func runModifyImages(ctx context.Context, opts *options, rw core.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)

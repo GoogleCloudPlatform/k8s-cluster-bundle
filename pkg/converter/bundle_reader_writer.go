@@ -19,18 +19,18 @@ import (
 	"os"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 )
 
 // BundleReaderWriter uses a file reader writer to read, write. and convert bundles.
 type BundleReaderWriter struct {
 	// RW is a FileReaderWriter instance.
-	RW core.FileReaderWriter
+	RW files.FileReaderWriter
 }
 
 func NewFileSystemBundleReaderWriter() *BundleReaderWriter {
 	return &BundleReaderWriter{
-		&core.LocalFileSystemReaderWriter{},
+		&files.LocalFileSystemReaderWriter{},
 	}
 }
 

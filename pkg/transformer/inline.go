@@ -22,7 +22,7 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -30,7 +30,7 @@ import (
 // filesystem.
 type Inliner struct {
 	// Local reader reads from the local filesystem.
-	Reader core.FilePBReader
+	Reader files.FilePBReader
 }
 
 // InlineOptions are options to give to the inliner.
@@ -44,7 +44,7 @@ type InlineOptions struct {
 // should be the absolute path to the directory containing the bundle file on disk.
 func NewInliner(cwd string) *Inliner {
 	return &Inliner{
-		Reader: &core.LocalFilePBReader{cwd, &core.LocalFileSystemReader{}},
+		Reader: &files.LocalFilePBReader{cwd, &files.LocalFileSystemReader{}},
 		// TODO: Add more readers for remote filesystems here or add some way to
 		// plug-in other reader types.
 	}

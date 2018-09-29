@@ -24,7 +24,7 @@ import (
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	"github.com/ghodss/yaml"
 	log "github.com/golang/glog"
@@ -32,7 +32,7 @@ import (
 )
 
 // ReadBundleContents reads bundle contents from a file or stdin.
-func ReadBundleContents(ctx context.Context, rw core.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
+func ReadBundleContents(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
 	var bytes []byte
 	var err error
 	if g.BundleFile != "" {
@@ -69,7 +69,7 @@ func ReadBundleContents(ctx context.Context, rw core.FileReaderWriter, g *Global
 }
 
 // convertBundle converts a bundle from raw bytes into a proto.
-func convertBundle(ctx context.Context, bytes []byte, rw core.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
+func convertBundle(ctx context.Context, bytes []byte, rw files.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
 	if g.InputFormat == "yaml" {
 		bi, err := converter.Bundle.YAMLToProto(bytes)
 		if err != nil {
@@ -87,9 +87,9 @@ func convertBundle(ctx context.Context, bytes []byte, rw core.FileReaderWriter, 
 }
 
 // inlineBundle inlines a cluster bundle before processing
-func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw core.FileReaderWriter, opts *transformer.InlineOptions) (*bpb.ClusterBundle, error) {
+func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw files.FileReaderWriter, opts *transformer.InlineOptions) (*bpb.ClusterBundle, error) {
 	inliner := &transformer.Inliner{
-		&core.LocalFilePBReader{
+		&files.LocalFilePBReader{
 			WorkingDir: filepath.Dir(path),
 			Rdr:        rw,
 		},
@@ -98,7 +98,7 @@ func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw cor
 }
 
 // WriteContentsStructured writes some structured contents. The contents must be serializable to both JSON and YAML.
-func WriteStructuredContents(ctx context.Context, obj interface{}, rw core.FileReaderWriter, g *GlobalOptions) error {
+func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.FileReaderWriter, g *GlobalOptions) error {
 	var bytes []byte
 	var err error
 	if o, ok := obj.(proto.Message); ok {
@@ -137,7 +137,7 @@ func WriteStructuredContents(ctx context.Context, obj interface{}, rw core.FileR
 }
 
 // WriteContents writes some bytes to disk or stdout. if outPath is empty, write to stdout instdea.
-func WriteContents(ctx context.Context, outPath string, bytes []byte, rw core.FileReaderWriter) error {
+func WriteContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
 	if outPath == "" {
 		_, err := os.Stdout.Write(bytes)
 		if err != nil {

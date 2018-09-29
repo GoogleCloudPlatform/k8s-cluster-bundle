@@ -20,7 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -43,7 +43,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 
 // createInlinerFn creates an Inliner that works with the given current working
 // directory for the purposes of dependency injection.
-var createInlinerFn = func(pbr core.FilePBReader) *transformer.Inliner {
+var createInlinerFn = func(pbr files.FilePBReader) *transformer.Inliner {
 	return &transformer.Inliner{pbr}
 }
 

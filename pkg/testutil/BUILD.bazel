@@ -10,7 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
-        "//pkg/core:go_default_library",
+        "//pkg/files:go_default_library",
     ],
 )
 
