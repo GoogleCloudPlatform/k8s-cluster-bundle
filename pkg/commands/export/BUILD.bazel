@@ -27,6 +27,5 @@ go_test(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",
         "//pkg/testutil:go_default_library",
-        "//pkg/transformer:go_default_library",
     ],
 )

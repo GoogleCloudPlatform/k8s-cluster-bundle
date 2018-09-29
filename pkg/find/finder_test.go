@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 var validBundleExample = `apiVersion: 'bundle.k8s.io/v1alpha1'
@@ -107,7 +108,11 @@ func TestBundleFinder(t *testing.T) {
 			}
 
 		} else if tc.objName != "" && tc.compName != "" {
-			v := finder.ClusterComponentObject(tc.compName, tc.objName)
+			vl := finder.ClusterComponentObject(tc.compName, tc.objName)
+			var v *structpb.Struct
+			if len(vl) > 0 {
+				v = vl[0]
+			}
 			if v == nil && tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected nil response for cluster comp object lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {

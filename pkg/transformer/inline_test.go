@@ -32,20 +32,19 @@ metadata:
   name: test-bundle
 spec:
   nodeConfigs:
-  - name: master
+  - metadata:
+      name: master
     externalInitFile:
       url: 'file://path/to/init-script.sh'
   components:
-  - name: kube-apiserver
-    clusterObjects:
-    - name: pod
-      file:
-        url: 'file://path/to/kube_apiserver.yaml'
-  - name: kubelet-config
-    clusterObjects:
-    - name: kubelet-config-pod
-      file:
-        url: 'file://path/to/kubelet/config.yaml'
+  - metadata:
+      name: kube-apiserver
+    clusterObjectFiles:
+    - url: 'file://path/to/kube_apiserver.yaml'
+  - metadata:
+      name: kubelet-config
+    clusterObjectFiles:
+    - url: 'file://path/to/kubelet/config.yaml'
 `
 
 const (
@@ -68,10 +67,10 @@ func (*fakeLocalReader) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte,
 		return []byte(initScriptContents), nil
 
 	case url == kubeletConfigFile:
-		return []byte("{\"foo\": \"bar\"}"), nil
+		return []byte("{\"metadata\": { \"name\": \"foobar\"}, \"foo\": \"bar\"}"), nil
 
 	case url == kubeAPIServerFile:
-		return []byte("{\"biff\": \"bam\"}"), nil
+		return []byte("{\"metadata\": { \"name\": \"biffbam\"}, \"biff\": \"bam\"}"), nil
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
 	}
@@ -99,10 +98,10 @@ func TestInlineBundle(t *testing.T) {
 	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
-	if got := finder.ClusterComponentObject("kube-apiserver", "pod").GetInline().GetFields()["biff"].GetStringValue(); got != "bam" {
+	if got := finder.ClusterComponentObject("kube-apiserver", "biffbam")[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
-	if got := finder.ClusterComponentObject("kubelet-config", "kubelet-config-pod").GetInline().GetFields()["foo"].GetStringValue(); got != "bar" {
+	if got := finder.ClusterComponentObject("kubelet-config", "foobar")[0].GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bar")
 	}
 }

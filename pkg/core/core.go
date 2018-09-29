@@ -41,6 +41,14 @@ type ObjectReference struct {
 	Name string
 }
 
+func ObjectRefFromStruct(o *structpb.Struct) ObjectReference {
+	return ObjectReference{
+		APIVersion: ObjectAPIVersion(o),
+		Kind:       ObjectKind(o),
+		Name:       ObjectName(o),
+	}
+}
+
 // ObjectName gets the Object name from a cluster object.
 func ObjectName(obj *structpb.Struct) string {
 	meta := obj.GetFields()["metadata"]

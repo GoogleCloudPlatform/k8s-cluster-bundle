@@ -31,7 +31,7 @@ import (
 // exporter provides an interface for exporting ClusterComponents from a
 // ClusterBundle.
 type exporter interface {
-	Export(b *bpb.ClusterBundle, compName string) (*transformer.ExportedComponent, error)
+	Export(compName string) (*bpb.ClusterComponent, error)
 }
 
 type options struct {
@@ -69,18 +69,14 @@ func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib
 	}
 
 	for _, comp := range o.components {
-		ea, err := exporter.Export(b, comp)
+		ea, err := exporter.Export(comp)
 		if err != nil {
 			return err
 		}
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
-		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.Name)
-		outComp := &bpb.ClusterComponent{
-			Name:           ea.Name,
-			ClusterObjects: ea.Objects,
-		}
-		bytes, err := converter.ClusterComponent.ProtoToYAML(outComp)
+		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())
+		bytes, err := converter.ClusterComponent.ProtoToYAML(ea)
 		if err != nil {
 			return err
 		}
@@ -88,7 +84,7 @@ func run(ctx context.Context, o *options, rw core.FileReaderWriter, gopt *cmdlib
 		if err != nil {
 			return err
 		}
-		log.Infof("Wrote file %q", ea.Name)
+		log.Infof("Wrote file %q", path)
 	}
 	return nil
 }

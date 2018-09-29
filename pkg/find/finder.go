@@ -30,7 +30,7 @@ type BundleFinder struct {
 	bundle        *bpb.ClusterBundle
 	nodeLookup    map[string]*bpb.NodeConfig
 	compLookup    map[string]*bpb.ClusterComponent
-	compObjLookup map[core.ClusterObjectKey]*structpb.Struct
+	compObjLookup map[core.ClusterObjectKey][]*structpb.Struct
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
@@ -46,27 +46,18 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	}
 
 	compConfigs := make(map[string]*bpb.ClusterComponent)
-	compObjLookup := make(map[core.ClusterObjectKey]*structpb.Struct)
 	for _, ca := range b.GetSpec().GetComponents() {
 		n := ca.GetMetadata().GetName()
 		if n == "" {
 			return nil, fmt.Errorf("cluster components must always have a metadata.name. was empty for %v", ca)
 		}
 		compConfigs[n] = ca
-		for _, co := range ca.GetClusterObjects() {
-			con := core.ObjectName(co)
-			if con == "" {
-				return nil, fmt.Errorf("cluster component objects must always have a metadata.name. was empty for object %v in component %q", co, n)
-			}
-			compObjLookup[core.ClusterObjectKey{n, con}] = co
-		}
 	}
 
 	return &BundleFinder{
-		bundle:        b,
-		nodeLookup:    nodeConfigs,
-		compLookup:    compConfigs,
-		compObjLookup: compObjLookup,
+		bundle:     b,
+		nodeLookup: nodeConfigs,
+		compLookup: compConfigs,
 	}, nil
 }
 
@@ -80,7 +71,15 @@ func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 	return b.nodeLookup[name]
 }
 
-// ClusterComponentObject returns a ClusterComponent's Cluster object or nil.
-func (b *BundleFinder) ClusterComponentObject(compName string, objName string) *structpb.Struct {
-	return b.compObjLookup[core.ClusterObjectKey{compName, objName}]
+// ClusterComponentObject returns ClusterComponent's Cluster object or nil.
+func (b *BundleFinder) ClusterComponentObject(compName string, objName string) []*structpb.Struct {
+	comp := b.ClusterComponent(compName)
+	var out []*structpb.Struct
+	for _, c := range comp.GetClusterObjects() {
+		n := core.ObjectName(c)
+		if n == objName {
+			out = append(out, c)
+		}
+	}
+	return out
 }

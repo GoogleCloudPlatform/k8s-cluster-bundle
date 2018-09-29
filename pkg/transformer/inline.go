@@ -69,9 +69,9 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 
 	// Process all node-bootstrap files.
 	for _, v := range spec.GetNodeConfigs() {
-		k := v.Metadata().GetName()
+		k := v.GetMetadata().GetName()
 		if v.GetExternalInitFile() != nil {
-			contents, err := n.ReadFilePB(ctx, v.GetExternalInitFile())
+			contents, err := n.readFilePB(ctx, v.GetExternalInitFile())
 			if err != nil {
 				return nil, fmt.Errorf("error processing init script for node bootstrap config %q: %v", k, err)
 			}
@@ -90,19 +90,73 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle) (*bpb.Cluste
 }
 
 func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *converter.Converter) (proto.Message, error) {
-	contents, err := n.ReadFilePB(ctx, file)
+	contents, err := n.readFilePB(ctx, file)
 	if err != nil {
-		return fmt.Errorf("error reading file %q: %v", file.GetUrl(), err)
+		return nil, fmt.Errorf("error reading file %q: %v", file.GetUrl(), err)
 	}
 	ext := filepath.Ext(file.GetUrl())
 	switch ext {
-	case ext == ".yaml":
+	case ".yaml":
 		return conv.YAMLToProto(contents)
-	case ext == ".json":
+	case ".json":
 		return conv.JSONToProto(contents)
 	default:
 		return conv.YAMLToProto(contents)
 	}
+}
+
+func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+	for _, cf := range b.GetSpec().GetComponentFiles() {
+		pb, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
+		if err != nil {
+			return fmt.Errorf("error reading component: %v", err)
+		}
+		comp := converter.ToClusterComponent(pb)
+		compName := comp.GetMetadata().GetName()
+		if compName == "" {
+			return fmt.Errorf("no component name (metadata.name) found for component with url %q",
+				cf.GetUrl())
+		}
+
+		// Transform the file-urls of the children to now be relative to where the component is
+		for _, ocf := range comp.GetClusterObjectFiles() {
+			compUrl := cf.GetUrl()
+			objUrl := ocf.GetUrl()
+			if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
+				ocf.Url = "file://" + filepath.Join(shortFileUrl(compUrl), shortFileUrl(objUrl))
+			}
+		}
+
+		b.GetSpec().Components = append(b.GetSpec().Components, comp)
+	}
+	var emptyFiles []*bpb.File
+	b.GetSpec().ComponentFiles = emptyFiles
+	return nil
+}
+
+func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+	for _, cf := range b.GetSpec().GetNodeConfigFiles() {
+		pb, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
+		if err != nil {
+			return fmt.Errorf("error reading node config: %v", err)
+		}
+		cfg := converter.ToNodeConfig(pb)
+		if cfgName := cfg.GetMetadata().GetName(); cfgName == "" {
+			return fmt.Errorf("no node config name (metadata.name) found for node config with url %q",
+				cf.GetUrl())
+		}
+
+		// Transform the init file to be raltive to the node config.
+		cfgUrl := cf.GetUrl()
+		extInit := cfg.GetExternalInitFile()
+		if extInit != nil && strings.HasPrefix(cfgUrl, "file://") && strings.HasPrefix(extInit.GetUrl(), "file://") {
+			extInit.Url = "file://" + filepath.Join(shortFileUrl(cfgUrl), shortFileUrl(extInit.GetUrl()))
+		}
+		b.GetSpec().NodeConfigs = append(b.GetSpec().NodeConfigs, cfg)
+	}
+	var emptyFiles []*bpb.File
+	b.GetSpec().NodeConfigFiles = emptyFiles
+	return nil
 }
 
 func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ClusterComponent) error {
@@ -118,34 +172,8 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 	return nil
 }
 
-func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.ClusterBundle) error {
-	for _, cf := range b.GetComponentFiles() {
-		pb, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
-		if err != nil {
-			return fmt.Errorf("error reading component: %v", err)
-		}
-		b.Components = append(b.components, converter.ToClusterComponent(pb))
-	}
-	var emptyFiles []*bpb.File
-	b.ComponentFiles = emptyFiles
-	return nil
-}
-
-func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBundle) error {
-	for _, cf := range b.GetNodeConfigFiles() {
-		pb, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
-		if err != nil {
-			return fmt.Errorf("error reading node config: %v", err)
-		}
-		b.Components = append(b.components, converter.ToClusterComponent(pb))
-	}
-	var emptyFiles []*bpb.File
-	b.NodeConfigFiles = emptyFiles
-	return nil
-}
-
-// ReadFilePB from either a local or remote location.
-func (n *Inliner) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error) {
+// readFilePB from either a local or remote location.
+func (n *Inliner) readFilePB(ctx context.Context, file *bpb.File) ([]byte, error) {
 	url := file.GetUrl()
 	if url == "" {
 		return nil, fmt.Errorf("file %v was specified but no file path/url was provided", file)
@@ -162,4 +190,11 @@ func (n *Inliner) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error
 		// By default, assume that the user expects to read from the local filesystem.
 		return n.Reader.ReadFilePB(ctx, file)
 	}
+}
+
+func shortFileUrl(url string) string {
+	if strings.HasPrefix(url, "file://") {
+		url = strings.TrimPrefix(url, "file://")
+	}
+	return url
 }

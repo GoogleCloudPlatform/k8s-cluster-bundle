@@ -44,7 +44,7 @@ func (b *BundleValidator) validateNodeConfigs() []error {
 	var errs []error
 	nodeConfigs := make(map[string]*bpb.NodeConfig)
 	for _, nc := range b.Bundle.GetSpec().GetNodeConfigs() {
-		n := nc.GetName()
+		n := nc.GetMetadata().GetName()
 		if n == "" {
 			errs = append(errs, fmt.Errorf("node configs must always have a name. was empty for config %v", nc))
 			continue
@@ -76,35 +76,38 @@ func (b *BundleValidator) validateClusterComponentNames() []error {
 	return errs
 }
 
-// compObjKey is a key for an component+object, for use in maps.
-type compObjKey struct {
-	compName string
-	objName  string
-}
-
 func (b *BundleValidator) validateClusterObjNames() []error {
 	var errs []error
-	compObjects := make(map[compObjKey]*bpb.ClusterObject)
+	// Map to catch duplicate objects.
+	compObjects := make(map[core.ObjectReference]bool)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		compName := ca.GetMetadata().GetName()
-		objCollect := make(map[string]*bpb.ClusterObject)
 		for _, obj := range ca.GetClusterObjects() {
+			// We could check if the GVK/ObjectRef is unique. But name can appear
+			// multiple times.
 			n := core.ObjectName(obj)
 			if n == "" {
 				errs = append(errs, fmt.Errorf("cluster components must always have a metadata.name. was empty for component %q", compName))
 				continue
 			}
-			if _, ok := objCollect[n]; ok {
-				errs = append(errs, fmt.Errorf("duplicate cluster component object key %q when processing component %q", n, compName))
+
+			k := core.ObjectKind(obj)
+			if k == "" {
+				errs = append(errs, fmt.Errorf("cluster components must always have a kind. was empty for object %q in component %q", n, compName))
 				continue
 			}
-			key := compObjKey{compName: compName, objName: n}
-			if _, ok := compObjects[key]; ok {
-				errs = append(errs, fmt.Errorf("combination of cluster component object name %q and object name %q was not unique", n, compName))
+
+			a := core.ObjectAPIVersion(obj)
+			if a == "" {
+				errs = append(errs, fmt.Errorf("cluster components must always have an API Version. was empty for object %q in component %q", n, compName))
 				continue
 			}
-			objCollect[n] = obj
-			compObjects[compObjKey{compName: compName, objName: n}] = obj
+
+			ref := core.ObjectRefFromStruct(obj)
+			if _, ok := compObjects[ref]; ok {
+				errs = append(errs, fmt.Errorf("duplicate cluster object found with object reference %v for component %q", ref, compName))
+			}
+			compObjects[ref] = true
 		}
 	}
 	return errs
