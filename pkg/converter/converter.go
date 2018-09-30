@@ -35,28 +35,36 @@ var (
 	// NodeConfig is a converter for NodeConfig protos.
 	NodeConfig = &Converter{&bpb.NodeConfig{}}
 
+	// ObjectMeta is a converter for NodeConfig protos.
+	ObjectMeta = &Converter{&bpb.ObjectMeta{}}
+
 	// Struct is a converter for Struct protos.
 	Struct = &Converter{&structpb.Struct{}}
 )
 
-// ToBundle is a type converter for converting a proto to a Bundle.
+// ToBundle is a type converter for converting to and from a Bundle.
 func ToBundle(msg proto.Message) *bpb.ClusterBundle {
 	return msg.(*bpb.ClusterBundle)
 }
 
-// ToClusterComponent is a type converter for converting a proto to a ClusterComponent.
+// ToClusterComponent is a type converter for converting to and from a ClusterComponent.
 func ToClusterComponent(msg proto.Message) *bpb.ClusterComponent {
 	return msg.(*bpb.ClusterComponent)
 }
 
-// ToStruct is a type converter for converting a proto to a Struct.
+// ToStruct is a type converter for converting to and from a Struct.
 func ToStruct(msg proto.Message) *structpb.Struct {
 	return msg.(*structpb.Struct)
 }
 
-// ToNodeConfig is a type converter for converting a proto to a NodeConfig.
+// ToNodeConfig is a type converter for converting to and from a NodeConfig.
 func ToNodeConfig(msg proto.Message) *bpb.NodeConfig {
 	return msg.(*bpb.NodeConfig)
+}
+
+// ToObjectMeta is a type converter for converting a proto to an ObjectMeta.
+func ToObjectMeta(msg proto.Message) *bpb.ObjectMeta {
+	return msg.(*bpb.ObjectMeta)
 }
 
 // Converter is a generic struct that knows how to convert between textpb,
@@ -128,4 +136,25 @@ func (b *Converter) JSONToProto(contents []byte) (proto.Message, error) {
 		return nil, err
 	}
 	return bun, nil
+}
+
+// ObjectMetaFromStruct converts to the ObjectMeta proto from a structpb's ObjectMeta.
+func ObjectMetaFromStruct(obj *structpb.Struct) (*bpb.ObjectMeta, error) {
+	m := &bpb.ObjectMeta{}
+	metaf := obj.GetFields()["metadata"]
+	if metaf == nil {
+		return m, nil
+	}
+
+	by, err := Struct.ProtoToJSON(&structpb.Struct{Fields: metaf.GetStructValue().GetFields()})
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling to json: %v", err)
+	}
+
+	objm, err := ObjectMeta.JSONToProto(by)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling to object meta: %v", err)
+	}
+
+	return ToObjectMeta(objm), nil
 }
