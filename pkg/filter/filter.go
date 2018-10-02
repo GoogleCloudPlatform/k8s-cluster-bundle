@@ -24,7 +24,7 @@ import (
 // Filterer filters the components and objects in bundles to produce new,
 // smaller bundles
 type Filterer struct {
-	b *bpb.ClusterBundle
+	Bundle *bpb.ClusterBundle
 }
 
 // Options for filtering bundles. By default, if any of the options match, then
@@ -45,6 +45,9 @@ type Options struct {
 	// all label-values for a particular key.
 	Labels map[string]string
 
+	// Namespaces to filter on.
+	Namespaces []string
+
 	// KeepOnly means that instead of removing the found objects.
 	KeepOnly bool
 }
@@ -54,11 +57,8 @@ type Options struct {
 // components. By default components are removed, unless KeepOnly is set, and
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
-func FilterComponents(b *bpb.ClusterBundle, o *Options) *bpb.ClusterBundle {
-	b = converter.CloneBundle(b)
-	if b.GetSpec() == nil {
-		return b
-	}
+func (f *Filterer) FilterComponents(o *Options) *bpb.ClusterBundle {
+	b := converter.CloneBundle(f.Bundle)
 	var matched []*bpb.ClusterComponent
 	var notMatched []*bpb.ClusterComponent
 	for _, c := range b.GetSpec().GetComponents() {
@@ -81,11 +81,8 @@ func FilterComponents(b *bpb.ClusterBundle, o *Options) *bpb.ClusterBundle {
 // the objects, returning a new cluster bundle with just filtered
 // objects. By default objectsare removed, unless KeepOnly is set, and
 // then the opposite is true.
-func FilterObjects(b *bpb.ClusterBundle, o *Options) *bpb.ClusterBundle {
-	b = converter.CloneBundle(b)
-	if b.GetSpec() == nil {
-		return b
-	}
+func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
+	b := converter.CloneBundle(f.Bundle)
 	for _, cp := range b.GetSpec().GetComponents() {
 		var matched []*structpb.Struct
 		var notMatched []*structpb.Struct
@@ -116,6 +113,11 @@ func FilterObjects(b *bpb.ClusterBundle, o *Options) *bpb.ClusterBundle {
 func filterMeta(kind string, meta *bpb.ObjectMeta, o *Options) bool {
 	for _, k := range o.Kinds {
 		if k == kind {
+			return true
+		}
+	}
+	for _, n := range o.Namespaces {
+		if n == meta.Namespace {
 			return true
 		}
 	}

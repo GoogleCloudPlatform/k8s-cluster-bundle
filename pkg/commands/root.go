@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
@@ -57,6 +58,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 		&cmdlib.GlobalOptionsValues.TopLayerInlineOnly, "only-inline-top", "", false, "Whether to inline just the top layer of the bundle (node config and component files)")
 
 	export.AddCommandsTo(ctx, rootCmd)
+	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
 	inline.AddCommandsTo(ctx, rootCmd)
 	modify.AddCommandsTo(ctx, rootCmd)
