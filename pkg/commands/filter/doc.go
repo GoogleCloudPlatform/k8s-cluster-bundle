@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package files contains methods and data types for manipulating files.
-package files
+// Package filter contains commands for filtering components and objects.
+package filter
