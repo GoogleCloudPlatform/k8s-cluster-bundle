@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -100,45 +101,68 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineO
 	return b, nil
 }
 
-func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *converter.Converter) (proto.Message, error) {
+var multiDoc = regexp.MustCompile("\n---\n")
+
+func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *converter.Converter) ([]proto.Message, error) {
 	contents, err := n.readFilePB(ctx, file)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file %q: %v", file.GetUrl(), err)
 	}
 	ext := filepath.Ext(file.GetUrl())
+
+	// toYaml converts a possibly multi-doc YAML into proto.
+	var empty []proto.Message
+	toYaml := func(cont []byte) ([]proto.Message, error) {
+		var out []proto.Message
+		splat := multiDoc.Split(string(cont), -1)
+		for i, s := range splat {
+			c, err := conv.YAMLToProto([]byte(s))
+			if err != nil {
+				return empty, fmt.Errorf("error in document (%d): %v", i, err)
+			}
+			out = append(out, c)
+		}
+		return out, nil
+	}
+
 	switch ext {
 	case ".yaml":
-		return conv.YAMLToProto(contents)
+		return toYaml(contents)
 	case ".json":
-		return conv.JSONToProto(contents)
+		z, err := conv.JSONToProto(contents)
+		if err != nil {
+			return empty, err
+		}
+		return []proto.Message{z}, nil
 	default:
-		return conv.YAMLToProto(contents)
+		return toYaml(contents)
 	}
 }
 
 func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.ClusterBundle) error {
 	for _, cf := range b.GetSpec().GetComponentFiles() {
-		pb, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
+		pbs, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
 		if err != nil {
 			return fmt.Errorf("error reading component: %v", err)
 		}
-		comp := converter.ToClusterComponent(pb)
-		compName := comp.GetMetadata().GetName()
-		if compName == "" {
-			return fmt.Errorf("no component name (metadata.name) found for component with url %q",
-				cf.GetUrl())
-		}
-
-		// Transform the file-urls of the children to now be relative to where the component is
-		for _, ocf := range comp.GetClusterObjectFiles() {
-			compUrl := cf.GetUrl()
-			objUrl := ocf.GetUrl()
-			if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
-				ocf.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(objUrl))
+		for _, pb := range pbs {
+			comp := converter.ToClusterComponent(pb)
+			compName := comp.GetMetadata().GetName()
+			if compName == "" {
+				return fmt.Errorf("no component name (metadata.name) found for component with url %q",
+					cf.GetUrl())
 			}
-		}
 
-		b.GetSpec().Components = append(b.GetSpec().Components, comp)
+			// Transform the file-urls of the children to now be relative to where the component is
+			for _, ocf := range comp.GetClusterObjectFiles() {
+				compUrl := cf.GetUrl()
+				objUrl := ocf.GetUrl()
+				if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
+					ocf.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(objUrl))
+				}
+			}
+			b.GetSpec().Components = append(b.GetSpec().Components, comp)
+		}
 	}
 	var emptyFiles []*bpb.File
 	b.GetSpec().ComponentFiles = emptyFiles
@@ -147,23 +171,25 @@ func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.Clust
 
 func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBundle) error {
 	for _, cf := range b.GetSpec().GetNodeConfigFiles() {
-		pb, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
+		pbs, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
 		if err != nil {
 			return fmt.Errorf("error reading node config: %v", err)
 		}
-		cfg := converter.ToNodeConfig(pb)
-		if cfgName := cfg.GetMetadata().GetName(); cfgName == "" {
-			return fmt.Errorf("no node config name (metadata.name) found for node config with url %q",
-				cf.GetUrl())
-		}
+		for _, pb := range pbs {
+			cfg := converter.ToNodeConfig(pb)
+			if cfgName := cfg.GetMetadata().GetName(); cfgName == "" {
+				return fmt.Errorf("no node config name (metadata.name) found for node config with url %q",
+					cf.GetUrl())
+			}
 
-		// Transform the init file to be raltive to the node config.
-		cfgUrl := cf.GetUrl()
-		extInit := cfg.GetExternalInitFile()
-		if extInit != nil && strings.HasPrefix(cfgUrl, "file://") && strings.HasPrefix(extInit.GetUrl(), "file://") {
-			extInit.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(cfgUrl)), shortFileUrl(extInit.GetUrl()))
+			// Transform the init file to be raltive to the node config.
+			cfgUrl := cf.GetUrl()
+			extInit := cfg.GetExternalInitFile()
+			if extInit != nil && strings.HasPrefix(cfgUrl, "file://") && strings.HasPrefix(extInit.GetUrl(), "file://") {
+				extInit.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(cfgUrl)), shortFileUrl(extInit.GetUrl()))
+			}
+			b.GetSpec().NodeConfigs = append(b.GetSpec().NodeConfigs, cfg)
 		}
-		b.GetSpec().NodeConfigs = append(b.GetSpec().NodeConfigs, cfg)
 	}
 	var emptyFiles []*bpb.File
 	b.GetSpec().NodeConfigFiles = emptyFiles
@@ -172,11 +198,13 @@ func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBund
 
 func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ClusterComponent) error {
 	for _, cf := range b.GetClusterObjectFiles() {
-		pb, err := n.readFileToProto(ctx, cf, converter.Struct)
-		if err != nil {
-			return fmt.Errorf("error reading component object for component %q: %v", compName, err)
+		pbs, err := n.readFileToProto(ctx, cf, converter.Struct)
+		for _, pb := range pbs {
+			if err != nil {
+				return fmt.Errorf("error reading component object for component %q: %v", compName, err)
+			}
+			b.ClusterObjects = append(b.ClusterObjects, converter.ToStruct(pb))
 		}
-		b.ClusterObjects = append(b.ClusterObjects, converter.ToStruct(pb))
 	}
 	var emptyFiles []*bpb.File
 	b.ClusterObjectFiles = emptyFiles

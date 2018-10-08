@@ -51,6 +51,7 @@ const (
 	initScriptFile    = "path/to/init-script.sh"
 	kubeletConfigFile = "path/to/kubelet/config.yaml"
 	kubeAPIServerFile = "path/to/kube_apiserver.yaml"
+	multiDocFile      = "path/to/multidoc.yaml"
 
 	parentInitScriptFile    = "parent/path/to/init-script.sh"
 	parentKubeAPIServerFile = "parent/path/to/kube_apiserver.yaml"
@@ -76,6 +77,16 @@ func (*fakeLocalReader) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte,
 
 	case kubeletConfigFile:
 		return []byte("{\"metadata\": { \"name\": \"foobar\"}, \"foo\": \"bar\"}"), nil
+
+	case multiDocFile:
+		return []byte(`
+metadata:
+  name: foobar
+foo: bar
+---
+metadata:
+  name: biffbam
+biff: bam`), nil
 
 	case parentKubeAPIServerFile:
 		fallthrough
@@ -191,5 +202,48 @@ func TestTwoLayerInline(t *testing.T) {
 	found = finder.ClusterComponentObject("kube-apiserver", "biffbam")
 	if len(found) != 0 {
 		t.Fatalf("found %v but did not expect to find anything", found)
+	}
+}
+
+const bundleWithMultidoc = `
+apiVersion: 'bundle.k8s.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: test-bundle
+spec:
+  components:
+  - metadata:
+      name: multidoc
+    clusterObjectFiles:
+    - url: 'file://path/to/multidoc.yaml'
+`
+
+func TestMultiDoc(t *testing.T) {
+	ctx := context.Background()
+
+	b, err := converter.Bundle.YAMLToProto([]byte(bundleWithMultidoc))
+	if err != nil {
+		t.Fatalf("Error parsing bundle: %v", err)
+	}
+	bp := converter.ToBundle(b)
+	inliner := &Inliner{
+		Reader: &fakeLocalReader{},
+	}
+
+	newpb, err := inliner.Inline(ctx, bp, &InlineOptions{})
+	if err != nil {
+		t.Fatalf("Error inlining bundle: %v", err)
+	}
+
+	finder, err := find.NewBundleFinder(newpb)
+	if err != nil {
+		t.Fatalf("Error creating bundle finder: %v", err)
+	}
+
+	if got := finder.ClusterComponentObject("multidoc", "biffbam")[0].GetFields()["biff"].GetStringValue(); got != "bam" {
+		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bam")
+	}
+	if got := finder.ClusterComponentObject("multidoc", "foobar")[0].GetFields()["foo"].GetStringValue(); got != "bar" {
+		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bar")
 	}
 }
