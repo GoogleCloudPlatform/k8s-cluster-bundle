@@ -206,7 +206,11 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 			if err != nil {
 				return fmt.Errorf("error reading component object for component %q: %v", compName, err)
 			}
-			b.ClusterObjects = append(b.ClusterObjects, converter.ToStruct(pb))
+			st := converter.ToStruct(pb)
+			if len(st.GetFields()) > 0 {
+				// Ignore 0-length objects (empty documents).
+				b.ClusterObjects = append(b.ClusterObjects, st)
+			}
 		}
 	}
 	var emptyFiles []*bpb.File
