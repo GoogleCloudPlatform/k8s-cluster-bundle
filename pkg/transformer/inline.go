@@ -101,7 +101,7 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineO
 	return b, nil
 }
 
-var multiDoc = regexp.MustCompile("\n---\n")
+var multiDoc = regexp.MustCompile("---(\n|$)")
 
 func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *converter.Converter) ([]proto.Message, error) {
 	contents, err := n.readFilePB(ctx, file)
@@ -118,7 +118,7 @@ func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *con
 		for i, s := range splat {
 			c, err := conv.YAMLToProto([]byte(s))
 			if err != nil {
-				return empty, fmt.Errorf("error in document (%d): %v", i, err)
+				return empty, fmt.Errorf("error in document (%d) for file %q: %v", i, file.GetUrl(), err)
 			}
 			out = append(out, c)
 		}
@@ -199,6 +199,9 @@ func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBund
 func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ClusterComponent) error {
 	for _, cf := range b.GetClusterObjectFiles() {
 		pbs, err := n.readFileToProto(ctx, cf, converter.Struct)
+		if err != nil {
+			return err
+		}
 		for _, pb := range pbs {
 			if err != nil {
 				return fmt.Errorf("error reading component object for component %q: %v", compName, err)

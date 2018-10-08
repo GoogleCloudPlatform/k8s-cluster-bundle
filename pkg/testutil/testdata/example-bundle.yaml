@@ -66,6 +66,14 @@ spec:
     - url: 'file://kubedns/config-map.yaml'
     - url: 'file://kubedns/deployment.yaml'
 
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ClusterComponent
+    metadata:
+      name: kubeproxy
+    version: '2.1'
+    clusterObjectFiles:
+    - url: 'file://kubeproxy/kubeproxy.yaml'
+
   #=========#
   # options #
   #=========#
