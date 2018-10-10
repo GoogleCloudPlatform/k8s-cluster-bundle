@@ -22,11 +22,12 @@ import (
 	"context"
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 )
 
 const bundleWithRefs = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -134,16 +135,16 @@ func TestInlineBundle(t *testing.T) {
 	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
-	if got := finder.ClusterComponentObject("kube-apiserver", "biffbam")[0].GetFields()["biff"].GetStringValue(); got != "bam" {
+	if got := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
-	if got := finder.ClusterComponentObject("kubelet-config", "foobar")[0].GetFields()["foo"].GetStringValue(); got != "bar" {
+	if got := finder.ClusterObjects("kubelet-config", core.ObjectRef{Name: "foobar"})[0].GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bar")
 	}
 }
 
 const twoLayerBundle = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -177,7 +178,7 @@ func TestTwoLayerInline(t *testing.T) {
 	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
-	found := finder.ClusterComponentObject("kube-apiserver", "biffbam")
+	found := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})
 	comp := finder.ClusterComponent("kube-apiserver")
 	if len(found) == 0 {
 		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
@@ -199,14 +200,14 @@ func TestTwoLayerInline(t *testing.T) {
 	if len(found) == 0 {
 		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
 	}
-	found = finder.ClusterComponentObject("kube-apiserver", "biffbam")
+	found = finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})
 	if len(found) != 0 {
 		t.Fatalf("found %v but did not expect to find anything", found)
 	}
 }
 
 const bundleWithMultidoc = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -240,10 +241,10 @@ func TestMultiDoc(t *testing.T) {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
 
-	if got := finder.ClusterComponentObject("multidoc", "biffbam")[0].GetFields()["biff"].GetStringValue(); got != "bam" {
+	if got := finder.ClusterObjects("multidoc", core.ObjectRef{Name: "biffbam"})[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bam")
 	}
-	if got := finder.ClusterComponentObject("multidoc", "foobar")[0].GetFields()["foo"].GetStringValue(); got != "bar" {
+	if got := finder.ClusterObjects("multidoc", core.ObjectRef{Name: "foobar"})[0].GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bar")
 	}
 }

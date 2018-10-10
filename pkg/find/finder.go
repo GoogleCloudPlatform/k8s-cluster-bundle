@@ -71,14 +71,42 @@ func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 	return b.nodeLookup[name]
 }
 
-// ClusterComponentObject returns ClusterComponent's Cluster object or nil.
-func (b *BundleFinder) ClusterComponentObject(compName string, objName string) []*structpb.Struct {
+// ClusterObjects returns ClusterComponent's Cluster objects (given some object ref) or nil.
+func (b *BundleFinder) ClusterObjects(compName string, ref core.ObjectRef) []*structpb.Struct {
 	comp := b.ClusterComponent(compName)
 	var out []*structpb.Struct
-	for _, c := range comp.GetClusterObjects() {
-		n := core.ObjectName(c)
-		if n == objName {
-			out = append(out, c)
+	if comp == nil {
+		return out
+	}
+	return (&ComponentFinder{comp}).ClusterObjects(ref)
+}
+
+// ComponentFinder finds objects within components
+type ComponentFinder struct {
+	Component *bpb.ClusterComponent
+}
+
+// ClusterObjects finds cluster objects matching a certain ObjectRef key. If
+// the ObjectRef is partially filled out, then only those fields will be used
+// for searching and the partial matches will be returned.
+func (c *ComponentFinder) ClusterObjects(ref core.ObjectRef) []*structpb.Struct {
+	var out []*structpb.Struct
+	for _, o := range c.Component.GetClusterObjects() {
+		var key core.ObjectRef
+		if ref.Name != "" {
+			// Doing a search based on name
+			key.Name = core.ObjectName(o)
+		}
+		if ref.APIVersion != "" {
+			// Doing a search based on API version
+			key.APIVersion = core.ObjectAPIVersion(o)
+		}
+		if ref.Kind != "" {
+			// Doing a search based on kind
+			key.Kind = core.ObjectKind(o)
+		}
+		if key == ref {
+			out = append(out, o)
 		}
 	}
 	return out

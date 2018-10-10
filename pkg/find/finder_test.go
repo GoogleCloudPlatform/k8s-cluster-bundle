@@ -15,13 +15,15 @@
 package find
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
-var validBundleExample = `apiVersion: 'bundle.k8s.io/v1alpha1'
+var validBundleExample = `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -108,7 +110,7 @@ func TestBundleFinder(t *testing.T) {
 			}
 
 		} else if tc.objName != "" && tc.compName != "" {
-			vl := finder.ClusterComponentObject(tc.compName, tc.objName)
+			vl := finder.ClusterObjects(tc.compName, core.ObjectRef{Name: tc.objName})
 			var v *structpb.Struct
 			if len(vl) > 0 {
 				v = vl[0]
@@ -131,4 +133,98 @@ func TestBundleFinder(t *testing.T) {
 			t.Errorf("Unexpected fallthrough for testcase %v", tc)
 		}
 	}
+}
+
+var validComponent = `
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterComponent
+metadata:
+  name: kube-apiserver
+clusterObjects:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: pody
+
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: dodo
+
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: kube-proxy
+
+- apiVersion: extensions/v1beta1
+  kind: DaemonSet
+  metadata:
+    name: kube-proxy
+`
+
+func TestComponentFinder_PartialLookup(t *testing.T) {
+	c, err := converter.ClusterComponent.YAMLToProto([]byte(validComponent))
+	if err != nil {
+		t.Fatalf("error converting componente: %v", err)
+	}
+	finder := &ComponentFinder{converter.ToClusterComponent(c)}
+
+	testCases := []struct {
+		desc string
+		ref  core.ObjectRef
+		exp  []string
+	}{
+		{
+			desc: "get everything",
+			ref:  core.ObjectRef{},
+			exp:  []string{"pody", "dodo", "kube-proxy", "kube-proxy"},
+		},
+		{
+			desc: "get apiversion",
+			ref:  core.ObjectRef{APIVersion: "v1"},
+			exp:  []string{"pody", "dodo", "kube-proxy"},
+		},
+		{
+			desc: "get kind",
+			ref:  core.ObjectRef{Kind: "Pod"},
+			exp:  []string{"pody", "dodo"},
+		},
+		{
+			desc: "get name",
+			ref:  core.ObjectRef{Name: "pody"},
+			exp:  []string{"pody"},
+		},
+		{
+			desc: "get name, multiple hits",
+			ref:  core.ObjectRef{Name: "kube-proxy"},
+			exp:  []string{"kube-proxy", "kube-proxy"},
+		},
+		{
+			desc: "get specific",
+			ref:  core.ObjectRef{Name: "kube-proxy", APIVersion: "v1"},
+			exp:  []string{"kube-proxy"},
+		},
+		{
+			desc: "get none",
+			ref:  core.ObjectRef{Name: "kube-proxy", APIVersion: "zed"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			found := finder.ClusterObjects(tc.ref)
+			names := getObjNames(found)
+			if !reflect.DeepEqual(names, tc.exp) {
+				t.Errorf("CluusterObjects(): got %v but wanted %v", names, tc.exp)
+			}
+		})
+	}
+}
+
+func getObjNames(obj []*structpb.Struct) []string {
+	var names []string
+	for _, c := range obj {
+		names = append(names, core.ObjectName(c))
+	}
+	return names
 }

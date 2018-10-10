@@ -29,8 +29,8 @@ type ClusterObjectKey struct {
 
 var EmptyClusterObjectKey = ClusterObjectKey{}
 
-// ObjectReference is a stripped-down version of the Kubernetes corev1.ObjectReference type.
-type ObjectReference struct {
+// ObjectRef is a stripped-down version of the Kubernetes corev1.ObjectReference type.
+type ObjectRef struct {
 	// The API Version for an Object.
 	APIVersion string
 
@@ -41,8 +41,8 @@ type ObjectReference struct {
 	Name string
 }
 
-func ObjectRefFromStruct(o *structpb.Struct) ObjectReference {
-	return ObjectReference{
+func ObjectRefFromStruct(o *structpb.Struct) ObjectRef {
+	return ObjectRef{
 		APIVersion: ObjectAPIVersion(o),
 		Kind:       ObjectKind(o),
 		Name:       ObjectName(o),

@@ -26,7 +26,7 @@ import (
 )
 
 const inlinedBundle = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: inlined-bundle
@@ -52,7 +52,7 @@ spec:
 `
 
 const filesBundle = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: files-bundle
