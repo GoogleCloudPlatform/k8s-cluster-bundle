@@ -19,9 +19,6 @@ import (
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	// apiextensions is a very heavy library to depend on. It's not used right
-	// now anyway, so for now, we remove it.
-	// apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 func init() {
@@ -39,6 +36,9 @@ func init() {
 
 	must(corev1.AddToScheme(k.KubeScheme))
 	must(extv1beta1.AddToScheme(k.KubeScheme))
+
+	// Don't register the extension scheme right now -- it's a very heavy dep and
+	// isn't really being used at the moment.
 	// must(apiextv1beta1.AddToScheme(k.KubeScheme))
 
 	defaultPatcherScheme = k

@@ -16,7 +16,6 @@ package converter
 
 import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	// apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 // KubeConverter converts structs to Kubernetes objects.
