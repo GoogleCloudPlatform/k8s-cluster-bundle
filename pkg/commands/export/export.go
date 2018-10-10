@@ -23,15 +23,15 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
-// exporter provides an interface for exporting ClusterComponents from a
+// compfinder provides an interface for exporting ClusterComponents from a
 // ClusterBundle.
-type exporter interface {
-	Export(compName string) (*bpb.ClusterComponent, error)
+type compfinder interface {
+	ClusterComponent(compName string) *bpb.ClusterComponent
 }
 
 type options struct {
@@ -52,9 +52,9 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	}
 }
 
-// createExporterFn creates an exporter that operates on the given ClusterBundle.
-var createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
-	return transformer.NewComponentExporter(b)
+// createFinderFn creates an exporter that operates on the given ClusterBundle.
+var createFinderFn = func(b *bpb.ClusterBundle) (compfinder, error) {
+	return find.NewBundleFinder(b)
 }
 
 func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
@@ -63,16 +63,17 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	exporter, err := createExporterFn(b)
+	f, err := createFinderFn(b)
 	if err != nil {
 		return err
 	}
 
 	for _, comp := range o.components {
-		ea, err := exporter.Export(comp)
-		if err != nil {
-			return err
+		ea := f.ClusterComponent(comp)
+		if ea == nil {
+			return fmt.Errorf("could not find cluster component named %q", comp)
 		}
+
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
 		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())

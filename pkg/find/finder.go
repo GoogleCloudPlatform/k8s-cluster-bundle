@@ -27,10 +27,9 @@ import (
 // bundles. The BundleFinder is intended to be readonly; if modifications are
 // made to the bundle, subsequent lookups will fail.
 type BundleFinder struct {
-	bundle        *bpb.ClusterBundle
-	nodeLookup    map[string]*bpb.NodeConfig
-	compLookup    map[string]*bpb.ClusterComponent
-	compObjLookup map[core.ClusterObjectKey][]*structpb.Struct
+	bundle     *bpb.ClusterBundle
+	nodeLookup map[string]*bpb.NodeConfig
+	compLookup map[string]*bpb.ClusterComponent
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.

@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "doc.go",
-        "export.go",
         "images.go",
         "inline.go",
     ],
@@ -23,7 +22,6 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
-        "export_test.go",
         "images_test.go",
         "inline_test.go",
     ],
@@ -33,6 +31,5 @@ go_test(
         "//pkg/converter:go_default_library",
         "//pkg/core:go_default_library",
         "//pkg/find:go_default_library",
-        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
     ],
 )
