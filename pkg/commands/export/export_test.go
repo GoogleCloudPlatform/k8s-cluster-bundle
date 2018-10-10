@@ -16,7 +16,6 @@ package export
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,18 +29,18 @@ const (
 	invalidComponent = "not-a-component"
 )
 
-// Fake implementation of exporter for unit tests.
-type fakeExporter struct{}
+// Fake implementation of compfinder for unit tests.
+type fakeFinder struct{}
 
-func (f *fakeExporter) Export(compName string) (*bpb.ClusterComponent, error) {
+func (f *fakeFinder) ClusterComponent(compName string) *bpb.ClusterComponent {
 	if compName == invalidComponent {
-		return nil, fmt.Errorf("could not find cluster component named \"%v\"", compName)
+		return nil
 	}
 	return &bpb.ClusterComponent{
 		Metadata: &bpb.ObjectMeta{
 			Name: compName,
 		},
-	}, nil
+	}
 }
 
 func TestRunExport(t *testing.T) {
@@ -92,9 +91,9 @@ func TestRunExport(t *testing.T) {
 		},
 	}
 
-	// Override the createExporterFn to return a fake exporter.
-	createExporterFn = func(b *bpb.ClusterBundle) (exporter, error) {
-		return &fakeExporter{}, nil
+	// Override the createExporterFn to return a fake compfinder.
+	createFinderFn = func(b *bpb.ClusterBundle) (compfinder, error) {
+		return &fakeFinder{}, nil
 	}
 
 	for _, tc := range testcases {
