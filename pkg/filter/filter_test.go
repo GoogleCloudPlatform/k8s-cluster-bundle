@@ -24,7 +24,7 @@ import (
 )
 
 var example = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -211,7 +211,7 @@ func getObjNames(b *bpb.ClusterBundle) []string {
 }
 
 var componentExample = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'

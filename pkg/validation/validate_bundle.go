@@ -79,7 +79,7 @@ func (b *BundleValidator) validateClusterComponentNames() []error {
 func (b *BundleValidator) validateClusterObjNames() []error {
 	var errs []error
 	// Map to catch duplicate objects.
-	compObjects := make(map[core.ObjectReference]bool)
+	compObjects := make(map[core.ObjectRef]bool)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		compName := ca.GetMetadata().GetName()
 		for _, obj := range ca.GetClusterObjects() {

@@ -16,10 +16,7 @@ package converter
 
 import (
 	"encoding/json"
-	"fmt"
-	"regexp"
 
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
@@ -48,40 +45,4 @@ func (k *KubeConverter) ToCRD() (*apiextv1beta1.CustomResourceDefinition, error)
 	}
 
 	return crd, nil
-}
-
-// ToObjectRef converts a Kubernetes object to an object reference.
-// TODO(kashomon): deduplicate with ObjectRefFromRawKubeResource
-func (k *KubeConverter) ToObjectRef() (core.ObjectReference, error) {
-	nullResp := core.ObjectReference{}
-	ref := core.ObjectReference{}
-	apiVersion := k.s.GetFields()["apiVersion"].GetStringValue()
-	if apiVersion == "" {
-		return nullResp, fmt.Errorf("no apiVersion field was found for Kubernetes resource %v", k.s)
-	}
-	matches := regexp.MustCompile("(.+)/(.+)").FindStringSubmatch(apiVersion)
-	if matches == nil || len(matches) != 3 {
-		return nullResp, fmt.Errorf("Kubernetes resource apiVersion is not formatted as group/version: got %q", apiVersion)
-	}
-	ref.APIVersion = apiVersion
-
-	kind := k.s.GetFields()["kind"].GetStringValue()
-	if kind == "" {
-		return nullResp, fmt.Errorf("no kind field was found for Kubernetes resource %v", k.s)
-	}
-	ref.Kind = kind
-
-	md := k.s.GetFields()["metadata"]
-	if md == nil {
-		return nullResp, fmt.Errorf("no metadata field was found for Kubernetes resource %v", k.s)
-	}
-
-	metadata := md.GetStructValue()
-	name := metadata.GetFields()["name"].GetStringValue()
-	if name == "" {
-		return nullResp, fmt.Errorf("no metadata.name field was found for Kubernetes resource %v", k.s)
-	}
-
-	ref.Name = name
-	return ref, nil
 }

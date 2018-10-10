@@ -19,7 +19,7 @@ import (
 )
 
 const bundleSimple = `
-apiVersion: 'bundle.k8s.io/v1alpha1'
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
