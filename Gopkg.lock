@@ -14,12 +14,6 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
-  version = "v1.1.1"
-
-[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -78,11 +72,7 @@
   packages = [
     "jsonpb",
     "proto",
-    "ptypes",
-    "ptypes/any",
-    "ptypes/duration",
-    "ptypes/struct",
-    "ptypes/timestamp"
+    "ptypes/struct"
   ]
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
   version = "v1.2.0"
@@ -92,16 +82,6 @@
   name = "github.com/google/gofuzz"
   packages = ["."]
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
-
-[[projects]]
-  name = "github.com/googleapis/gnostic"
-  packages = [
-    "OpenAPIv2",
-    "compiler",
-    "extensions"
-  ]
-  revision = "7c663266750e7d82587642f65e60bc4083f1f84e"
-  version = "v0.2.0"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -206,20 +186,10 @@
 
 [[projects]]
   branch = "release-1.9"
-  name = "k8s.io/apiextensions-apiserver"
-  packages = [
-    "pkg/apis/apiextensions",
-    "pkg/apis/apiextensions/v1beta1"
-  ]
-  revision = "7e9f478f435dad2133a8b41431f4ac67c85f7ddf"
-
-[[projects]]
-  branch = "release-1.9"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/resource",
     "pkg/apis/meta/v1",
-    "pkg/apis/meta/v1/unstructured",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -237,17 +207,14 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
-    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/watch",
-    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect"
   ]
   revision = "fb40df2b502912cbe3a93aa61c2b2487f39cb42f"
@@ -255,15 +222,12 @@
 [[projects]]
   branch = "master"
   name = "k8s.io/kube-openapi"
-  packages = [
-    "pkg/common",
-    "pkg/util/proto"
-  ]
+  packages = ["pkg/common"]
   revision = "e3762e86a74c878ffed47484592986685639c2cd"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "396e04348f9ec1158536f5a8c5b4124412439d8f0ac4452b9e92e32001eeda35"
+  inputs-digest = "6e7c74bdaad401ba36d5751a8acc5739d80a7d1daaf742e4a64ec4b12fca610a"
   solver-name = "gps-cdcl"
   solver-version = 1

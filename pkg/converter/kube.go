@@ -15,10 +15,7 @@
 package converter
 
 import (
-	"encoding/json"
-
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 // KubeConverter converts structs to Kubernetes objects.
@@ -30,6 +27,10 @@ type KubeConverter struct {
 func FromStruct(s *structpb.Struct) *KubeConverter {
 	return &KubeConverter{s}
 }
+
+/*
+For now, remove the apiextensions-apiserver dependency. It's not really used anywhere
+anyway at the moment
 
 // ToCRD converts a struct to a Kubernetes CustomResourceDefinition.
 func (k *KubeConverter) ToCRD() (*apiextv1beta1.CustomResourceDefinition, error) {
@@ -46,3 +47,4 @@ func (k *KubeConverter) ToCRD() (*apiextv1beta1.CustomResourceDefinition, error)
 
 	return crd, nil
 }
+*/
