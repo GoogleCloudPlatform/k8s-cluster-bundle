@@ -17,9 +17,11 @@ package scheme
 import (
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	// apiextensions is a very heavy library to depend on. It's not used right
+	// now anyway, so for now, we remove it.
+	// apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 func init() {
@@ -37,7 +39,7 @@ func init() {
 
 	must(corev1.AddToScheme(k.KubeScheme))
 	must(extv1beta1.AddToScheme(k.KubeScheme))
-	must(apiextv1beta1.AddToScheme(k.KubeScheme))
+	// must(apiextv1beta1.AddToScheme(k.KubeScheme))
 
 	defaultPatcherScheme = k
 }
