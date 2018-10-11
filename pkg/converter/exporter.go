@@ -22,14 +22,14 @@ import (
 
 // ObjectExporter exports cluster objects
 type ObjectExporter struct {
-	objects []*structpb.Struct
+	Objects []*structpb.Struct
 }
 
 // ExportAsMultiYAML converts cluster objects into multiple YAML files.
 func (e *ObjectExporter) ExportAsMultiYAML() ([]string, error) {
 	var out []string
 	var empty []string
-	for _, o := range e.objects {
+	for _, o := range e.Objects {
 		yaml, err := Struct.ProtoToYAML(o)
 		if err != nil {
 			return empty, err
@@ -41,9 +41,9 @@ func (e *ObjectExporter) ExportAsMultiYAML() ([]string, error) {
 
 // ExportAsYAML converts cluster objects into single YAML file.
 func (e *ObjectExporter) ExportAsYAML() (string, error) {
-	numElements := len(e.objects)
+	numElements := len(e.Objects)
 	var sb strings.Builder
-	for i, o := range e.objects {
+	for i, o := range e.Objects {
 		yaml, err := Struct.ProtoToYAML(o)
 		if err != nil {
 			return "", err
