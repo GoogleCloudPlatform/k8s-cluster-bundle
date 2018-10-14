@@ -16,6 +16,6 @@ go_library(
 
 filegroup(
     name = "bundle_testdata",
-    srcs = glob(["testdata/**/*.yaml"]),
+    srcs = glob(["testdata/**/*.yaml", "testdata/**/*.txt"]),
     visibility = ["//visibility:public"],
 )
