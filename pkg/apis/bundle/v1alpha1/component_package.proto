@@ -67,8 +67,10 @@ message ComponentPackageSpec {
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashio.  These Kubernetes objects
-  // are inlined and must be YAML/JSON
-  // compatible. Each must have `apiVersion`, `kind`, and `metadata`.
+  // are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
+  // `kind`, and `metadata`.
+  //
+  // This is essentially equivalent to the Kubernetes `Unstructured` type.
   repeated google.protobuf.Struct cluster_objects = 4;
 
   // Cluster objects that are specified via a File-URL. The process of inlining

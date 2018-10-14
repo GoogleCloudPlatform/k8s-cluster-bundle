@@ -43,3 +43,14 @@ func TestBundleParse(t *testing.T) {
 		t.Errorf("Got name %q, expected name %q", bp.Metadata.Name, "test-bundle")
 	}
 }
+
+func TestK8sBundleParse(t *testing.T) {
+	b, err := YAMLToK8sBundle([]byte(bundleSimple))
+	if err != nil {
+		t.Fatalf("Error parsing bundle: %v", err)
+	}
+
+	if b.ObjectMeta.Name != "test-bundle" {
+		t.Errorf("Got name %q, expected name %q", b.ObjectMeta.Name, "test-bundle")
+	}
+}

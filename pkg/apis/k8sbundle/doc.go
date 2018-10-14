@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +domain=gke.io
+// +k8s:deepcopy-gen=package,register
+// +groupName=gke.io/k8s-cluster-bundle
 
-// Package apis represents the directory for bundle APIs. No code should live
-// in this package.
-package apis
+package k8sbundle

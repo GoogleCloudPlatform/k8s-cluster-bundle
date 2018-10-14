@@ -1,0 +1,5 @@
+# Configuration for crd generation
+# See sigs.k8s.io/controller-tools
+version: "1"
+domain: gke.io
+repo: github.com/GoogleCloudPlatform/k8s-cluster-bundle
