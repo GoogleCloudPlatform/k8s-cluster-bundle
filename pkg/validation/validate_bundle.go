@@ -35,7 +35,7 @@ func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
 func (b *BundleValidator) Validate() []error {
 	var errs []error
 	errs = append(errs, b.validateNodeConfigs()...)
-	errs = append(errs, b.validateClusterComponentNames()...)
+	errs = append(errs, b.validateComponentPackageNames()...)
 	errs = append(errs, b.validateClusterObjNames()...)
 	return errs
 }
@@ -58,9 +58,9 @@ func (b *BundleValidator) validateNodeConfigs() []error {
 	return errs
 }
 
-func (b *BundleValidator) validateClusterComponentNames() []error {
+func (b *BundleValidator) validateComponentPackageNames() []error {
 	var errs []error
-	objCollect := make(map[string]*bpb.ClusterComponent)
+	objCollect := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		n := ca.GetMetadata().GetName()
 		if n == "" {

@@ -21,7 +21,7 @@ spec:
 
   nodeConfigs:
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ClusterComponent
+    kind: ComponentPackage
     metadata:
       name: 'ubuntu-control-plane'
     initFile: "echo 'I'm a script'"
@@ -44,7 +44,7 @@ spec:
   # Core control plane #
   #====================#
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ClusterComponent
+    kind: ComponentPackage
     metadata:
       name: kubernetes-control-plane
     version: '11.0.0'
@@ -58,7 +58,7 @@ spec:
   # Addons #
   #========#
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ClusterComponent
+    kind: ComponentPackage
     metadata:
       name: kubedns
     version: '2.0'
@@ -69,7 +69,7 @@ spec:
     - url: 'file://kubedns/deployment.yaml'
 
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ClusterComponent
+    kind: ComponentPackage
     metadata:
       name: kubeproxy
     version: '2.1'
@@ -80,7 +80,7 @@ spec:
   # options #
   #=========#
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ClusterComponent
+    kind: ComponentPackage
     metadata:
       name: options
     version: '2.0'

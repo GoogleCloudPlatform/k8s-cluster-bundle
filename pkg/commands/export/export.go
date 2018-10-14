@@ -28,10 +28,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// compfinder provides an interface for exporting ClusterComponents from a
+// compfinder provides an interface for exporting ComponentPackages from a
 // ClusterBundle.
 type compfinder interface {
-	ClusterComponent(compName string) *bpb.ClusterComponent
+	ComponentPackage(compName string) *bpb.ComponentPackage
 }
 
 type options struct {
@@ -69,7 +69,7 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 	}
 
 	for _, comp := range o.components {
-		ea := f.ClusterComponent(comp)
+		ea := f.ComponentPackage(comp)
 		if ea == nil {
 			return fmt.Errorf("could not find cluster component named %q", comp)
 		}
@@ -77,7 +77,7 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
 		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())
-		bytes, err := converter.ClusterComponent.ProtoToYAML(ea)
+		bytes, err := converter.ComponentPackage.ProtoToYAML(ea)
 		if err != nil {
 			return err
 		}

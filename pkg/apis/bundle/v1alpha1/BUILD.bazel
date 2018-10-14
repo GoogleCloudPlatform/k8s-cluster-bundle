@@ -5,7 +5,7 @@ go_library(
     srcs = [
         "bundle_common.pb.go",
         "cluster_bundle.pb.go",
-        "cluster_component.pb.go",
+        "component_package.pb.go",
         "doc.go",
         "node_config.pb.go",
         "object_meta.pb.go",

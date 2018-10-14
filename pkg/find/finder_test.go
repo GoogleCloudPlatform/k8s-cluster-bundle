@@ -122,7 +122,7 @@ func TestBundleFinder(t *testing.T) {
 			}
 
 		} else if tc.compName != "" {
-			v := finder.ClusterComponent(tc.compName)
+			v := finder.ComponentPackage(tc.compName)
 			if v == nil && tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected nil response for cluster comp lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {
@@ -137,7 +137,7 @@ func TestBundleFinder(t *testing.T) {
 
 var validComponent = `
 apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
-kind: ClusterComponent
+kind: ComponentPackage
 metadata:
   name: kube-apiserver
 clusterObjects:
@@ -163,11 +163,11 @@ clusterObjects:
 `
 
 func TestComponentFinder_PartialLookup(t *testing.T) {
-	c, err := converter.ClusterComponent.YAMLToProto([]byte(validComponent))
+	c, err := converter.ComponentPackage.YAMLToProto([]byte(validComponent))
 	if err != nil {
 		t.Fatalf("error converting componente: %v", err)
 	}
-	finder := &ComponentFinder{converter.ToClusterComponent(c)}
+	finder := &ComponentFinder{converter.ToComponentPackage(c)}
 
 	testCases := []struct {
 		desc string
