@@ -37,9 +37,9 @@ type ClusterComponent struct {
 	// 'kubernetes' component, depending on the granulatarity of the Bundle
 	// components.
 	Metadata *ObjectMeta `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Required. Version-string for this component. The version should be a SemVer
-	// 2 string (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).
-	// A major-version changes should indicate breaking changes, minor-versions
+	// Version-string for this component. The version should be a SemVer 2 string
+	// (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
+	// major-version changes should indicate breaking changes, minor-versions
 	// should indicate backwards compatible features, and patch changes should
 	// indicate backwords compatible. If there are any changes to the component,
 	// then the version string must be incremented.

@@ -36,13 +36,22 @@ message ClusterBundle {
   // filled out for each Bundle.
   ObjectMeta metadata = 3;
 
-  // Required. Version-string for this bundle. The version should be a SemVer
-  // string (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).
-  // Generally speaking, a major-version (changes should indicate breaking
-  // changes, minor-versions should indicate backwards compatible features, and
-  // patch changes should indicate backwords compatible. If there are any
-  // changes to the bundle, then the version string must be incremented.
-  string version = 4;
+  // Spec for the ClusterBundle, which specifies the intended Kubernetes cluster
+  // configuration.
+  ClusterBundleSpec spec = 4;
+}
+
+// A spec object that wraps the Cluster Bundle.
+message ClusterBundleSpec {
+  // Version-string for this bundle. The version should be a SemVer string (see
+  // https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
+  // speaking, a major-version (changes should indicate breaking changes,
+  // minor-versions should indicate backwards compatible features, and patch
+  // changes should indicate backwords compatible. If there are any changes to
+  // the bundle, then the version string must be incremented.
+  //
+  // If a bundle is versioned, then all its components must be versioned.
+  string version = 1;
 
   // The release channel for this bundle, which indicates the minimum
   // stability of components in the Bundle. For example, you might have
@@ -50,30 +59,23 @@ message ClusterBundle {
   // artifacts in the bundle must be labeled as 'Stable'. If a channel is
   // labeled as 'Dev' then, you may want all packages in the bundle to be at
   // least Alpha (but possibly also 'Beta' or 'Stable').
-  string channel = 5;
+  string channel = 2;
 
-  // Spec for the ClusterBundle, which specifies the intended Kubernetes cluster
-  // configuration.
-  ClusterBundleSpec spec = 6;
-}
-
-// A spec object that wraps the Cluster Bundle.
-message ClusterBundleSpec {
   // Configuration for the nodes.
-  repeated NodeConfig node_configs = 1;
+  repeated NodeConfig node_configs = 3;
 
   // Configuration for the nodes, specified as external files. The process of
   // inlining reads node config files into node configs, and so after
   // inlining, this list will be empty.
-  repeated File node_config_files = 2;
+  repeated File node_config_files = 4;
 
   // Kubernetes objects grouped into cluster components and versioned together.
   // These could be applications or they could be some sort of supporting
   // object collection.
-  repeated ClusterComponent components = 3;
+  repeated ClusterComponent components = 5;
 
   // Cluster components that are specified externally as Files. The process of inlining
   // for a bundle reads component files into components, and so after
   // inlining, this list will be empty.
-  repeated File component_files = 4;
+  repeated File component_files = 6;
 }
