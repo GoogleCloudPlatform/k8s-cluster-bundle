@@ -179,7 +179,7 @@ func TestTwoLayerInline(t *testing.T) {
 		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
 	found := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})
-	comp := finder.ClusterComponent("kube-apiserver")
+	comp := finder.ComponentPackage("kube-apiserver")
 	if len(found) == 0 {
 		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
 	}
@@ -196,7 +196,7 @@ func TestTwoLayerInline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
-	comp = finder.ClusterComponent("kube-apiserver")
+	comp = finder.ComponentPackage("kube-apiserver")
 	if len(found) == 0 {
 		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
 	}

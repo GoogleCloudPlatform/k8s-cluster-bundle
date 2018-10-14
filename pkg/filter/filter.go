@@ -59,8 +59,8 @@ type Options struct {
 // account the properties of the object-children of the components.
 func (f *Filterer) FilterComponents(o *Options) *bpb.ClusterBundle {
 	b := converter.CloneBundle(f.Bundle)
-	var matched []*bpb.ClusterComponent
-	var notMatched []*bpb.ClusterComponent
+	var matched []*bpb.ComponentPackage
+	var notMatched []*bpb.ComponentPackage
 	for _, c := range b.GetSpec().GetComponents() {
 		matches := filterMeta(c.GetKind(), c.GetMetadata(), o)
 		if matches {

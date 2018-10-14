@@ -67,7 +67,7 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineO
 	}
 
 	// First, process any cluster component files or node config files.
-	if err := n.processClusterComponentFiles(ctx, b); err != nil {
+	if err := n.processComponentPackageFiles(ctx, b); err != nil {
 		return nil, err
 	}
 
@@ -139,14 +139,14 @@ func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *con
 	}
 }
 
-func (n *Inliner) processClusterComponentFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.ClusterBundle) error {
 	for _, cf := range b.GetSpec().GetComponentFiles() {
-		pbs, err := n.readFileToProto(ctx, cf, converter.ClusterComponent)
+		pbs, err := n.readFileToProto(ctx, cf, converter.ComponentPackage)
 		if err != nil {
 			return fmt.Errorf("error reading component: %v", err)
 		}
 		for _, pb := range pbs {
-			comp := converter.ToClusterComponent(pb)
+			comp := converter.ToComponentPackage(pb)
 			compName := comp.GetMetadata().GetName()
 			if compName == "" {
 				return fmt.Errorf("no component name (metadata.name) found for component with url %q",
@@ -196,7 +196,7 @@ func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBund
 	return nil
 }
 
-func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ClusterComponent) error {
+func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ComponentPackage) error {
 	for _, cf := range b.GetClusterObjectFiles() {
 		pbs, err := n.readFileToProto(ctx, cf, converter.Struct)
 		if err != nil {
