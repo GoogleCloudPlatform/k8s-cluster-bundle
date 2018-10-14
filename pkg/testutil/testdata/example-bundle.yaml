@@ -17,6 +17,8 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
+  version: '2.3.4'
+
   nodeConfigs:
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
     kind: ClusterComponent
