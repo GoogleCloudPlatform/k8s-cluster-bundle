@@ -55,22 +55,26 @@ message ComponentPackage {
   // may be blank, but then other components may not depend on this component.
   string componentApiVersion = 5;
 
+  // The release channel for this component, which to indicates the stability
+  // type of the component. For example, you might see 'Stable', 'Beta', 'Dev'.
+  string channel = 6;
+
   // A list of components that must be packaged in a bundle in with this
   // component.
-  repeated MinRequirement requirements = 6;
+  repeated MinRequirement requirements = 7;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashio.  These Kubernetes objects
   // are inlined and must be YAML/JSON
   // compatible. Each must have `apiVersion`, `kind`, and `metadata`
-  repeated google.protobuf.Struct cluster_objects = 7;
+  repeated google.protobuf.Struct cluster_objects = 8;
 
   // Cluster objects that are specified via a File-URL. The process of inlining
   // the a component turns cluster object files into cluster objects.
   // During the inline process, if the file is YAML-formatted and contains multiple
   // objects, the objects will be split into separate inline objects. In other
   // words, one cluster object file may result in multiple cluster objects.
-  repeated File cluster_object_files = 8;
+  repeated File cluster_object_files = 9;
 }
 
 // MinRequirement represents a component that this component must be packaged

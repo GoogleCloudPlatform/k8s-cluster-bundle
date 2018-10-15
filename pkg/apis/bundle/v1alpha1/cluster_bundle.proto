@@ -38,7 +38,7 @@ message ClusterBundle {
 
   // Spec for the ClusterBundle, which specifies the intended Kubernetes cluster
   // configuration.
-  ClusterBundleSpec spec = 5;
+  ClusterBundleSpec spec = 4;
 }
 
 // A spec object that wraps the Cluster Bundle.
@@ -53,21 +53,29 @@ message ClusterBundleSpec {
   // If a bundle is versioned, then all its components must be versioned.
   string version = 1;
 
+  // The release channel for this bundle, which indicates the minimum
+  // stability of components in the Bundle. For example, you might have
+  // 'Dev', 'Beta', or 'Stable' channels. If the channel is 'Stable' all
+  // artifacts in the bundle must be labeled as 'Stable'. If a channel is
+  // labeled as 'Dev' then, you may want all packages in the bundle to be at
+  // least Alpha (but possibly also 'Beta' or 'Stable').
+  string channel = 2;
+
   // Configuration for the nodes.
-  repeated NodeConfig node_configs = 2;
+  repeated NodeConfig node_configs = 3;
 
   // Configuration for the nodes, specified as external files. The process of
   // inlining reads node config files into node configs, and so after
   // inlining, this list will be empty.
-  repeated File node_config_files = 3;
+  repeated File node_config_files = 4;
 
   // Kubernetes objects grouped into component packages and versioned together.
   // These could be applications or they could be some sort of supporting
   // object collection.
-  repeated ComponentPackage components = 4;
+  repeated ComponentPackage components = 5;
 
   // Cluster components that are specified externally as Files. The process of inlining
   // for a bundle reads component files into components, and so after
   // inlining, this list will be empty.
-  repeated File component_files = 5;
+  repeated File component_files = 6;
 }
