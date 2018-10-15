@@ -32,52 +32,56 @@ spec:
   components:
   - metadata:
       name: zap
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: zap-pod
-        labels:
-          component: zork
-        annotations:
-          foo: bar
-        namespace: kube-system
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: zap-pod
+          labels:
+            component: zork
+          annotations:
+            foo: bar
+          namespace: kube-system
   - metadata:
       name: bog
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: bog-pod
-        labels:
-          component: bork
-        annotations:
-          foof: yar
-        namespace: kube-system
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: bog-pod
+          labels:
+            component: bork
+          annotations:
+            foof: yar
+          namespace: kube-system
   - metadata:
       name: nog
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: nog-pod
-        labels:
-          component: nork
-        annotations:
-          foof: narf
-        namespace: kube
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: nog-pod
+          labels:
+            component: nork
+          annotations:
+            foof: narf
+          namespace: kube
   - metadata:
       name: zog
-    clusterObjects:
-    - apiVersion: v1
-      kind: Deployment
-      metadata:
-        name: zog-dep
-        labels:
-          component: zork
-        annotations:
-          zoof: zarf
-        namespace: zube`
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Deployment
+        metadata:
+          name: zog-dep
+          labels:
+            component: zork
+          annotations:
+            zoof: zarf
+          namespace: zube`
 
 func TestFilterObjects(t *testing.T) {
 	testcases := []struct {
@@ -203,7 +207,7 @@ func TestFilterObjects(t *testing.T) {
 func getObjNames(b *bpb.ClusterBundle) []string {
 	var names []string
 	for _, c := range b.GetSpec().GetComponents() {
-		for _, o := range c.GetClusterObjects() {
+		for _, o := range c.GetSpec().GetClusterObjects() {
 			names = append(names, core.ObjectName(o))
 		}
 	}
