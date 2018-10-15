@@ -368,8 +368,6 @@ func TestFilterComponents(t *testing.T) {
 			}
 		})
 	}
-
-	t.Fatalf("blarg")
 }
 
 func getCompObjNames(b *bpb.ClusterBundle) []string {
