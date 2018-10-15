@@ -34,27 +34,8 @@ func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
 // Validate validates Bundles, providing as many errors as it can.
 func (b *BundleValidator) Validate() []error {
 	var errs []error
-	errs = append(errs, b.validateNodeConfigs()...)
 	errs = append(errs, b.validateComponentPackageNames()...)
 	errs = append(errs, b.validateClusterObjNames()...)
-	return errs
-}
-
-func (b *BundleValidator) validateNodeConfigs() []error {
-	var errs []error
-	nodeConfigs := make(map[string]*bpb.NodeConfig)
-	for _, nc := range b.Bundle.GetSpec().GetNodeConfigs() {
-		n := nc.GetMetadata().GetName()
-		if n == "" {
-			errs = append(errs, fmt.Errorf("node configs must always have a name. was empty for config %v", nc))
-			continue
-		}
-		if _, ok := nodeConfigs[n]; ok {
-			errs = append(errs, fmt.Errorf("duplicate node config key %q found when processing config %v", n, nc))
-			continue
-		}
-		nodeConfigs[n] = nc
-	}
 	return errs
 }
 
@@ -82,7 +63,7 @@ func (b *BundleValidator) validateClusterObjNames() []error {
 	compObjects := make(map[core.ObjectRef]bool)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		compName := ca.GetMetadata().GetName()
-		for _, obj := range ca.GetClusterObjects() {
+		for _, obj := range ca.GetSpec().GetClusterObjects() {
 			// We could check if the GVK/ObjectRef is unique. But name can appear
 			// multiple times.
 			n := core.ObjectName(obj)

@@ -28,22 +28,12 @@ import (
 // made to the bundle, subsequent lookups will fail.
 type BundleFinder struct {
 	bundle     *bpb.ClusterBundle
-	nodeLookup map[string]*bpb.NodeConfig
 	compLookup map[string]*bpb.ComponentPackage
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
 func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	b = converter.CloneBundle(b)
-	nodeConfigs := make(map[string]*bpb.NodeConfig)
-	for _, nc := range b.GetSpec().GetNodeConfigs() {
-		n := nc.GetMetadata().GetName()
-		if n == "" {
-			return nil, fmt.Errorf("node bootstrap configs must always have a metadata.name. was empty for %v", nc)
-		}
-		nodeConfigs[n] = nc
-	}
-
 	compConfigs := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.GetSpec().GetComponents() {
 		n := ca.GetMetadata().GetName()
@@ -55,7 +45,6 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 
 	return &BundleFinder{
 		bundle:     b,
-		nodeLookup: nodeConfigs,
 		compLookup: compConfigs,
 	}, nil
 }
@@ -63,11 +52,6 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 // ComponentPackage returns a found cluster component or nil.
 func (b *BundleFinder) ComponentPackage(name string) *bpb.ComponentPackage {
 	return b.compLookup[name]
-}
-
-// NodeConfig returns a node bootstrap config or nil.
-func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
-	return b.nodeLookup[name]
 }
 
 // ClusterObjects returns ComponentPackage's Cluster objects (given some object ref) or nil.
@@ -90,7 +74,7 @@ type ComponentFinder struct {
 // for searching and the partial matches will be returned.
 func (c *ComponentFinder) ClusterObjects(ref core.ObjectRef) []*structpb.Struct {
 	var out []*structpb.Struct
-	for _, o := range c.Component.GetClusterObjects() {
+	for _, o := range c.Component.GetSpec().GetClusterObjects() {
 		var key core.ObjectRef
 		if ref.Name != "" {
 			// Doing a search based on name

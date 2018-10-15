@@ -14,17 +14,19 @@
 
 syntax = "proto3";
 
-package pkg.apis.bundle.v1alpha1;
+package pkg.apis.bundleext.v1alpha1;
 
-option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1";
+option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1";
 
 import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
 import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 
-// Configuration for node images.
+// Configuration for node images. This is a resource that provides information
+// about which images are available for node creation and how to initialize the
+// node images.
 message NodeConfig {
   // Required. Kubernetes API Version for the NodeConfig type.
-  // Should be 'gke.io/k8s-cluster-bundle/v1alpha1'
+  // Should be 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
   string apiVersion = 1;
 
   // Required. The Kubernetes `kind` for this object. Must always be
@@ -35,31 +37,23 @@ message NodeConfig {
   // filled out and each node config in a bundle must have a unique name. For
   // example you might have a 'master-node-config' component or perhaps even a
   // 'gpu-config' config.
-  ObjectMeta metadata = 3;
-
-  // Required. Version-string for this node config. The version should be a
-  // SemVer 2 string (see https://semver.org/) of the form X.Y.Z
-  // (Major.Minor.Patch). A major-version changes should indicate breaking
-  // changes, minor-versions should indicate backwards compatible features, and
-  // patch changes should indicate backwords compatible. If there are any
-  // changes to the component, then the version string must be incremented.
-  string version = 4;
+  pkg.apis.bundle.v1alpha1.ObjectMeta metadata = 3;
 
   // Initialization file to run on VM startup. The contents of this init file
   // will depend a great deal on the specific environment and operation system.
   oneof init_data {
     // The file specified inline as a UTF-8 encoded byte string.
-    string init_file = 5;
+    string init_file = 4;
 
     // An external init file.
-    File external_init_file = 6;
+    pkg.apis.bundle.v1alpha1.File external_init_file = 5;
   }
 
   // Envirnoment variables to set before startup to configure the init script.
-  repeated EnvVar env_vars = 7;
+  repeated EnvVar env_vars = 6;
 
   // The OS image to use for VM creation.
-  File os_image = 8;
+  pkg.apis.bundle.v1alpha1.File os_image = 7;
 }
 
 // An environment variable specified for node startup.

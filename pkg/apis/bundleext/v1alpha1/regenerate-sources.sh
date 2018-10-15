@@ -26,4 +26,4 @@ DIR=$PWD
 protoc --go_out=paths=source_relative:. \
   -I ./ \
   -I ./deps/ \
-  ./pkg/apis/bundle/v1alpha1/*.proto
+  ./pkg/apis/bundleext/v1alpha1/*.proto

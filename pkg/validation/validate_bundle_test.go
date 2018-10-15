@@ -38,21 +38,6 @@ metadata:
 		},
 
 		{
-			desc: "fail: duplicate node config key",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  nodeConfigs:
-  - metadata:
-      name: masterNode
-  - metadata:
-      name: masterNode`,
-			errSubstring: "duplicate node config",
-		},
-
-		{
 			desc: "fail: duplicate cluster component key",
 			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
@@ -77,10 +62,11 @@ spec:
   components:
   - metadata:
       name: coolApp1
-    clusterObjects:
-    - metadata:
-        name: pod
-      kind: zed`,
+    spec:
+      clusterObjects:
+      - metadata:
+          name: pod
+        kind: zed`,
 			errSubstring: "must always have an API Version",
 		},
 
@@ -94,10 +80,11 @@ spec:
   components:
   - metadata:
       name: coolApp1
-    clusterObjects:
-    - metadata:
-        name: pod
-      apiVersion: zed`,
+    spec:
+      clusterObjects:
+      - metadata:
+          name: pod
+        apiVersion: zed`,
 			errSubstring: "must always have a kind",
 		},
 
@@ -111,15 +98,16 @@ spec:
   components:
   - metadata:
       name: coolApp1
-    clusterObjects:
-    - metadata:
-        name: pod
-      apiVersion: zed,
-      kind: zork
-    - metadata:
-        name: pod
-      apiVersion: zed,
-      kind: zork`,
+    spec:
+      clusterObjects:
+      - metadata:
+          name: pod
+        apiVersion: zed,
+        kind: zork
+      - metadata:
+          name: pod
+        apiVersion: zed,
+        kind: zork`,
 			errSubstring: "duplicate cluster object found",
 		},
 	}

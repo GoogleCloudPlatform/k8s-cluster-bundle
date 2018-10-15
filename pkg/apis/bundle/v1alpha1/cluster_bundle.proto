@@ -20,7 +20,6 @@ option go_package = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/
 
 import "pkg/apis/bundle/v1alpha1/bundle_common.proto";
 import "pkg/apis/bundle/v1alpha1/component_package.proto";
-import "pkg/apis/bundle/v1alpha1/node_config.proto";
 import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 
 // The ClusterBundle is a packaging format for Kubernetes Components.
@@ -38,7 +37,7 @@ message ClusterBundle {
 
   // Spec for the ClusterBundle, which specifies the intended Kubernetes cluster
   // configuration.
-  ClusterBundleSpec spec = 5;
+  ClusterBundleSpec spec = 4;
 }
 
 // A spec object that wraps the Cluster Bundle.
@@ -53,21 +52,13 @@ message ClusterBundleSpec {
   // If a bundle is versioned, then all its components must be versioned.
   string version = 1;
 
-  // Configuration for the nodes.
-  repeated NodeConfig node_configs = 2;
-
-  // Configuration for the nodes, specified as external files. The process of
-  // inlining reads node config files into node configs, and so after
-  // inlining, this list will be empty.
-  repeated File node_config_files = 3;
-
   // Kubernetes objects grouped into component packages and versioned together.
   // These could be applications or they could be some sort of supporting
   // object collection.
-  repeated ComponentPackage components = 4;
+  repeated ComponentPackage components = 2;
 
   // Cluster components that are specified externally as Files. The process of inlining
   // for a bundle reads component files into components, and so after
   // inlining, this list will be empty.
-  repeated File component_files = 5;
+  repeated File component_files = 3;
 }

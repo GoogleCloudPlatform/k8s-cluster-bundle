@@ -28,27 +28,22 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  nodeConfigs:
-  - metadata:
-      name: masterNode
-    initFile: "echo 'I'm a script'"
-  - metadata:
-      name: userNode
-    initFile: "echo 'I'm another script'"
   components:
   - metadata:
       name: etcd-server
-    clusterObjects:
-    - metadata:
-        name: pod
-    - metadata:
-        name: dwerp
+    spec:
+      clusterObjects:
+      - metadata:
+          name: pod
+      - metadata:
+          name: dwerp
 
   - metadata:
       name: kube-apiserver
-    clusterObjects:
-    - metadata:
-        name: pod
+    spec:
+      clusterObjects:
+      - metadata:
+          name: pod
 `
 
 func TestBundleFinder(t *testing.T) {
@@ -62,21 +57,10 @@ func TestBundleFinder(t *testing.T) {
 	}
 	testCases := []struct {
 		desc       string
-		nodeName   string
 		compName   string
 		objName    string
 		shouldFind bool
 	}{
-		{
-			desc:       "success: bootstrap lookup",
-			nodeName:   "masterNode",
-			shouldFind: true,
-		},
-		{
-			desc:       "failure: bootstrap lookup",
-			nodeName:   "masterNoob",
-			shouldFind: false,
-		},
 		{
 			desc:       "success: cluster comp lookup",
 			compName:   "etcd-server",
@@ -101,15 +85,7 @@ func TestBundleFinder(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		if tc.nodeName != "" {
-			v := finder.NodeConfig(tc.nodeName)
-			if v == nil && tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected nil response for lookup of bootstrap", tc.desc)
-			} else if v != nil && !tc.shouldFind {
-				t.Errorf("Test %v: Got unexpected non-nil response %v for lookup of bootstrap", tc.desc, v)
-			}
-
-		} else if tc.objName != "" && tc.compName != "" {
+		if tc.objName != "" && tc.compName != "" {
 			vl := finder.ClusterObjects(tc.compName, core.ObjectRef{Name: tc.objName})
 			var v *structpb.Struct
 			if len(vl) > 0 {
@@ -128,7 +104,6 @@ func TestBundleFinder(t *testing.T) {
 			} else if v != nil && !tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected non-nil response %v for cluster comp lookup", tc.desc, v)
 			}
-
 		} else {
 			t.Errorf("Unexpected fallthrough for testcase %v", tc)
 		}
@@ -140,26 +115,27 @@ apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ComponentPackage
 metadata:
   name: kube-apiserver
-clusterObjects:
-- apiVersion: v1
-  kind: Pod
-  metadata:
-    name: pody
+spec:
+  clusterObjects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pody
 
-- apiVersion: v1
-  kind: Pod
-  metadata:
-    name: dodo
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: dodo
 
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: kube-proxy
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: kube-proxy
 
-- apiVersion: extensions/v1beta1
-  kind: DaemonSet
-  metadata:
-    name: kube-proxy
+  - apiVersion: extensions/v1beta1
+    kind: DaemonSet
+    metadata:
+      name: kube-proxy
 `
 
 func TestComponentFinder_PartialLookup(t *testing.T) {

@@ -71,24 +71,8 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineO
 		return nil, err
 	}
 
-	if err := n.processNodeConfigFiles(ctx, b); err != nil {
-		return nil, err
-	}
-
 	if opt.TopLayerOnly {
 		return b, nil
-	}
-
-	// Process all node-bootstrap files.
-	for _, v := range spec.GetNodeConfigs() {
-		k := v.GetMetadata().GetName()
-		if v.GetExternalInitFile() != nil {
-			contents, err := n.readFilePB(ctx, v.GetExternalInitFile())
-			if err != nil {
-				return nil, fmt.Errorf("error processing init script for node bootstrap config %q: %v", k, err)
-			}
-			v.InitData = &bpb.NodeConfig_InitFile{string(contents)}
-		}
 	}
 
 	// Process all the cluster object files.
@@ -166,33 +150,6 @@ func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.Clust
 	}
 	var emptyFiles []*bpb.File
 	b.GetSpec().ComponentFiles = emptyFiles
-	return nil
-}
-
-func (n *Inliner) processNodeConfigFiles(ctx context.Context, b *bpb.ClusterBundle) error {
-	for _, cf := range b.GetSpec().GetNodeConfigFiles() {
-		pbs, err := n.readFileToProto(ctx, cf, converter.NodeConfig)
-		if err != nil {
-			return fmt.Errorf("error reading node config: %v", err)
-		}
-		for _, pb := range pbs {
-			cfg := converter.ToNodeConfig(pb)
-			if cfgName := cfg.GetMetadata().GetName(); cfgName == "" {
-				return fmt.Errorf("no node config name (metadata.name) found for node config with url %q",
-					cf.GetUrl())
-			}
-
-			// Transform the init file to be raltive to the node config.
-			cfgUrl := cf.GetUrl()
-			extInit := cfg.GetExternalInitFile()
-			if extInit != nil && strings.HasPrefix(cfgUrl, "file://") && strings.HasPrefix(extInit.GetUrl(), "file://") {
-				extInit.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(cfgUrl)), shortFileUrl(extInit.GetUrl()))
-			}
-			b.GetSpec().NodeConfigs = append(b.GetSpec().NodeConfigs, cfg)
-		}
-	}
-	var emptyFiles []*bpb.File
-	b.GetSpec().NodeConfigFiles = emptyFiles
 	return nil
 }
 
