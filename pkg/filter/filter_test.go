@@ -217,7 +217,7 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - kind: ClusterComponent
+  - kind: ComponentPackage
     metadata:
       name: zap-pod
       labels:
@@ -225,7 +225,7 @@ spec:
       annotations:
         foo: bar
       namespace: kube-system
-  - kind: ClusterComponent
+  - kind: ComponentPackage
     metadata:
       name: bog-pod
       labels:
@@ -233,7 +233,7 @@ spec:
       annotations:
         foof: yar
       namespace: kube-system
-  - kind: ClusterComponent
+  - kind: ComponentPackage
     metadata:
       name: nog-pod
       labels:
@@ -241,7 +241,7 @@ spec:
       annotations:
         foof: narf
       namespace: kube
-  - kind: ClusterComponent
+  - kind: ComponentPackage
     metadata:
       name: zog-dep
       labels:
@@ -296,7 +296,7 @@ func TestFilterComponents(t *testing.T) {
 		{
 			desc: "fiter-success: kind filter",
 			opt: &Options{
-				Kinds: []string{"ClusterComponent"},
+				Kinds: []string{"ComponentPackage"},
 			},
 		},
 
@@ -346,7 +346,7 @@ func TestFilterComponents(t *testing.T) {
 		{
 			desc: "fiter-success keeponly: kind filter",
 			opt: &Options{
-				Kinds:    []string{"ClusterComponent"},
+				Kinds:    []string{"ComponentPackage"},
 				KeepOnly: true,
 			},
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},

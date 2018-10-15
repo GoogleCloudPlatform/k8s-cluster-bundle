@@ -24,14 +24,14 @@ import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 
 // Kubernetes objects grouped into cluster components and versioned together.
 // These could be applications or they could be some sort of supporting
-// object collection.
-message ClusterComponent {
-  // Required. Kubernetes API Version for the ClusterComponent type.
+// collection of objects.
+message ComponentPackage {
+  // Required. Kubernetes API Version for the ComponentPackage type.
   // Must always be 'gke.io/k8s-cluster-bundle/v1alpha1'
   string apiVersion = 1;
 
   // Required. The Kubernetes `kind` for this object. Must be
-  // 'ClusterComponent'.
+  // 'ComponentPackage'.
   string kind = 2;
 
   // Kubernetes Metadata for the component. The Metadata.name field must be

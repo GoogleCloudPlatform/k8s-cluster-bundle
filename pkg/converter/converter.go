@@ -29,8 +29,8 @@ var (
 	// Bundle is a converter for ClusterBundles
 	Bundle = &Converter{&bpb.ClusterBundle{}}
 
-	// ClusterComponent is a converter for ClusterComponent protos.
-	ClusterComponent = &Converter{&bpb.ClusterComponent{}}
+	// ComponentPackage is a converter for ComponentPackage protos.
+	ComponentPackage = &Converter{&bpb.ComponentPackage{}}
 
 	// NodeConfig is a converter for NodeConfig protos.
 	NodeConfig = &Converter{&bpb.NodeConfig{}}
@@ -47,9 +47,9 @@ func ToBundle(msg proto.Message) *bpb.ClusterBundle {
 	return msg.(*bpb.ClusterBundle)
 }
 
-// ToClusterComponent is a type converter for converting to and from a ClusterComponent.
-func ToClusterComponent(msg proto.Message) *bpb.ClusterComponent {
-	return msg.(*bpb.ClusterComponent)
+// ToComponentPackage is a type converter for converting to and from a ComponentPackage.
+func ToComponentPackage(msg proto.Message) *bpb.ComponentPackage {
+	return msg.(*bpb.ComponentPackage)
 }
 
 // ToStruct is a type converter for converting to and from a Struct.

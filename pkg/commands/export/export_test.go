@@ -32,11 +32,11 @@ const (
 // Fake implementation of compfinder for unit tests.
 type fakeFinder struct{}
 
-func (f *fakeFinder) ClusterComponent(compName string) *bpb.ClusterComponent {
+func (f *fakeFinder) ComponentPackage(compName string) *bpb.ComponentPackage {
 	if compName == invalidComponent {
 		return nil
 	}
-	return &bpb.ClusterComponent{
+	return &bpb.ComponentPackage{
 		Metadata: &bpb.ObjectMeta{
 			Name: compName,
 		},

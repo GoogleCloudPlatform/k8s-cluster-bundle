@@ -29,7 +29,7 @@ import (
 type BundleFinder struct {
 	bundle     *bpb.ClusterBundle
 	nodeLookup map[string]*bpb.NodeConfig
-	compLookup map[string]*bpb.ClusterComponent
+	compLookup map[string]*bpb.ComponentPackage
 }
 
 // NewBundleFinder creates a new BundleFinder or returns an error.
@@ -44,7 +44,7 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 		nodeConfigs[n] = nc
 	}
 
-	compConfigs := make(map[string]*bpb.ClusterComponent)
+	compConfigs := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.GetSpec().GetComponents() {
 		n := ca.GetMetadata().GetName()
 		if n == "" {
@@ -60,8 +60,8 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	}, nil
 }
 
-// ClusterComponent returns a found cluster component or nil.
-func (b *BundleFinder) ClusterComponent(name string) *bpb.ClusterComponent {
+// ComponentPackage returns a found cluster component or nil.
+func (b *BundleFinder) ComponentPackage(name string) *bpb.ComponentPackage {
 	return b.compLookup[name]
 }
 
@@ -70,9 +70,9 @@ func (b *BundleFinder) NodeConfig(name string) *bpb.NodeConfig {
 	return b.nodeLookup[name]
 }
 
-// ClusterObjects returns ClusterComponent's Cluster objects (given some object ref) or nil.
+// ClusterObjects returns ComponentPackage's Cluster objects (given some object ref) or nil.
 func (b *BundleFinder) ClusterObjects(compName string, ref core.ObjectRef) []*structpb.Struct {
-	comp := b.ClusterComponent(compName)
+	comp := b.ComponentPackage(compName)
 	var out []*structpb.Struct
 	if comp == nil {
 		return out
@@ -82,7 +82,7 @@ func (b *BundleFinder) ClusterObjects(compName string, ref core.ObjectRef) []*st
 
 // ComponentFinder finds objects within components
 type ComponentFinder struct {
-	Component *bpb.ClusterComponent
+	Component *bpb.ComponentPackage
 }
 
 // ClusterObjects finds cluster objects matching a certain ObjectRef key. If
