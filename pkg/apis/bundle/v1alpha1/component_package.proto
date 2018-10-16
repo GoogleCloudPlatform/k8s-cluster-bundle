@@ -41,36 +41,42 @@ message ComponentPackage {
   // components.
   ObjectMeta metadata = 3;
 
+  // Spec for the ComponentPackage.
+  ComponentPackageSpec spec = 4;
+}
+
+// ComponentPackageSpec represents the spec for the component.
+message ComponentPackageSpec {
   // Version-string for this component. The version should be a SemVer 2 string
   // (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
   // major-version changes should indicate breaking changes, minor-versions
   // should indicate backwards compatible features, and patch changes should
   // indicate backwords compatible. If there are any changes to the component,
   // then the version string must be incremented.
-  string version = 4;
+  string version = 1;
 
   // Optional. A version-string representing the version of the API this
   // component offers to other components (for the purposes of requirement
   // satisfaction). If no API is offered to other components, then this field
   // may be blank, but then other components may not depend on this component.
-  string componentApiVersion = 5;
+  string componentApiVersion = 2;
 
   // A list of components that must be packaged in a bundle in with this
   // component.
-  repeated MinRequirement requirements = 6;
+  repeated MinRequirement requirements = 3;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashio.  These Kubernetes objects
   // are inlined and must be YAML/JSON
   // compatible. Each must have `apiVersion`, `kind`, and `metadata`
-  repeated google.protobuf.Struct cluster_objects = 7;
+  repeated google.protobuf.Struct cluster_objects = 4;
 
   // Cluster objects that are specified via a File-URL. The process of inlining
   // the a component turns cluster object files into cluster objects.
   // During the inline process, if the file is YAML-formatted and contains multiple
   // objects, the objects will be split into separate inline objects. In other
   // words, one cluster object file may result in multiple cluster objects.
-  repeated File cluster_object_files = 8;
+  repeated File cluster_object_files = 5;
 }
 
 // MinRequirement represents a component that this component must be packaged

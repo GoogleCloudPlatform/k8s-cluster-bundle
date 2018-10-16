@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
@@ -94,7 +93,7 @@ func (b *ImageFinder) WalkContainerImages(st *structpb.Struct, fn func(img strin
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
 		compName := ca.GetMetadata().GetName()
-		for _, obj := range ca.GetClusterObjects() {
+		for _, obj := range ca.GetSpec().GetClusterObjects() {
 			objName := core.ObjectName(obj)
 			if obj == nil {
 				continue
@@ -123,7 +122,8 @@ func containerImageRecurser(fieldName string, parentFieldName string, st *struct
 		// From my spotty research, it's almost always true that the parent name
 		// for the container object is 'container', 'containers' or
 		// 'somethingContainer[s]'.
-		if fieldName == "image" && (strings.Contains(parentFieldName, "container") || strings.Contains(parentFieldName, "Container")) {
+		if fieldName == "image" && (strings.Contains(parentFieldName, "container") || strings.Contains(parentFieldName, "Container")) ||
+			fieldName == "url" && parentFieldName == "osImage" { // hack to make finding images work with NodeConfigs
 			if ret := fn(st.GetStringValue()); ret != st.GetStringValue() {
 				st.Kind = &structpb.Value_StringValue{ret}
 			}
@@ -145,66 +145,24 @@ func containerImageRecurser(fieldName string, parentFieldName string, st *struct
 	}
 }
 
-// NodeImage represents an OS image for a NodeConfig object.
-type NodeImage struct {
-	ConfigName string
-	Image      string
-}
-
-// NodeImages returns all the os images used in NodeConfigs.
-func (b *ImageFinder) NodeImages() []*NodeImage {
-	var images []*NodeImage
-	b.WalkNodeImages(func(configName string, img string) string {
-		images = append(images, &NodeImage{configName, img})
-		return img
-	})
-	return images
-}
-
-// WalkNodeImages provides a method for traversing through Node
-// images and works identially to WalkAllContainerImages.
-//
-// This changes the Bundle object in-place, so if changes are intended, it is
-// recommend that the Bundle be cloned.
-func (b *ImageFinder) WalkNodeImages(fn func(configName string, img string) string) {
-	for _, config := range b.Bundle.GetSpec().GetNodeConfigs() {
-		configName := config.GetMetadata().GetName()
-		if url := config.GetOsImage().GetUrl(); url != "" {
-			ret := fn(configName, url)
-			if ret != url {
-				filecopy := converter.CloneFile(config.GetOsImage())
-				filecopy.Url = ret
-				config.OsImage = filecopy
-			}
-		}
-	}
-}
-
 // WalkAllImages walks all node and container images. Only one of
 // nodeConfigName or key will be filled out, based on whether the image is from
 // a node config or from a cluster object.
 //
 // This changes the Bundle object in-place, so if changes are intended, it is
 // recommend that the Bundle be cloned.
-func (b *ImageFinder) WalkAllImages(fn func(nodeConfigName string, key core.ClusterObjectKey, img string) string) {
-	b.WalkNodeImages(func(configName string, img string) string {
-		return fn(configName, core.EmptyClusterObjectKey, img)
-	})
-	b.WalkAllContainerImages(func(k core.ClusterObjectKey, img string) string {
-		return fn("", k, img)
-	})
+func (b *ImageFinder) WalkAllImages(fn func(key core.ClusterObjectKey, img string) string) {
+	b.WalkAllContainerImages(fn)
 }
 
 // AllImages returns all images found -- both container images and OS images for nodes.
 type AllImages struct {
-	NodeImages      []*NodeImage
 	ContainerImages []*ContainerImage
 }
 
 // FindAllImages finds both container and node images.
 func (b *ImageFinder) AllImages() *AllImages {
 	return &AllImages{
-		NodeImages:      b.NodeImages(),
 		ContainerImages: b.AllContainerImages(),
 	}
 }
@@ -212,17 +170,8 @@ func (b *ImageFinder) AllImages() *AllImages {
 // Flattened turns an AllImages struct with image information into a struct
 // containing lists of strings. All duplicates are removed.
 func (a *AllImages) Flattened() *AllImagesFlattened {
-	var nodeImages []string
 	seen := make(map[string]bool)
-	for _, val := range a.NodeImages {
-		if !seen[val.Image] {
-			nodeImages = append(nodeImages, val.Image)
-		}
-		seen[val.Image] = true
-	}
-
 	var containerImages []string
-	seen = make(map[string]bool)
 	for _, val := range a.ContainerImages {
 		if !seen[val.Image] {
 			containerImages = append(containerImages, val.Image)
@@ -230,7 +179,6 @@ func (a *AllImages) Flattened() *AllImagesFlattened {
 		seen[val.Image] = true
 	}
 	return &AllImagesFlattened{
-		NodeImages:      nodeImages,
 		ContainerImages: containerImages,
 	}
 }
@@ -238,6 +186,5 @@ func (a *AllImages) Flattened() *AllImagesFlattened {
 // ImagesFlattened contains images found, but flattened into lists of
 // strings.
 type AllImagesFlattened struct {
-	NodeImages      []string `json:"nodeImages"`
 	ContainerImages []string `json:"containerImages"`
 }

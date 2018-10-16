@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	bextpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1"
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -33,7 +34,7 @@ var (
 	ComponentPackage = &Converter{&bpb.ComponentPackage{}}
 
 	// NodeConfig is a converter for NodeConfig protos.
-	NodeConfig = &Converter{&bpb.NodeConfig{}}
+	NodeConfig = &Converter{&bextpb.NodeConfig{}}
 
 	// ObjectMeta is a converter for NodeConfig protos.
 	ObjectMeta = &Converter{&bpb.ObjectMeta{}}
@@ -58,8 +59,8 @@ func ToStruct(msg proto.Message) *structpb.Struct {
 }
 
 // ToNodeConfig is a type converter for converting to and from a NodeConfig.
-func ToNodeConfig(msg proto.Message) *bpb.NodeConfig {
-	return msg.(*bpb.NodeConfig)
+func ToNodeConfig(msg proto.Message) *bextpb.NodeConfig {
+	return msg.(*bextpb.NodeConfig)
 }
 
 // ToObjectMeta is a type converter for converting a proto to an ObjectMeta.

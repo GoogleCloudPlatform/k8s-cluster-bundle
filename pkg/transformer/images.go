@@ -44,7 +44,7 @@ type ImageSubRule struct {
 func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) *bpb.ClusterBundle {
 	b := converter.CloneBundle(t.Bundle)
 	finder := find.ImageFinder{b}
-	finder.WalkAllImages(func(_ string, _ core.ClusterObjectKey, img string) string {
+	finder.WalkAllImages(func(_ core.ClusterObjectKey, img string) string {
 		for _, r := range rules {
 			if strings.Contains(img, r.Find) {
 				// We can't return because it's possible that another rule will apply

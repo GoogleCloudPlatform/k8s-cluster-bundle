@@ -160,7 +160,7 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 }
 
 var bundleExample = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -168,42 +168,46 @@ spec:
   components:
   - metadata:
       name: logger
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: logger-pod
-      spec:
-        dnsPolicy: Default
-        containers:
-        - name: logger
-          image: gcr.io/floof/logger
-          command:
-             - /logger
-             - --logtostderr
-        - name: chopper
-          image: gcr.io/floof/chopper
-          command:
-             - /chopper
-             - --logtostderr
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: logger-pod
+        spec:
+          dnsPolicy: Default
+          containers:
+          - name: logger
+            image: gcr.io/floof/logger
+            command:
+               - /logger
+               - --logtostderr
+          - name: chopper
+            image: gcr.io/floof/chopper
+            command:
+               - /chopper
+               - --logtostderr
   - metadata:
       name: zap
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: zap-pod
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: zap-pod
+
   - metadata:
       name: dap
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: dap
-      spec:
-        containers:
-        - name: dapper
-          image: gcr.io/floof/dapper`
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: dap
+        spec:
+          containers:
+          - name: dapper
+            image: gcr.io/floof/dapper`
 
 func TestImageFinder_Bundle(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExample))
@@ -237,28 +241,45 @@ func TestImageFinder_Bundle(t *testing.T) {
 }
 
 var bundleExampleNodeConfig = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  nodeConfigs:
+  components:
   - metadata:
-      name: 'ubuntu-control-plane'
-    initFile: "echo 'I'm a script'"
-    osImage:
-      url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-    envVars:
-      - name: FOO_VAR
-        value: 'foo-val'
+      name: nodeconfig1
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-control-plane'
+        kind: NodeConfig
+        initFile: "echo 'I'm a script'"
+        osImage:
+          url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+        envVars:
+          - name: FOO_VAR
+            value: 'foo-val'
+
   - metadata:
-      name: 'ubuntu-cluster-node'
-    initFile: "echo 'I'm another script'"
-    osImage:
-      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+      name: nodeconfig2
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-cluster-node'
+        kind: NodeConfig
+        initFile: "echo 'I'm another script'"
+        osImage:
+          url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+
   - metadata:
-      name: 'ubuntu-cluster-node-no-image'
-    initFile: "echo 'I'm another script'"`
+      name: nodeconfig3
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-cluster-node-no-image'
+        kind: NodeConfig
+        initFile: "echo 'I'm another script'"`
 
 func TestImageFinder_NodeImages(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleNodeConfig))
@@ -267,13 +288,13 @@ func TestImageFinder_NodeImages(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	found := finder.NodeImages()
+	found := finder.AllContainerImages()
 	if err != nil {
 		t.Fatalf("error finding images: %v", err)
 	}
-	expected := []*NodeImage{
-		&NodeImage{"ubuntu-control-plane", "gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
-		&NodeImage{"ubuntu-cluster-node", "gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+	expected := []*ContainerImage{
+		&ContainerImage{core.ClusterObjectKey{"nodeconfig1", "ubuntu-control-plane"}, "gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
+		&ContainerImage{core.ClusterObjectKey{"nodeconfig2", "ubuntu-cluster-node"}, "gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1"},
 	}
 
 	if !reflect.DeepEqual(found, expected) {
@@ -282,70 +303,90 @@ func TestImageFinder_NodeImages(t *testing.T) {
 }
 
 var bundleExampleAll = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
-  nodeConfigs:
-  - metadata:
-      name: 'ubuntu-control-plane'
-    initFile: "echo 'I'm a script'"
-    osImage:
-      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-    envVars:
-      - name: FOO_VAR
-        value: 'foo-val'
-  - metadata:
-      name: 'ubuntu-cluster-node'
-    initFile: "echo 'I'm another script'"
-    osImage:
-      url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-  - metadata:
-      name: 'ubuntu-cluster-node-no-image'
-    initFile: "echo 'I'm another script'"
-
   components:
   - metadata:
+      name: nodeconfig1
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-control-plane'
+        kind: NodeConfig
+        initFile: "echo 'I'm a script'"
+        osImage:
+          url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+        envVars:
+          - name: FOO_VAR
+            value: 'foo-val'
+
+  - metadata:
+      name: nodeconfig2
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-cluster-node'
+        kind: NodeConfig
+        initFile: "echo 'I'm another script'"
+        osImage:
+          url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+
+  - metadata:
+      name: nodeconfig3
+    spec:
+      clusterObjects:
+      - metadata:
+          name: 'ubuntu-cluster-node-no-image'
+        kind: NodeConfig
+        initFile: "echo 'I'm another script'"
+
+  - metadata:
       name: logger
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: logger-pod
-      spec:
-        dnsPolicy: Default
-        containers:
-        - name: logger
-          image: gcr.io/floof/logger
-          command:
-             - /logger
-             - --logtostderr
-        - name: chopper
-          image: gcr.io/floof/chopper
-          command:
-             - /chopper
-             - --logtostderr
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: logger-pod
+        spec:
+          dnsPolicy: Default
+          containers:
+          - name: logger
+            image: gcr.io/floof/logger
+            command:
+               - /logger
+               - --logtostderr
+          - name: chopper
+            image: gcr.io/floof/chopper
+            command:
+               - /chopper
+               - --logtostderr
   - metadata:
       name: zap
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: zap-pod
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: zap-pod
+
   - metadata:
       name: dap
-    clusterObjects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: dap
-      spec:
-        containers:
-        - name: dapper
-          image: gcr.io/floof/dapper
-        - name: verydapper
-          image: gcr.io/floof/dapper`
+    spec:
+      clusterObjects:
+      - apiVersion: v1
+        kind: Pod
+        metadata:
+          name: dap
+        spec:
+          containers:
+          - name: dapper
+            image: gcr.io/floof/dapper
+          - name: verydapper
+            image: gcr.io/floof/dapper`
 
 func TestImageFinder_AllFlattened(t *testing.T) {
 	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleAll))
@@ -356,10 +397,8 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 	finder := &ImageFinder{converter.ToBundle(s)}
 	found := finder.AllImages().Flattened()
 	expected := &AllImagesFlattened{
-		NodeImages: []string{
-			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
-		},
 		ContainerImages: []string{
+			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
 			"gcr.io/floof/logger",
 			"gcr.io/floof/chopper",
 			"gcr.io/floof/dapper",
@@ -377,8 +416,8 @@ func TestImageFinder_WalkTransform(t *testing.T) {
 	}
 
 	finder := &ImageFinder{converter.ToBundle(s)}
-	finder.WalkAllImages(func(nc string, key core.ClusterObjectKey, img string) string {
-		if nc == "ubuntu-control-plane" && strings.HasPrefix(img, "gs://") {
+	finder.WalkAllImages(func(key core.ClusterObjectKey, img string) string {
+		if key.ObjectName == "ubuntu-control-plane" && strings.HasPrefix(img, "gs://") {
 			return "go://" + strings.TrimPrefix(img, "gs://")
 		}
 		if key.ComponentName == "dap" && strings.HasPrefix(img, "gcr.io") {
@@ -389,11 +428,9 @@ func TestImageFinder_WalkTransform(t *testing.T) {
 	found := finder.AllImages().Flattened()
 
 	expected := &AllImagesFlattened{
-		NodeImages: []string{
+		ContainerImages: []string{
 			"go://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
 			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
-		},
-		ContainerImages: []string{
 			"gcr.io/floof/logger",
 			"gcr.io/floof/chopper",
 			"k8s.io/floof/dapper",

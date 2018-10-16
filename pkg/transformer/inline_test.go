@@ -32,24 +32,20 @@ kind: ClusterBundle
 metadata:
   name: test-bundle
 spec:
-  nodeConfigs:
-  - metadata:
-      name: master
-    externalInitFile:
-      url: 'file://path/to/init-script.sh'
   components:
   - metadata:
       name: kube-apiserver
-    clusterObjectFiles:
-    - url: 'file://path/to/kube_apiserver.yaml'
+    spec:
+      clusterObjectFiles:
+      - url: 'file://path/to/kube_apiserver.yaml'
   - metadata:
       name: kubelet-config
-    clusterObjectFiles:
-    - url: 'file://path/to/kubelet/config.yaml'
+    spec:
+      clusterObjectFiles:
+      - url: 'file://path/to/kubelet/config.yaml'
 `
 
 const (
-	initScriptFile    = "path/to/init-script.sh"
 	kubeletConfigFile = "path/to/kubelet/config.yaml"
 	kubeAPIServerFile = "path/to/kube_apiserver.yaml"
 	multiDocFile      = "path/to/multidoc.yaml"
@@ -57,8 +53,7 @@ const (
 	parentInitScriptFile    = "parent/path/to/init-script.sh"
 	parentKubeAPIServerFile = "parent/path/to/kube_apiserver.yaml"
 
-	nodeCfgFile = "parent/some_node_config.yaml"
-	compFile    = "parent/kube_apiserver_component.yaml"
+	compFile = "parent/kube_apiserver_component.yaml"
 
 	initScriptContents = "#!/bin/bash\necho foo"
 )
@@ -73,8 +68,6 @@ func (*fakeLocalReader) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte,
 	switch url {
 	case parentInitScriptFile:
 		fallthrough
-	case initScriptFile:
-		return []byte(initScriptContents), nil
 
 	case kubeletConfigFile:
 		return []byte("{\"metadata\": { \"name\": \"foobar\"}, \"foo\": \"bar\"}"), nil
@@ -94,19 +87,13 @@ biff: bam`), nil
 	case kubeAPIServerFile:
 		return []byte("{\"metadata\": { \"name\": \"biffbam\"}, \"biff\": \"bam\"}"), nil
 
-	case nodeCfgFile:
-		return []byte(`
-metadata:
-  name: master
-externalInitFile:
-  url: 'file://path/to/init-script.sh'`), nil
-
 	case compFile:
 		return []byte(`
 metadata:
   name: kube-apiserver
-clusterObjectFiles:
-- url: 'file://path/to/kube_apiserver.yaml'`), nil
+spec:
+  clusterObjectFiles:
+  - url: 'file://path/to/kube_apiserver.yaml'`), nil
 
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
@@ -132,9 +119,6 @@ func TestInlineBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
-	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
-		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
-	}
 	if got := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
@@ -149,8 +133,6 @@ kind: ClusterBundle
 metadata:
   name: test-bundle
 spec:
-  nodeConfigFiles:
-  - url: 'file://parent/some_node_config.yaml'
   componentFiles:
   - url: 'file://parent/kube_apiserver_component.yaml'
 `
@@ -174,9 +156,6 @@ func TestTwoLayerInline(t *testing.T) {
 	finder, err := find.NewBundleFinder(newpb)
 	if err != nil {
 		t.Fatalf("Error creating bundle finder: %v", err)
-	}
-	if got := finder.NodeConfig("master").GetInitFile(); got != initScriptContents {
-		t.Errorf("Master init script: Got %q, but wanted %q.", got, initScriptContents)
 	}
 	found := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})
 	comp := finder.ComponentPackage("kube-apiserver")
@@ -215,8 +194,9 @@ spec:
   components:
   - metadata:
       name: multidoc
-    clusterObjectFiles:
-    - url: 'file://path/to/multidoc.yaml'
+    spec:
+      clusterObjectFiles:
+      - url: 'file://path/to/multidoc.yaml'
 `
 
 func TestMultiDoc(t *testing.T) {

@@ -15,6 +15,7 @@
 package converter
 
 import (
+	bextpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
@@ -26,6 +27,19 @@ type KubeConverter struct {
 // FromStruct creates a new KubeConverter.
 func FromStruct(s *structpb.Struct) *KubeConverter {
 	return &KubeConverter{s}
+}
+
+// ToNodeConfig converts from a struct to a NodeConfig.
+func (k *KubeConverter) ToNodeConfig() (*bextpb.NodeConfig, error) {
+	b, err := Struct.ProtoToJSON(k.s)
+	if err != nil {
+		return nil, err
+	}
+	pb, err := NodeConfig.JSONToProto(b)
+	if err != nil {
+		return nil, err
+	}
+	return ToNodeConfig(pb), nil
 }
 
 /*

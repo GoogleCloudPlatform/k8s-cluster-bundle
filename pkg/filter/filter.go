@@ -86,7 +86,10 @@ func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
 	for _, cp := range b.GetSpec().GetComponents() {
 		var matched []*structpb.Struct
 		var notMatched []*structpb.Struct
-		for _, c := range cp.GetClusterObjects() {
+		if cp.Spec == nil {
+			continue
+		}
+		for _, c := range cp.GetSpec().GetClusterObjects() {
 			meta, err := converter.ObjectMetaFromStruct(c)
 			if err != nil {
 				log.Infof("error converting cluster's object meta: %v", err)
@@ -102,9 +105,9 @@ func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
 			}
 		}
 		if o.KeepOnly {
-			cp.ClusterObjects = matched
+			cp.Spec.ClusterObjects = matched
 		} else {
-			cp.ClusterObjects = notMatched
+			cp.Spec.ClusterObjects = notMatched
 		}
 	}
 	return b
