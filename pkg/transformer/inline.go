@@ -124,6 +124,9 @@ func (n *Inliner) readFileToProto(ctx context.Context, file *bpb.File, conv *con
 }
 
 func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.ClusterBundle) error {
+	if b.Spec == nil {
+		return nil
+	}
 	for _, cf := range b.GetSpec().GetComponentFiles() {
 		pbs, err := n.readFileToProto(ctx, cf, converter.ComponentPackage)
 		if err != nil {
@@ -138,7 +141,7 @@ func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.Clust
 			}
 
 			// Transform the file-urls of the children to now be relative to where the component is
-			for _, ocf := range comp.GetClusterObjectFiles() {
+			for _, ocf := range comp.GetSpec().GetClusterObjectFiles() {
 				compUrl := cf.GetUrl()
 				objUrl := ocf.GetUrl()
 				if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
@@ -154,7 +157,10 @@ func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.Clust
 }
 
 func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b *bpb.ComponentPackage) error {
-	for _, cf := range b.GetClusterObjectFiles() {
+	if b.Spec == nil {
+		return nil
+	}
+	for _, cf := range b.GetSpec().GetClusterObjectFiles() {
 		pbs, err := n.readFileToProto(ctx, cf, converter.Struct)
 		if err != nil {
 			return err
@@ -166,12 +172,12 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 			st := converter.ToStruct(pb)
 			if len(st.GetFields()) > 0 {
 				// Ignore 0-length objects (empty documents).
-				b.ClusterObjects = append(b.ClusterObjects, st)
+				b.GetSpec().ClusterObjects = append(b.GetSpec().ClusterObjects, st)
 			}
 		}
 	}
 	var emptyFiles []*bpb.File
-	b.ClusterObjectFiles = emptyFiles
+	b.GetSpec().ClusterObjectFiles = emptyFiles
 	return nil
 }
 

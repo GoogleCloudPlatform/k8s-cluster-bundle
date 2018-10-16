@@ -91,8 +91,9 @@ biff: bam`), nil
 		return []byte(`
 metadata:
   name: kube-apiserver
-clusterObjectFiles:
-- url: 'file://path/to/kube_apiserver.yaml'`), nil
+spec:
+  clusterObjectFiles:
+  - url: 'file://path/to/kube_apiserver.yaml'`), nil
 
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
@@ -193,8 +194,9 @@ spec:
   components:
   - metadata:
       name: multidoc
-    clusterObjectFiles:
-    - url: 'file://path/to/multidoc.yaml'
+    spec:
+      clusterObjectFiles:
+      - url: 'file://path/to/multidoc.yaml'
 `
 
 func TestMultiDoc(t *testing.T) {
