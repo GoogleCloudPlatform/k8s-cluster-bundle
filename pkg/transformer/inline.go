@@ -163,12 +163,9 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 	for _, cf := range b.GetSpec().GetClusterObjectFiles() {
 		pbs, err := n.readFileToProto(ctx, cf, converter.Struct)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading component object for component %q: %v", compName, err)
 		}
 		for _, pb := range pbs {
-			if err != nil {
-				return fmt.Errorf("error reading component object for component %q: %v", compName, err)
-			}
 			st := converter.ToStruct(pb)
 			if len(st.GetFields()) > 0 {
 				// Ignore 0-length objects (empty documents).
