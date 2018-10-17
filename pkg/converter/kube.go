@@ -15,8 +15,11 @@
 package converter
 
 import (
+	"encoding/json"
+
 	bextpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // KubeConverter converts structs to Kubernetes objects.
@@ -40,6 +43,21 @@ func (k *KubeConverter) ToNodeConfig() (*bextpb.NodeConfig, error) {
 		return nil, err
 	}
 	return ToNodeConfig(pb), nil
+}
+
+// ToNodeConfig converts from a struct to a NodeConfig.
+func (k *KubeConverter) ToConfigMap() (*corev1.ConfigMap, error) {
+	b, err := Struct.ProtoToJSON(k.s)
+	if err != nil {
+		return nil, err
+	}
+
+	cm := &corev1.ConfigMap{}
+	err = json.Unmarshal(b, cm)
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
 }
 
 /*

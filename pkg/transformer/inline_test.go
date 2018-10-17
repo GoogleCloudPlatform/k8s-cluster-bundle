@@ -87,6 +87,12 @@ biff: bam`), nil
 	case kubeAPIServerFile:
 		return []byte("{\"metadata\": { \"name\": \"biffbam\"}, \"biff\": \"bam\"}"), nil
 
+	case "path/to/raw-text.yaml":
+		return []byte("foobar"), nil
+
+	case "path/to/rawer-text.yaml":
+		return []byte("biffbam"), nil
+
 	case compFile:
 		return []byte(`
 metadata:
@@ -226,5 +232,67 @@ func TestMultiDoc(t *testing.T) {
 	}
 	if got := finder.ClusterObjects("multidoc", core.ObjectRef{Name: "foobar"})[0].GetFields()["foo"].GetStringValue(); got != "bar" {
 		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bar")
+	}
+}
+
+const bundleWithText = `
+apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: test-bundle
+spec:
+  components:
+  - metadata:
+      name: textdoc
+    spec:
+      rawTextFiles:
+      - url: 'file://path/to/raw-text.yaml'
+      - url: 'file://path/to/rawer-text.yaml'
+`
+
+func TestBundleRawText(t *testing.T) {
+	ctx := context.Background()
+
+	b, err := converter.Bundle.YAMLToProto([]byte(bundleWithText))
+	if err != nil {
+		t.Fatalf("Error parsing bundle: %v", err)
+	}
+	bp := converter.ToBundle(b)
+	inliner := &Inliner{
+		Reader: &fakeLocalReader{},
+	}
+
+	newpb, err := inliner.Inline(ctx, bp, &InlineOptions{})
+	if err != nil {
+		t.Fatalf("Error inlining bundle: %v", err)
+	}
+
+	finder, err := find.NewBundleFinder(newpb)
+	if err != nil {
+		t.Fatalf("Error creating bundle finder: %v", err)
+	}
+
+	outBun, err := converter.Bundle.ProtoToYAML(newpb)
+	if err != nil {
+		t.Fatalf("error converting inlined bundle back into a bundle-yaml: %v", err)
+	}
+
+	name := "raw-text.yaml"
+	objs := finder.ClusterObjects("textdoc", core.ObjectRef{Name: name})
+	if len(objs) == 0 {
+		t.Fatalf("Couldn't find cluster object in named %s in bundle %s", name, string(outBun))
+	}
+	if got := objs[0].GetFields()["data"].GetStructValue().GetFields()["raw-text.yaml"].GetStringValue(); got != "foobar" {
+		t.Errorf("textdoc object: Got %q, but wanted foobar.", got)
+	}
+
+	name = "rawer-text.yaml"
+	objs = finder.ClusterObjects("textdoc", core.ObjectRef{Name: name})
+	if len(objs) == 0 {
+		t.Fatalf("Couldn't find cluster object in named %s in bundle %s", name, string(outBun))
+	}
+	if got := objs[0].GetFields()["data"].
+		GetStructValue().GetFields()["rawer-text.yaml"].GetStringValue(); got != "biffbam" {
+		t.Errorf("textdoc object: Got %q, but wanted biffbam", got)
 	}
 }

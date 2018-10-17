@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "config_map_maker.go",
         "doc.go",
         "images.go",
         "inline.go",
@@ -16,12 +17,14 @@ go_library(
         "//pkg/files:go_default_library",
         "//pkg/find:go_default_library",
         "//vendor/github.com/golang/protobuf/proto:go_default_library",
+        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
     ],
 )
 
 go_test(
     name = "go_default_test",
     srcs = [
+        "config_map_maker_test.go",
         "images_test.go",
         "inline_test.go",
     ],
