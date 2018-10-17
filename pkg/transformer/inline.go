@@ -188,6 +188,7 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 
 	var emptyFiles []*bpb.File
 	b.GetSpec().ClusterObjectFiles = emptyFiles
+	b.GetSpec().RawTextFiles = emptyFiles
 	return nil
 }
 

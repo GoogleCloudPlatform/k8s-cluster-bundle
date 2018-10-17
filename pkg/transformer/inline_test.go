@@ -125,6 +125,12 @@ func TestInlineBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
+	for _, c := range newpb.GetSpec().GetComponents() {
+		if fi := c.GetSpec().ClusterObjectFiles; len(fi) > 0 {
+			t.Errorf("Found files %v, but expected all the cluster object files to be removed.", fi)
+		}
+	}
+
 	if got := finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("Master kubelet config: Got %q, but wanted %q.", got, "bam")
 	}
@@ -227,6 +233,12 @@ func TestMultiDoc(t *testing.T) {
 		t.Fatalf("Error creating bundle finder: %v", err)
 	}
 
+	for _, c := range newpb.GetSpec().GetComponents() {
+		if fi := c.GetSpec().ClusterObjectFiles; len(fi) > 0 {
+			t.Errorf("Found files %v, but expected all the cluster object files to be removed.", fi)
+		}
+	}
+
 	if got := finder.ClusterObjects("multidoc", core.ObjectRef{Name: "biffbam"})[0].GetFields()["biff"].GetStringValue(); got != "bam" {
 		t.Errorf("multidoc object: Got %q, but wanted %q.", got, "bam")
 	}
@@ -275,6 +287,12 @@ func TestBundleRawText(t *testing.T) {
 	outBun, err := converter.Bundle.ProtoToYAML(newpb)
 	if err != nil {
 		t.Fatalf("error converting inlined bundle back into a bundle-yaml: %v", err)
+	}
+
+	for _, c := range newpb.GetSpec().GetComponents() {
+		if fi := c.GetSpec().RawTextFiles; len(fi) > 0 {
+			t.Errorf("Found files %v, but expected all the raw text files to be removed.", fi)
+		}
 	}
 
 	name := "raw-text.yaml"
