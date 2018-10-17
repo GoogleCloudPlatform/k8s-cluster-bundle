@@ -16,18 +16,16 @@ changes for a while until the API settles down.
 
 ![Cluster Bundle](https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-cluster-bundle/master/cluster_bundle.png)
 
-The core of the Cluster Bundle are the Kubernetes types that are used to
-represent the software components (or packages) and the collections of these
-components (or bundles).
+Some Terminology:
 
 * **Cluster Object**: A Kubernetes object, such as a pod, deployment, and so on.
 * **Component Package**: A versioned collection of Kubernetes objects.
 * **Bundle**: A versioned collection of Kubernetes component packages.
 
 The Cluster Bundle APIs are minimal and focused. In particular, they are
-focused only on representing Kubernetes components without worrying about
-deployment. It is assumed that external deployment mechanisms (like a CLI) will
-consume the components and apply the components to a cluster.
+designed to represent Kubernetes components without worrying about deployment.
+It is assumed that external deployment mechanisms (like a CLI) will consume the
+components and apply the components to a cluster.
 
 ### Component Packages
 
