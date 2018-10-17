@@ -84,7 +84,10 @@ message ComponentPackageSpec {
   // Raw files represent arbitrary string data. Unlike cluster object files,
   // these files don't need to be parseable as YAML or JSON. So, during the
   // inline process, the data is inserted into a generated config map before
-  // being added to the cluster objects.
+  // being added to the cluster objects. A ConfigMap is generated per-file,
+  // with the metadata.name and the data-key both being set to the base-file
+  // name. Thus, if the url is something like 'file://foo/bar/biff.txt', the
+  // metadata.name and data-key will be 'biff.txt'.
   repeated File raw_text_files = 6;
 }
 
