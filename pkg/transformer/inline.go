@@ -173,6 +173,19 @@ func (n *Inliner) processClusterObjects(ctx context.Context, compName string, b 
 			}
 		}
 	}
+
+	for _, cf := range b.GetSpec().GetRawTextFiles() {
+		text, err := n.readFilePB(ctx, cf)
+		if err != nil {
+			return fmt.Errorf("error reading raw text object for component %q: %v", compName, err)
+		}
+
+		name := filepath.Base(cf.GetUrl())
+		m := newConfigMapMaker(name)
+		m.addData(name, string(text))
+		b.GetSpec().ClusterObjects = append(b.GetSpec().ClusterObjects, m.cfgMap)
+	}
+
 	var emptyFiles []*bpb.File
 	b.GetSpec().ClusterObjectFiles = emptyFiles
 	return nil

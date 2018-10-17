@@ -68,7 +68,7 @@ message ComponentPackageSpec {
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashio.  These Kubernetes objects
   // are inlined and must be YAML/JSON
-  // compatible. Each must have `apiVersion`, `kind`, and `metadata`
+  // compatible. Each must have `apiVersion`, `kind`, and `metadata`.
   repeated google.protobuf.Struct cluster_objects = 4;
 
   // Cluster objects that are specified via a File-URL. The process of inlining
@@ -76,7 +76,19 @@ message ComponentPackageSpec {
   // During the inline process, if the file is YAML-formatted and contains multiple
   // objects, the objects will be split into separate inline objects. In other
   // words, one cluster object file may result in multiple cluster objects.
+  //
+  // Each cluster object file must be parseable into a Struct: In other words,
+  // it should be representable as either YAML or JSON.
   repeated File cluster_object_files = 5;
+
+  // Raw files represent arbitrary string data. Unlike cluster object files,
+  // these files don't need to be parseable as YAML or JSON. So, during the
+  // inline process, the data is inserted into a generated config map before
+  // being added to the cluster objects. A ConfigMap is generated per-file,
+  // with the metadata.name and the data-key both being set to the base-file
+  // name. Thus, if the url is something like 'file://foo/bar/biff.txt', the
+  // metadata.name and data-key will be 'biff.txt'.
+  repeated File raw_text_files = 6;
 }
 
 // MinRequirement represents a component that this component must be packaged

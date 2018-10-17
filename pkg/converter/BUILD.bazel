@@ -9,6 +9,7 @@ go_library(
         "doc.go",
         "exporter.go",
         "kube.go",
+        "name.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter",
     visibility = ["//visibility:public"],
@@ -20,6 +21,7 @@ go_library(
         "//vendor/github.com/golang/protobuf/jsonpb:go_default_library",
         "//vendor/github.com/golang/protobuf/proto:go_default_library",
         "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
     ],
 )
 
@@ -31,6 +33,7 @@ go_test(
         "example_test.go",
         "exporter_test.go",
         "kube_test.go",
+        "name_test.go",
     ],
     data = [
         "//pkg/testutil:bundle_testdata",
