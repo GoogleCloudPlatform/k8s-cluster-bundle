@@ -25,26 +25,6 @@ spec:
   - url: 'file://ubuntu-cluster-node.yaml' # Node Config
 
   components:
-  #=============#
-  # Node Config #
-  #=============#
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ComponentPackage
-    metadata:
-      name: 'node-config-ubuntu-master'
-    spec:
-      clusterObjects:
-      - apiVersion: 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
-        kind: NodeConfig
-        metadata:
-          name: 'ubuntu-control-plane'
-        initFile: "echo 'I'm a script'"
-        osImage:
-          url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-        envVars:
-          - name: FOO_VAR
-            value: 'foo-val'
-
   #====================#
   # Core control plane #
   #====================#
@@ -84,6 +64,15 @@ spec:
       clusterObjectFiles:
       - url: 'file://kubeproxy/kubeproxy.yaml'
 
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: data-blob
+    spec:
+      version: '0.1'
+      rawTextFiles:
+      - url: 'file://some-data.txt'
+
   #=========#
   # options #
   #=========#
@@ -96,3 +85,24 @@ spec:
       clusterObjectFiles:
       - url: 'file://options-example.yaml'
       - url: 'file://options-crd.yaml'
+
+  #=============#
+  # Node Config #
+  #=============#
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: 'node-config-ubuntu-master'
+    spec:
+      clusterObjects:
+      - apiVersion: 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
+        kind: NodeConfig
+        metadata:
+          name: 'ubuntu-control-plane'
+        initFile: "echo 'I'm a script'"
+        osImage:
+          url: 'gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+        envVars:
+          - name: FOO_VAR
+            value: 'foo-val'
+

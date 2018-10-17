@@ -1,5 +1,5 @@
 apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
-kind: ClusterBundle
+kind: ComponentPackage
 metadata:
   name: etcd-component
 spec:
