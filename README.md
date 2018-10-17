@@ -95,8 +95,7 @@ Bundles are collections of components, which makes it possible publish,
 validate, and deploy components as a single unit. Like components, Bundles can
 contain inlined or externalized components:
 
-```ymal
-
+```yaml
 apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
