@@ -45,7 +45,7 @@ func (k *KubeConverter) ToNodeConfig() (*bextpb.NodeConfig, error) {
 	return ToNodeConfig(pb), nil
 }
 
-// ToNodeConfig converts from a struct to a NodeConfig.
+// ToConfigMap converts from a struct to a Kubernetes ConfigMap.
 func (k *KubeConverter) ToConfigMap() (*corev1.ConfigMap, error) {
 	b, err := Struct.ProtoToJSON(k.s)
 	if err != nil {
