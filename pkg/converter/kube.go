@@ -32,6 +32,19 @@ func FromStruct(s *structpb.Struct) *KubeConverter {
 	return &KubeConverter{s}
 }
 
+// ToObject tries to marshall the Struct into some arbitrary object.
+func (k *KubeConverter) ToObject(obj interface{}) error {
+	b, err := Struct.ProtoToJSON(k.s)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(b, obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ToNodeConfig converts from a struct to a NodeConfig.
 func (k *KubeConverter) ToNodeConfig() (*bextpb.NodeConfig, error) {
 	b, err := Struct.ProtoToJSON(k.s)
@@ -47,13 +60,8 @@ func (k *KubeConverter) ToNodeConfig() (*bextpb.NodeConfig, error) {
 
 // ToConfigMap converts from a struct to a Kubernetes ConfigMap.
 func (k *KubeConverter) ToConfigMap() (*corev1.ConfigMap, error) {
-	b, err := Struct.ProtoToJSON(k.s)
-	if err != nil {
-		return nil, err
-	}
-
 	cm := &corev1.ConfigMap{}
-	err = json.Unmarshal(b, cm)
+	err := k.ToObject(cm)
 	if err != nil {
 		return nil, err
 	}
