@@ -53,8 +53,6 @@ const (
 	parentInitScriptFile    = "parent/path/to/init-script.sh"
 	parentKubeAPIServerFile = "parent/path/to/kube_apiserver.yaml"
 
-	compFile = "parent/kube_apiserver_component.yaml"
-
 	initScriptContents = "#!/bin/bash\necho foo"
 )
 
@@ -87,19 +85,23 @@ biff: bam`), nil
 	case kubeAPIServerFile:
 		return []byte("{\"metadata\": { \"name\": \"biffbam\"}, \"biff\": \"bam\"}"), nil
 
+	case "parent/path/to/raw-text.yaml":
+		fallthrough
 	case "path/to/raw-text.yaml":
 		return []byte("foobar"), nil
 
 	case "path/to/rawer-text.yaml":
 		return []byte("biffbam"), nil
 
-	case compFile:
+	case "parent/kube_apiserver_component.yaml":
 		return []byte(`
 metadata:
   name: kube-apiserver
 spec:
   clusterObjectFiles:
-  - url: 'file://path/to/kube_apiserver.yaml'`), nil
+  - url: 'file://path/to/kube_apiserver.yaml'
+  rawTextFiles:
+  - url: 'file://path/to/raw-text.yaml'`), nil
 
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.GetUrl())
@@ -192,6 +194,12 @@ func TestTwoLayerInline(t *testing.T) {
 		t.Fatalf("could not find component %q and object %q in object %v", "kube-apiserver", "biffbam", comp)
 	}
 	found = finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "biffbam"})
+	if len(found) != 0 {
+		t.Fatalf("found %v but did not expect to find anything", found)
+	}
+
+	// check for the raw-text object.
+	found = finder.ClusterObjects("kube-apiserver", core.ObjectRef{Name: "raw-text.yaml"})
 	if len(found) != 0 {
 		t.Fatalf("found %v but did not expect to find anything", found)
 	}

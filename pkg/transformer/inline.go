@@ -140,9 +140,17 @@ func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.Clust
 					cf.GetUrl())
 			}
 
+			compUrl := cf.GetUrl()
 			// Transform the file-urls of the children to now be relative to where the component is
 			for _, ocf := range comp.GetSpec().GetClusterObjectFiles() {
-				compUrl := cf.GetUrl()
+				objUrl := ocf.GetUrl()
+				if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
+					ocf.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(objUrl))
+				}
+			}
+
+			// Do the same with the text files.
+			for _, ocf := range comp.GetSpec().GetRawTextFiles() {
 				objUrl := ocf.GetUrl()
 				if strings.HasPrefix(objUrl, "file://") && strings.HasPrefix(compUrl, "file://") {
 					ocf.Url = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(objUrl))
