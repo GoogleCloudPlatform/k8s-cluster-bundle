@@ -38,6 +38,56 @@ metadata:
 		},
 
 		{
+			desc: "fail: bad kind",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: Bundle
+metadata:
+  name: '1.9.7.testbundle-zork'`,
+			errSubstring: "bundle kind",
+		},
+		{
+			desc: "fail: apiVersion",
+			bundle: `apiVersion: 'gke.io/k8s-cluster'
+kind: Bundle
+metadata:
+  name: '1.9.7.testbundle-zork'`,
+			errSubstring: "bundle apiVersion",
+		},
+		{
+			desc: "fail: name",
+			bundle: `apiVersion: 'gke.io/k8s-cluster'
+kind: Bundle`,
+			errSubstring: "bundle name",
+		},
+
+		{
+			desc: "success cluster component",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  components:
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: coolApp`,
+			// no errors
+		},
+		{
+			desc: "fail cluster component: no kind",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  components:
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    metadata:
+      name: coolApp`,
+			errSubstring: "cluster component kind",
+		},
+		{
 			desc: "fail: duplicate cluster component key",
 			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
