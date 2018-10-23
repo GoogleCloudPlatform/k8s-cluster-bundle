@@ -16,6 +16,7 @@ package validation
 
 import (
 	"fmt"
+	"regexp"
 
 	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
@@ -26,6 +27,8 @@ type BundleValidator struct {
 	Bundle *bpb.ClusterBundle
 }
 
+var apiVersionPattern = regexp.MustCompile(`^gke.io/k8s-cluster-bundle/\w+$`)
+
 // NewBundleValidator creates a new Bundle Validator
 func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
 	return &BundleValidator{b}
@@ -34,8 +37,26 @@ func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
 // Validate validates Bundles, providing as many errors as it can.
 func (b *BundleValidator) Validate() []error {
 	var errs []error
+	errs = append(errs, b.validateBundle()...)
 	errs = append(errs, b.validateComponentPackageNames()...)
 	errs = append(errs, b.validateClusterObjNames()...)
+	return errs
+}
+
+func (b *BundleValidator) validateBundle() []error {
+	var errs []error
+	n := b.Bundle.GetMetadata().GetName()
+	if n == "" {
+		errs = append(errs, fmt.Errorf("bundle name was empty, but must always be present"))
+	}
+	api := b.Bundle.GetApiVersion()
+	if !apiVersionPattern.MatchString(api) {
+		errs = append(errs, fmt.Errorf("bundle apiVersion must have form \"gke.io/k8s-cluster-bundle/<version>\". was %q", api))
+	}
+	k := b.Bundle.GetKind()
+	if k != "ClusterBundle" {
+		errs = append(errs, fmt.Errorf("bundle kind must be \"ClusterBundle\". was %q", k))
+	}
 	return errs
 }
 
@@ -48,6 +69,15 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 			errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for config %v", ca))
 			continue
 		}
+		api := ca.GetApiVersion()
+		if !apiVersionPattern.MatchString(api) {
+			errs = append(errs, fmt.Errorf("cluster components apiversion have the apiVersion of \"gke.io/k8s-cluster-bundle/<version>\". was %q for config %v", api, ca))
+		}
+		k := ca.GetKind()
+		if k != "ComponentPackage" {
+			errs = append(errs, fmt.Errorf("cluster component kind must be \"ComponentPackage\". was %q for config %v", k, ca))
+		}
+
 		if _, ok := objCollect[n]; ok {
 			errs = append(errs, fmt.Errorf("duplicate cluster component key %q when processing config %v", n, ca))
 			continue
