@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +domain=gke.io
+// +k8s:deepcopy-gen=package,register
+// +k8s:defaulter-gen=TypeMeta
+// +groupName=gke.io/k8s-cluster-bundle
 
-// Package apis represents the directory for bundle APIs. No code should live
-// in this package.
-package apis
+// Package v1alpha1 contains a Go IDL version of the proto Cluster Bundle type
+package v1alpha1

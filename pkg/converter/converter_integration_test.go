@@ -36,3 +36,19 @@ func TestRealisticBundleParse(t *testing.T) {
 		t.Errorf("Got name %q, expected name %q", bp.GetMetadata().GetName(), expID)
 	}
 }
+
+func TestRealisticBundleParseK8sBundle(t *testing.T) {
+	bundleContents, err := testutil.ReadTestBundle("../testutil/testdata")
+	if err != nil {
+		t.Fatalf("Error reading bundle file %v", err)
+	}
+	bp, err := YAMLToK8sBundle(bundleContents)
+	if err != nil {
+		t.Fatalf("Error parsing file: %v", err)
+	}
+
+	expID := "1.9.7.testbundle-zork"
+	if bp.ObjectMeta.Name != expID {
+		t.Errorf("Got name %q, expected name %q", bp.ObjectMeta.Name, expID)
+	}
+}

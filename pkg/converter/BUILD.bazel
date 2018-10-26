@@ -8,6 +8,7 @@ go_library(
         "converter.go",
         "doc.go",
         "exporter.go",
+        "k8sbundle.go",
         "kube.go",
         "name.go",
     ],
@@ -16,6 +17,7 @@ go_library(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/apis/bundleext/v1alpha1:go_default_library",
+        "//pkg/apis/k8sbundle/v1alpha1:go_default_library",
         "//pkg/files:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/golang/protobuf/jsonpb:go_default_library",
