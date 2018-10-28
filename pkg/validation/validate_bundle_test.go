@@ -33,7 +33,9 @@ func TestValidateBundle(t *testing.T) {
 			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
 kind: ClusterBundle
 metadata:
-  name: '1.9.7.testbundle-zork'`,
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.0.0'`,
 			// no errors
 		},
 
@@ -59,6 +61,24 @@ metadata:
 kind: Bundle`,
 			errSubstring: "bundle name",
 		},
+		{
+			desc: "fail: missing bundle version",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'`,
+			errSubstring: "cluster bundle spec version string",
+		},
+		{
+			desc: "fail: cluster bundle version is not SemVer",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '2'`,
+			errSubstring: "cluster bundle spec version string",
+		},
 
 		{
 			desc: "success cluster component",
@@ -67,11 +87,23 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
+  version: '1.10.2-something+else'
   components:
   - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
     kind: ComponentPackage
+    spec:
+      version: '1.1.2-staging+12345'
+      requirements:
+      - component: 'libCool'
+        componentApiVersion: '1.8.0'
     metadata:
-      name: coolApp`,
+      name: coolApp
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    spec:
+      version: '1.8.6'
+    metadata:
+      name: libCool`,
 			// no errors
 		},
 		{
@@ -101,6 +133,38 @@ spec:
       name: coolApp`,
 			errSubstring: "duplicate cluster component key",
 		},
+		{
+			desc: "fail cluster component: missing SemVer version",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.10.2-something+else'
+  components:
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: coolApp`,
+			errSubstring: "cluster component spec version",
+		},
+		{
+			desc: "fail cluster component: invalid SemVer string",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.10.2-something+else'
+  components:
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    spec:
+      version: '1.01.2'
+    metadata:
+      name: coolApp`,
+			errSubstring: "cluster component spec version",
+		},
 
 		{
 			desc: "fail: api version on cluster obj",
@@ -118,6 +182,32 @@ spec:
           name: pod
         kind: zed`,
 			errSubstring: "must always have an API Version",
+		},
+		{
+			desc: "fail: invalid SemVer string on min requirements element",
+			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.10.2-something+else'
+  components:
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    spec:
+      version: '1.1.2-staging+12345'
+      requirements:
+      - component: 'libCool'
+        componentApiVersion: '1.8.invalid'
+    metadata:
+      name: coolApp
+  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+    kind: ComponentPackage
+    spec:
+      version: '1.8.6'
+    metadata:
+      name: libCool`,
+			errSubstring: "min requirement has invalid SemVer string",
 		},
 
 		{
@@ -190,4 +280,39 @@ func checkErrCases(desc string, err error, expErrSubstring string) error {
 		return fmt.Errorf("Test %q: Got error: %q. expected it to contain substring %q", desc, err.Error(), expErrSubstring)
 	}
 	return nil
+}
+
+func TestSemVerPattern(t *testing.T) {
+	testCases := []struct {
+		version string
+		matches bool
+	}{
+		{"0.0.0", true},
+		{"1.0.0", true},
+		{"1.2.3", true},
+		{"1.10.2-alpha", true},
+		{"1.10.3-alpha.beta-1.gamma", true},
+		{"1.4.5+1234", true},
+		{"1.2.6+12.45.alpha-1.beta2", true},
+		{"1.0.1-v1alpha1+1234", true},
+		{"10.22.3123-v1alpha-1.2+metadata-2.2-k32.v1", true},
+		{"version", false},
+		{"1", false},
+		{"12.", false},
+		{"3.1", false},
+		{"4.32.", false},
+		{"10.2.2.", false},
+		{"01.2.1", false},
+		{"1.02.1", false},
+		{"00.0.0", false},
+		{"2.0.003", false},
+		{"1.2.3-alpha_1", false},
+		{"1.2.3+124@23", false},
+	}
+	for _, tc := range testCases {
+		gotMatch := semVerPattern.MatchString(tc.version)
+		if gotMatch != tc.matches {
+			t.Errorf("'%v', got: %v, want: %v\n", tc.version, gotMatch, tc.matches)
+		}
+	}
 }
