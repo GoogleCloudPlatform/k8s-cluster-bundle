@@ -42,14 +42,12 @@ message ClusterBundle {
 
 // A spec object that wraps the Cluster Bundle.
 message ClusterBundleSpec {
-  // Version-string for this bundle. The version should be a SemVer string (see
-  // https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
-  // speaking, a major-version (changes should indicate breaking changes,
-  // minor-versions should indicate backwards compatible features, and patch
-  // changes should indicate backwords compatible. If there are any changes to
-  // the bundle, then the version string must be incremented.
-  //
-  // If a bundle is versioned, then all its components must be versioned.
+  // Required. Version-string for this bundle. The version should be a SemVer
+  // string (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).
+  // Generally speaking, a major-version should indicate breaking
+  // changes, minor-versions should indicate backwards compatible features, and
+  // patch changes should indicate backwords compatible. If there are any
+  // changes to the bundle, then the version string must be incremented.
   string version = 1;
 
   // Kubernetes objects grouped into component packages and versioned together.

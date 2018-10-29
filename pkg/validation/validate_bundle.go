@@ -27,7 +27,21 @@ type BundleValidator struct {
 	Bundle *bpb.ClusterBundle
 }
 
-var apiVersionPattern = regexp.MustCompile(`^gke.io/k8s-cluster-bundle/\w+$`)
+var (
+	apiVersionPattern = regexp.MustCompile(`^gke.io/k8s-cluster-bundle/\w+$`)
+
+	// Regex string for numbers without leading zeros.
+	number = `([1-9]\d*|0)`
+	// Regex string for dot separated alphanumeric identifier with hyphen.
+	dotID  = `[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*`
+	// The three regex strings below make up the SemVer 2.0.0 string.
+	// MAJOR.MINOR.PATCH-preRelease+metaData
+	majorMinorPatch = fmt.Sprintf(`%s\.%s\.%s`, number, number, number)
+	preRelease      = fmt.Sprintf(`(-%v)?`, dotID)
+	metaData        = fmt.Sprintf(`(\+%v)?`, dotID)
+	// Matches SemVer strings (https://semver.org/).
+	semVerPattern = regexp.MustCompile(fmt.Sprintf(`^%s%s%s$`, majorMinorPatch, preRelease, metaData))
+)
 
 // NewBundleValidator creates a new Bundle Validator
 func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
@@ -57,6 +71,10 @@ func (b *BundleValidator) validateBundle() []error {
 	if k != "ClusterBundle" {
 		errs = append(errs, fmt.Errorf("bundle kind must be \"ClusterBundle\". was %q", k))
 	}
+	v := b.Bundle.GetSpec().GetVersion()
+	if !semVerPattern.MatchString(v) {
+		errs = append(errs, fmt.Errorf("cluster bundle spec version string is not a SemVer string, was '%v'", v))
+	}
 	return errs
 }
 
@@ -77,12 +95,28 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 		if k != "ComponentPackage" {
 			errs = append(errs, fmt.Errorf("cluster component kind must be \"ComponentPackage\". was %q for config %v", k, ca))
 		}
-
+		v := ca.GetSpec().GetVersion()
+		if !semVerPattern.MatchString(v) {
+			errs = append(errs, fmt.Errorf("cluster component spec version is not a SemVer string, was '%v' for config %v", v, ca))
+		}
 		if _, ok := objCollect[n]; ok {
 			errs = append(errs, fmt.Errorf("duplicate cluster component key %q when processing config %v", n, ca))
 			continue
 		}
 		objCollect[n] = ca
+	}
+
+	// Validate the min requirements on each component.
+	for _, ca := range b.Bundle.GetSpec().GetComponents() {
+		for _, mr := range ca.GetSpec().GetRequirements() {
+			if !semVerPattern.MatchString(mr.GetComponentApiVersion()) {
+				errs = append(errs, fmt.Errorf("min requirement has invalid SemVer string, was '%v', from config: %v", mr.GetComponentApiVersion(), mr))
+			}
+
+			if _, ok := objCollect[mr.GetComponent()]; !ok {
+				errs = append(errs, fmt.Errorf("required component %v does not exist, requirement of config: %v", mr.GetComponent(),  ca))
+			}
+		}
 	}
 	return errs
 }
