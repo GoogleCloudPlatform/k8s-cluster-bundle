@@ -1,14 +1,14 @@
-apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 metadata:
   name: 'node-config-ubuntu-node'
 spec:
   clusterObjects:
-  - apiVersion: 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
+  - apiVersion: 'bundleext.gke.io/v1alpha1'
     kind: NodeConfig
     metadata:
       name: 'ubuntu-cluster-node'
-  - apiVersion: 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
+  - apiVersion: 'bundleext.gke.io/v1alpha1'
     kind: NodeConfig
     metadata:
       name: 'ubuntu-cluster-node-2'

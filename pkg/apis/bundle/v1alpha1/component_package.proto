@@ -27,7 +27,7 @@ import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 // collection of objects.
 message ComponentPackage {
   // Required. Kubernetes API Version for the ComponentPackage type.
-  // Must always be 'gke.io/k8s-cluster-bundle/v1alpha1'
+  // Must always be 'bundle.gke.io/v1alpha1'
   string apiVersion = 1;
 
   // Required. The Kubernetes `kind` for this object. Must be

@@ -14,7 +14,7 @@
 
 // +k8s:deepcopy-gen=package,register
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=gke.io/k8s-cluster-bundle
+// +groupName=bundle.gke.io
 
 // Package v1alpha1 contains a Go IDL version of the proto Cluster Bundle type
 package v1alpha1

@@ -25,7 +25,7 @@ import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 // The ClusterBundle is a packaging format for Kubernetes Components.
 message ClusterBundle {
   // Required. Kubernetes API Version for the Bundle.
-  // Must be gke.io/k8s-cluster-bundle/v1alpha1.
+  // Must be bundle.gke.io/v1alpha1.
   string api_version = 1;
 
   // Required. The Kubernetes `kind` for this object. Must be 'ClusterBundle'.

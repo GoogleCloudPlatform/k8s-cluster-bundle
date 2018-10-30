@@ -27,7 +27,7 @@ type BundleValidator struct {
 	Bundle *bpb.ClusterBundle
 }
 
-var apiVersionPattern = regexp.MustCompile(`^gke.io/k8s-cluster-bundle/\w+$`)
+var apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
 
 // NewBundleValidator creates a new Bundle Validator
 func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
@@ -51,7 +51,7 @@ func (b *BundleValidator) validateBundle() []error {
 	}
 	api := b.Bundle.GetApiVersion()
 	if !apiVersionPattern.MatchString(api) {
-		errs = append(errs, fmt.Errorf("bundle apiVersion must have form \"gke.io/k8s-cluster-bundle/<version>\". was %q", api))
+		errs = append(errs, fmt.Errorf("bundle apiVersion must have form \"bundle.gke.io/<version>\". was %q", api))
 	}
 	k := b.Bundle.GetKind()
 	if k != "ClusterBundle" {
@@ -71,7 +71,7 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 		}
 		api := ca.GetApiVersion()
 		if !apiVersionPattern.MatchString(api) {
-			errs = append(errs, fmt.Errorf("cluster components apiversion have the apiVersion of \"gke.io/k8s-cluster-bundle/<version>\". was %q for config %v", api, ca))
+			errs = append(errs, fmt.Errorf("cluster components apiversion have the apiVersion of \"bundle.gke.io/<version>\". was %q for config %v", api, ca))
 		}
 		k := ca.GetKind()
 		if k != "ComponentPackage" {

@@ -30,7 +30,7 @@ func TestValidateBundle(t *testing.T) {
 	}{
 		{
 			desc: "success",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'`,
@@ -39,7 +39,7 @@ metadata:
 
 		{
 			desc: "fail: bad kind",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: Bundle
 metadata:
   name: '1.9.7.testbundle-zork'`,
@@ -55,20 +55,20 @@ metadata:
 		},
 		{
 			desc: "fail: name",
-			bundle: `apiVersion: 'gke.io/k8s-cluster'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: Bundle`,
 			errSubstring: "bundle name",
 		},
 
 		{
 			desc: "success cluster component",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: coolApp`,
@@ -76,20 +76,20 @@ spec:
 		},
 		{
 			desc: "fail cluster component: no kind",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     metadata:
       name: coolApp`,
 			errSubstring: "cluster component kind",
 		},
 		{
 			desc: "fail: duplicate cluster component key",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -104,7 +104,7 @@ spec:
 
 		{
 			desc: "fail: api version on cluster obj",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -122,7 +122,7 @@ spec:
 
 		{
 			desc: "fail: no kind on cluster obj",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -140,7 +140,7 @@ spec:
 
 		{
 			desc: "fail: duplicate object ref",
-			bundle: `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
