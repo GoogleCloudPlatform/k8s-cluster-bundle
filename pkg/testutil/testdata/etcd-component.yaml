@@ -1,4 +1,4 @@
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
 metadata:
   name: etcd-component

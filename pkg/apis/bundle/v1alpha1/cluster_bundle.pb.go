@@ -23,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // The ClusterBundle is a packaging format for Kubernetes Components.
 type ClusterBundle struct {
 	// Required. Kubernetes API Version for the Bundle.
-	// Must be gke.io/k8s-cluster-bundle/v1alpha1.
+	// Must be bundle.gke.io/v1alpha1.
 	ApiVersion string `protobuf:"bytes,1,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
 	// Required. The Kubernetes `kind` for this object. Must be 'ClusterBundle'.
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`

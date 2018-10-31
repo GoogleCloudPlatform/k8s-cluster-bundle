@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -28,7 +28,7 @@ spec:
   #====================#
   # Core control plane #
   #====================#
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: kubernetes-control-plane
@@ -43,7 +43,7 @@ spec:
   #========#
   # Addons #
   #========#
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: kubedns
@@ -55,7 +55,7 @@ spec:
       - url: 'file://kubedns/config-map.yaml'
       - url: 'file://kubedns/deployment.yaml'
 
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: kubeproxy
@@ -64,7 +64,7 @@ spec:
       clusterObjectFiles:
       - url: 'file://kubeproxy/kubeproxy.yaml'
 
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: data-blob
@@ -76,7 +76,7 @@ spec:
   #=========#
   # options #
   #=========#
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: options
@@ -89,13 +89,13 @@ spec:
   #=============#
   # Node Config #
   #=============#
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+  - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
       name: 'node-config-ubuntu-master'
     spec:
       clusterObjects:
-      - apiVersion: 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
+      - apiVersion: 'bundleext.gke.io/v1alpha1'
         kind: NodeConfig
         metadata:
           name: 'ubuntu-control-plane'

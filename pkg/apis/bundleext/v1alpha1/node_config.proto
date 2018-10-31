@@ -26,7 +26,7 @@ import "pkg/apis/bundle/v1alpha1/object_meta.proto";
 // node images.
 message NodeConfig {
   // Required. Kubernetes API Version for the NodeConfig type.
-  // Should be 'gke.io/k8s-cluster-bundle-extensions/v1alpha1'
+  // Should be 'bundleext.gke.io/v1alpha1'
   string apiVersion = 1;
 
   // Required. The Kubernetes `kind` for this object. Must always be

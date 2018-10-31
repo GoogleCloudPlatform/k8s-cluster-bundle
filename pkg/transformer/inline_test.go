@@ -27,7 +27,7 @@ import (
 )
 
 const bundleWithRefs = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -142,7 +142,7 @@ func TestInlineBundle(t *testing.T) {
 }
 
 const twoLayerBundle = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -206,7 +206,7 @@ func TestTwoLayerInline(t *testing.T) {
 }
 
 const bundleWithMultidoc = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle
@@ -256,7 +256,7 @@ func TestMultiDoc(t *testing.T) {
 }
 
 const bundleWithText = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: test-bundle

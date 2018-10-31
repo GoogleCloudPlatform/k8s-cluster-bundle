@@ -23,7 +23,7 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
-var validBundleExample = `apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+var validBundleExample = `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
@@ -111,7 +111,7 @@ func TestBundleFinder(t *testing.T) {
 }
 
 var validComponent = `
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
 metadata:
   name: kube-apiserver

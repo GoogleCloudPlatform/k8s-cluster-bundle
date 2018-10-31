@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +domain=gke.io
+// +domain=bundle.gke.io
 
 // Package apis represents the directory for bundle APIs. No code should live
 // in this package.

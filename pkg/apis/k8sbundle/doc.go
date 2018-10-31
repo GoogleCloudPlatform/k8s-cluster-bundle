@@ -13,6 +13,6 @@
 // limitations under the License.
 
 // +k8s:deepcopy-gen=package,register
-// +groupName=gke.io/k8s-cluster-bundle
+// +groupName=bundle.gke.io
 
 package k8sbundle
