@@ -33,7 +33,9 @@ func TestValidateBundle(t *testing.T) {
 			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
 metadata:
-  name: '1.9.7.testbundle-zork'`,
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.0.2'`,
 			// no errors
 		},
 
@@ -59,6 +61,24 @@ metadata:
 kind: Bundle`,
 			errSubstring: "bundle name",
 		},
+		{
+			desc: "fail: invalid X.Y.Z version string",
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.0.invalid'`,
+			errSubstring: "cluster bundle spec version string is not a X.Y.Z version string",
+		},
+		{
+			desc: "fail: missing X.Y.Z version string",
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'`,
+			errSubstring: "cluster bundle spec version string is not a X.Y.Z version string",
+		},
 
 		{
 			desc: "success cluster component",
@@ -67,11 +87,14 @@ kind: ClusterBundle
 metadata:
   name: '1.9.7.testbundle-zork'
 spec:
+  version: '1.2.4'
   components:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
     metadata:
-      name: coolApp`,
+      name: coolApp
+    spec:
+      version: '2.10.1'`,
 			// no errors
 		},
 		{
@@ -118,6 +141,38 @@ spec:
           name: pod
         kind: zed`,
 			errSubstring: "must always have an API Version",
+		},
+		{
+			desc: "fail: cluster component invalid X.Y.Z version string ",
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.2.4'
+  components:
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: coolApp
+    spec:
+      version: '2.010.1'`,
+			errSubstring: "cluster component spec version is not a X.Y.Z version string",
+		},
+		{
+			desc: "fail: cluster component missing X.Y.Z version string ",
+			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ClusterBundle
+metadata:
+  name: '1.9.7.testbundle-zork'
+spec:
+  version: '1.2.4'
+  components:
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: ComponentPackage
+    metadata:
+      name: coolApp`,
+			errSubstring: "cluster component spec version is not a X.Y.Z version string",
 		},
 
 		{
