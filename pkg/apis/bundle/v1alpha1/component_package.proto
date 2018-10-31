@@ -47,12 +47,11 @@ message ComponentPackage {
 
 // ComponentPackageSpec represents the spec for the component.
 message ComponentPackageSpec {
-  // Version-string for this component. The version should be a SemVer 2 string
-  // (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
-  // major-version changes should indicate breaking changes, minor-versions
-  // should indicate backwards compatible features, and patch changes should
-  // indicate backwards compatible. If there are any changes to the component,
-  // then the version string must be incremented.
+  // Required. Version-string for this component. The version should be a string
+  // of the form X.Y.Z (Major.Minor.Patch).  Major-version changes indicate
+  // breaking changes, minor-versions indicate backwards compatible features,
+  // and patch changes indicate backwards compatible. If there are any changes
+  // to the component, then the version string must be incremented.
   string version = 1;
 
   // Optional. A version-string representing the version of the API this

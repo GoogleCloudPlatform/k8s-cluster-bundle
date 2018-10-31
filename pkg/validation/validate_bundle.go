@@ -27,7 +27,16 @@ type BundleValidator struct {
 	Bundle *bpb.ClusterBundle
 }
 
-var apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
+var (
+	apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
+
+	// Regex string for numbers without leading zeros.
+	number = `([1-9]\d*|0)`
+	// Matches version string X.Y.Z, where X, Y and Z are non-negative integers
+	// without leading zeros.
+	versionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s\.%s$`, number, number, number))
+)
+
 
 // NewBundleValidator creates a new Bundle Validator
 func NewBundleValidator(b *bpb.ClusterBundle) *BundleValidator {
@@ -57,6 +66,9 @@ func (b *BundleValidator) validateBundle() []error {
 	if k != "ClusterBundle" {
 		errs = append(errs, fmt.Errorf("bundle kind must be \"ClusterBundle\". was %q", k))
 	}
+	if v := b.Bundle.GetSpec().GetVersion(); !versionPattern.MatchString(v) {
+		errs = append(errs, fmt.Errorf("cluster bundle spec version string is not a X.Y.Z version string, was '%v'", v))
+	}
 	return errs
 }
 
@@ -77,7 +89,9 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 		if k != "ComponentPackage" {
 			errs = append(errs, fmt.Errorf("cluster component kind must be \"ComponentPackage\". was %q for config %v", k, ca))
 		}
-
+		if v := ca.GetSpec().GetVersion(); !versionPattern.MatchString(v) {
+			errs = append(errs, fmt.Errorf("cluster component spec version is not a X.Y.Z version string, was '%v' for config %v", v, ca))
+		}
 		if _, ok := objCollect[n]; ok {
 			errs = append(errs, fmt.Errorf("duplicate cluster component key %q when processing config %v", n, ca))
 			continue
