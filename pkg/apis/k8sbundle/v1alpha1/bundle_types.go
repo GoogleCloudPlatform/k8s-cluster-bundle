@@ -16,10 +16,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-// UnstructuredJSON represents JSON not bound to any particular schema
-type UnstructuredJSON map[string]interface{}
 
 // ClusterBundleSpec is the the specification for the cluster bundle.
 type ClusterBundleSpec struct {
@@ -36,7 +34,7 @@ type ClusterBundleSpec struct {
 	// Kubernetes objects grouped into component packages and versioned together.
 	// These could be applications or they could be some sort of supporting
 	// object collection.
-	Components []ComponentPackage `json:"componentPackage,omitempty"`
+	Components []ComponentPackage `json:"components,omitempty"`
 
 	// Cluster components that are specified externally as Files. The process of inlining
 	// for a bundle reads component files into components, and so after
@@ -81,7 +79,7 @@ type ComponentPackageSpec struct {
 	// `kind`, and `metadata`.
 	//
 	// This is essentially equivalent to the Kubernetes `Unstructured` type.
-	ClusterObjects []UnstructuredJSON `json:"clusterObjects,omitempty"`
+	ClusterObjects []unstructured.Unstructured `json:"clusterObjects,omitempty"`
 
 	// Cluster objects that are specified via a File-URL. The process of inlining
 	// a component turns cluster object files into cluster objects.
@@ -119,6 +117,7 @@ type MinRequirement struct {
 }
 
 // +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // The ClusterBundle is a packaging format for Kubernetes Components.
 type ClusterBundle struct {
@@ -129,6 +128,7 @@ type ClusterBundle struct {
 }
 
 // +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentPackage represents Kubernetes objects grouped into cluster
 // components and versioned together. These could be applications or they

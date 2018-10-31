@@ -35,21 +35,21 @@ cd ..
 
 # We can't use deepcopy-gen until issues/128 is fixed (or we write our own copy logic).
 # https://github.com/kubernetes/gengo/issues/128
-# deepcopy-gen \
-  # -h hack/boilerplate.go.txt \
-  # -O zz_generated.deepcopy \
-  # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
+deepcopy-gen \
+  -h hack/boilerplate.go.txt \
+  -O zz_generated.deepcopy \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
 
-# register-gen \
-  # -h hack/boilerplate.go.txt \
-  # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
+register-gen \
+  -h hack/boilerplate.go.txt \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
 
-# client-gen --clientset-name=versioned \
-  # -h hack/boilerplate.go.txt \
-  # --input-base=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
+client-gen --clientset-name=versioned \
+  -h hack/boilerplate.go.txt \
+  --input-base=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
 # Relies on ../PROJECT file
 # creates CRDS in ../config/crds/

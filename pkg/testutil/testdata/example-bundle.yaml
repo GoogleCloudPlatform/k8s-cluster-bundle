@@ -95,7 +95,7 @@ spec:
       name: 'node-config-ubuntu-master'
     spec:
       clusterObjects:
-      - apiVersion: 'bundleext.gke.io/v1alpha1'
+      - apiVersion: 'bundle.gke.io/v1alpha1'
         kind: NodeConfig
         metadata:
           name: 'ubuntu-control-plane'
@@ -105,4 +105,3 @@ spec:
         envVars:
           - name: FOO_VAR
             value: 'foo-val'
-

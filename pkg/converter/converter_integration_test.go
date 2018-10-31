@@ -35,6 +35,10 @@ func TestRealisticBundleParse(t *testing.T) {
 	if bp.GetMetadata().GetName() != expID {
 		t.Errorf("Got name %q, expected name %q", bp.GetMetadata().GetName(), expID)
 	}
+
+	if l := len(bp.GetSpec().GetComponents()); l != 6 {
+		t.Errorf("Got %d components, expected 6", l)
+	}
 }
 
 func TestRealisticBundleParseK8sBundle(t *testing.T) {
@@ -46,9 +50,16 @@ func TestRealisticBundleParseK8sBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error parsing file: %v", err)
 	}
+	if bp == nil {
+		t.Fatalf("Error: nil bundle")
+	}
 
 	expID := "1.9.7.testbundle-zork"
 	if bp.ObjectMeta.Name != expID {
 		t.Errorf("Got name %q, expected name %q", bp.ObjectMeta.Name, expID)
+	}
+
+	if l := len(bp.Spec.Components); l != 6 {
+		t.Errorf("Got %d components, expected 6", l)
 	}
 }
