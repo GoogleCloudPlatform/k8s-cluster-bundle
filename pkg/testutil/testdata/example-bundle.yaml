@@ -34,7 +34,6 @@ spec:
       name: kubernetes-control-plane
     spec:
       version: '11.0.0'
-      componentApiVersion: '1.9.7'
       clusterObjectFiles:
       - url: 'file://kube-apiserver.yaml'
       - url: 'file://kube-scheduler.yaml'

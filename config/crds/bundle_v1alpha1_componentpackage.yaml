@@ -35,23 +35,12 @@ spec:
               items:
                 type: object
               type: array
-            componentApiVersion:
-              type: string
             rawTextFiles:
               items:
                 properties:
                   hash:
                     type: string
                   url:
-                    type: string
-                type: object
-              type: array
-            requirements:
-              items:
-                properties:
-                  component:
-                    type: string
-                  componentApiVersion:
                     type: string
                 type: object
               type: array

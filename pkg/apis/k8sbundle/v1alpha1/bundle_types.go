@@ -63,16 +63,6 @@ type ComponentPackageSpec struct {
 	// then the version string must be incremented.
 	Version string `json:"version,omitempty"`
 
-	// Optional. A version-string representing the version of the API this
-	// component offers to other components (for the purposes of requirement
-	// satisfaction). If no API is offered to other components, then this field
-	// may be blank, but then other components may not depend on this component.
-	ComponentAPIVersion string `json:"componentApiVersion,omitempty"`
-
-	// A list of components that must be packaged in a bundle in with this
-	// component.
-	Requirements []MinRequirement `json:"requirements,omitempty"`
-
 	// Structured Kubenetes objects that run as part of this app, whether on the
 	// master, on the nodes, or in some other fashio.  These Kubernetes objects
 	// are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
@@ -99,21 +89,6 @@ type ComponentPackageSpec struct {
 	// name. Thus, if the url is something like 'file://foo/bar/biff.txt', the
 	// metadata.name and data-key will be 'biff.txt'.
 	RawTextFiles []File `json:"rawTextFiles,omitempty"`
-}
-
-// MinRequirement represents a component that this component must be packaged
-// with in a ClusterBundle (or must be satisfied in some other fashion). This is
-// roughly based on Semantic Import Versioning in the Go Language:
-// https://research.swtch.com/vgo-import.
-type MinRequirement struct {
-	// Name of a component. The component name specified here must match exactly a
-	// component name in the `metadata.name` field of another component.
-	Component string `json:"component,omitempty"`
-
-	// The sem-ver apiVersion of the component. The API Version is only a minimum
-	// requirement. The assumption any newer component with only backwards
-	// compatible changes is acceptable.
-	ComponentAPIVersion string `json:"componentApiVersion,omitempty"`
 }
 
 // +genclient

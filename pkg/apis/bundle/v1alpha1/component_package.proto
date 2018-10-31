@@ -55,16 +55,6 @@ message ComponentPackageSpec {
   // then the version string must be incremented.
   string version = 1;
 
-  // Optional. A version-string representing the version of the API this
-  // component offers to other components (for the purposes of requirement
-  // satisfaction). If no API is offered to other components, then this field
-  // may be blank, but then other components may not depend on this component.
-  string componentApiVersion = 2;
-
-  // A list of components that must be packaged in a bundle in with this
-  // component.
-  repeated MinRequirement requirements = 3;
-
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashion.  These Kubernetes objects
   // are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
@@ -91,19 +81,4 @@ message ComponentPackageSpec {
   // name. Thus, if the url is something like 'file://foo/bar/biff.txt', the
   // metadata.name and data-key will be 'biff.txt'.
   repeated File raw_text_files = 6;
-}
-
-// MinRequirement represents a component that this component must be packaged
-// with in a ClusterBundle (or must be satisfied in some other fashion). This is
-// roughly based on Semantic Import Versioning in the Go Language:
-// https://research.swtch.com/vgo-import.
-message MinRequirement {
-  // Name of a component. The component name specified here must match exactly a
-  // component name in the `metadata.name` field of another component.
-  string component = 1;
-
-  // The sem-ver apiVersion of the component. The API Version is only a minimum
-  // requirement. The assumption any newer component with only backwards
-  // compatible changes is acceptable.
-  string componentApiVersion = 2;
 }
