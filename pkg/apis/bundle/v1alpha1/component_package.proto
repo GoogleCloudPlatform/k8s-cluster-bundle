@@ -37,7 +37,7 @@ message ComponentPackage {
   // Kubernetes Metadata for the component. The Metadata.name field must be
   // filled out and each component in a bundle must have a unique name. For
   // example you might have a 'kube-apiserver' component or perhaps even a
-  // 'kubernetes' component, depending on the granulatarity of the Bundle
+  // 'kubernetes' component, depending on the granularity of the Bundle
   // components.
   ObjectMeta metadata = 3;
 
@@ -51,7 +51,7 @@ message ComponentPackageSpec {
   // (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
   // major-version changes should indicate breaking changes, minor-versions
   // should indicate backwards compatible features, and patch changes should
-  // indicate backwords compatible. If there are any changes to the component,
+  // indicate backwards compatible. If there are any changes to the component,
   // then the version string must be incremented.
   string version = 1;
 
@@ -66,7 +66,7 @@ message ComponentPackageSpec {
   repeated MinRequirement requirements = 3;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
-  // master, on the nodes, or in some other fashio.  These Kubernetes objects
+  // master, on the nodes, or in some other fashion.  These Kubernetes objects
   // are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
   // `kind`, and `metadata`.
   //
@@ -74,17 +74,17 @@ message ComponentPackageSpec {
   repeated google.protobuf.Struct cluster_objects = 4;
 
   // Cluster objects that are specified via a File-URL. The process of inlining
-  // the a component turns cluster object files into cluster objects.
+  // a component turns cluster object files into cluster objects.
   // During the inline process, if the file is YAML-formatted and contains multiple
   // objects, the objects will be split into separate inline objects. In other
   // words, one cluster object file may result in multiple cluster objects.
   //
-  // Each cluster object file must be parseable into a Struct: In other words,
+  // Each cluster object file must be parsable into a Struct: In other words,
   // it should be representable as either YAML or JSON.
   repeated File cluster_object_files = 5;
 
   // Raw files represent arbitrary string data. Unlike cluster object files,
-  // these files don't need to be parseable as YAML or JSON. So, during the
+  // these files don't need to be parsable as YAML or JSON. So, during the
   // inline process, the data is inserted into a generated config map before
   // being added to the cluster objects. A ConfigMap is generated per-file,
   // with the metadata.name and the data-key both being set to the base-file
@@ -104,6 +104,6 @@ message MinRequirement {
 
   // The sem-ver apiVersion of the component. The API Version is only a minimum
   // requirement. The assumption any newer component with only backwards
-  // compatable changes is acceptable.
+  // compatible changes is acceptable.
   string componentApiVersion = 2;
 }

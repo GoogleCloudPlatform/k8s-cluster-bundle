@@ -34,7 +34,7 @@ type ComponentPackage struct {
 	// Kubernetes Metadata for the component. The Metadata.name field must be
 	// filled out and each component in a bundle must have a unique name. For
 	// example you might have a 'kube-apiserver' component or perhaps even a
-	// 'kubernetes' component, depending on the granulatarity of the Bundle
+	// 'kubernetes' component, depending on the granularity of the Bundle
 	// components.
 	Metadata *ObjectMeta `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Spec for the ComponentPackage.
@@ -103,7 +103,7 @@ type ComponentPackageSpec struct {
 	// (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
 	// major-version changes should indicate breaking changes, minor-versions
 	// should indicate backwards compatible features, and patch changes should
-	// indicate backwords compatible. If there are any changes to the component,
+	// indicate backwards compatible. If there are any changes to the component,
 	// then the version string must be incremented.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Optional. A version-string representing the version of the API this
@@ -115,23 +115,23 @@ type ComponentPackageSpec struct {
 	// component.
 	Requirements []*MinRequirement `protobuf:"bytes,3,rep,name=requirements,proto3" json:"requirements,omitempty"`
 	// Structured Kubenetes objects that run as part of this app, whether on the
-	// master, on the nodes, or in some other fashio.  These Kubernetes objects
+	// master, on the nodes, or in some other fashion.  These Kubernetes objects
 	// are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
 	// `kind`, and `metadata`.
 	//
 	// This is essentially equivalent to the Kubernetes `Unstructured` type.
 	ClusterObjects []*_struct.Struct `protobuf:"bytes,4,rep,name=cluster_objects,json=clusterObjects,proto3" json:"cluster_objects,omitempty"`
 	// Cluster objects that are specified via a File-URL. The process of inlining
-	// the a component turns cluster object files into cluster objects.
+	// a component turns cluster object files into cluster objects.
 	// During the inline process, if the file is YAML-formatted and contains multiple
 	// objects, the objects will be split into separate inline objects. In other
 	// words, one cluster object file may result in multiple cluster objects.
 	//
-	// Each cluster object file must be parseable into a Struct: In other words,
+	// Each cluster object file must be parsable into a Struct: In other words,
 	// it should be representable as either YAML or JSON.
 	ClusterObjectFiles []*File `protobuf:"bytes,5,rep,name=cluster_object_files,json=clusterObjectFiles,proto3" json:"cluster_object_files,omitempty"`
 	// Raw files represent arbitrary string data. Unlike cluster object files,
-	// these files don't need to be parseable as YAML or JSON. So, during the
+	// these files don't need to be parsable as YAML or JSON. So, during the
 	// inline process, the data is inserted into a generated config map before
 	// being added to the cluster objects. A ConfigMap is generated per-file,
 	// with the metadata.name and the data-key both being set to the base-file
@@ -220,7 +220,7 @@ type MinRequirement struct {
 	Component string `protobuf:"bytes,1,opt,name=component,proto3" json:"component,omitempty"`
 	// The sem-ver apiVersion of the component. The API Version is only a minimum
 	// requirement. The assumption any newer component with only backwards
-	// compatable changes is acceptable.
+	// compatible changes is acceptable.
 	ComponentApiVersion  string   `protobuf:"bytes,2,opt,name=componentApiVersion,proto3" json:"componentApiVersion,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -27,7 +27,7 @@ type ClusterBundleSpec struct {
 	// https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
 	// speaking, a major-version (changes should indicate breaking changes,
 	// minor-versions should indicate backwards compatible features, and patch
-	// changes should indicate backwords compatible. If there are any changes to
+	// changes should indicate backwards compatible. If there are any changes to
 	// the bundle, then the version string must be incremented.
 	//
 	// If a bundle is versioned, then all its components must be versioned.
@@ -61,7 +61,7 @@ type ComponentPackageSpec struct {
 	// (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
 	// major-version changes should indicate breaking changes, minor-versions
 	// should indicate backwards compatible features, and patch changes should
-	// indicate backwords compatible. If there are any changes to the component,
+	// indicate backwards compatible. If there are any changes to the component,
 	// then the version string must be incremented.
 	Version string `json:"version,omitempty"`
 
@@ -84,17 +84,17 @@ type ComponentPackageSpec struct {
 	ClusterObjects []UnstructuredJSON `json:"clusterObjects,omitempty"`
 
 	// Cluster objects that are specified via a File-URL. The process of inlining
-	// the a component turns cluster object files into cluster objects.
+	// a component turns cluster object files into cluster objects.
 	// During the inline process, if the file is YAML-formatted and contains multiple
 	// objects, the objects will be split into separate inline objects. In other
 	// words, one cluster object file may result in multiple cluster objects.
 	//
-	// Each cluster object file must be parseable into a Struct: In other words,
+	// Each cluster object file must be parsable into a Struct: In other words,
 	// it should be representable as either YAML or JSON.
 	ClusterObjectFiles []File `json:"clusterObjectFiles,omitempty"`
 
 	// Raw files represent arbitrary string data. Unlike cluster object files,
-	// these files don't need to be parseable as YAML or JSON. So, during the
+	// these files don't need to be parsable as YAML or JSON. So, during the
 	// inline process, the data is inserted into a generated config map before
 	// being added to the cluster objects. A ConfigMap is generated per-file,
 	// with the metadata.name and the data-key both being set to the base-file
@@ -114,7 +114,7 @@ type MinRequirement struct {
 
 	// The sem-ver apiVersion of the component. The API Version is only a minimum
 	// requirement. The assumption any newer component with only backwards
-	// compatable changes is acceptable.
+	// compatible changes is acceptable.
 	ComponentAPIVersion string `json:"componentApiVersion,omitempty"`
 }
 
