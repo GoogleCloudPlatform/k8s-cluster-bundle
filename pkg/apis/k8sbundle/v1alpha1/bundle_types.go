@@ -23,6 +23,9 @@ type UnstructuredJSON map[string]interface{}
 
 // ClusterBundleSpec is the the specification for the cluster bundle.
 type ClusterBundleSpec struct {
+	// Name of the bundle.
+	Name string `json:"name,omitempty"`
+
 	// Version-string for this bundle. The version should be a SemVer string (see
 	// https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
 	// speaking, a major-version (changes should indicate breaking changes,
@@ -57,6 +60,9 @@ type File struct {
 
 // ComponentPackageSpec represents the spec for the component.
 type ComponentPackageSpec struct {
+	// Name of the component package. For example, 'kube-proxy'.
+	Name string `json:"name,omitempty"`
+
 	// Version-string for this component. The version should be a SemVer 2 string
 	// (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
 	// major-version changes should indicate breaking changes, minor-versions

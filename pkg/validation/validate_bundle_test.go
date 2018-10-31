@@ -32,7 +32,7 @@ func TestValidateBundle(t *testing.T) {
 			desc: "success",
 			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
-metadata:
+spec:
   name: '1.9.7.testbundle-zork'`,
 			// no errors
 		},
@@ -41,7 +41,7 @@ metadata:
 			desc: "fail: bad kind",
 			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: Bundle
-metadata:
+spec:
   name: '1.9.7.testbundle-zork'`,
 			errSubstring: "bundle kind",
 		},
@@ -49,7 +49,7 @@ metadata:
 			desc: "fail: apiVersion",
 			bundle: `apiVersion: 'gke.io/k8s-cluster'
 kind: Bundle
-metadata:
+spec:
   name: '1.9.7.testbundle-zork'`,
 			errSubstring: "bundle apiVersion",
 		},
@@ -64,13 +64,12 @@ kind: Bundle`,
 			desc: "success cluster component",
 			bundle: `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
 spec:
+  name: '1.9.7.testbundle-zork'
   components:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
+    spec:
       name: coolApp`,
 			// no errors
 		},
@@ -83,7 +82,7 @@ metadata:
 spec:
   components:
   - apiVersion: bundle.gke.io/v1alpha1
-    metadata:
+    spec:
       name: coolApp`,
 			errSubstring: "cluster component kind",
 		},
@@ -95,9 +94,9 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp
-  - metadata:
+  - spec:
       name: coolApp`,
 			errSubstring: "duplicate cluster component key",
 		},
@@ -110,9 +109,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod
@@ -128,9 +126,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod
@@ -146,9 +143,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod

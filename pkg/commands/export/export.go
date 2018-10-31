@@ -68,15 +68,15 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 		return err
 	}
 
-	for _, comp := range o.components {
-		ea := f.ComponentPackage(comp)
+	for _, compName := range o.components {
+		ea := f.ComponentPackage(compName)
 		if ea == nil {
-			return fmt.Errorf("could not find cluster component named %q", comp)
+			return fmt.Errorf("could not find cluster component named %q", compName)
 		}
 
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
-		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())
+		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), compName)
 		bytes, err := converter.ComponentPackage.ProtoToYAML(ea)
 		if err != nil {
 			return err

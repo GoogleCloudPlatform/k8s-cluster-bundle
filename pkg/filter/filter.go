@@ -62,7 +62,7 @@ func (f *Filterer) FilterComponents(o *Options) *bpb.ClusterBundle {
 	var matched []*bpb.ComponentPackage
 	var notMatched []*bpb.ComponentPackage
 	for _, c := range b.GetSpec().GetComponents() {
-		matches := filterMeta(c.GetKind(), c.GetMetadata(), o)
+		matches := filterMeta(c.GetKind(), c.GetSpec().GetName(), c.GetMetadata(), o)
 		if matches {
 			matched = append(matched, c)
 		} else {
@@ -97,7 +97,7 @@ func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
 				// ObjectMeta.
 				continue
 			}
-			matches := filterMeta(c.GetFields()["kind"].GetStringValue(), meta, o)
+			matches := filterMeta(c.GetFields()["kind"].GetStringValue(), meta.Name, meta, o)
 			if matches {
 				matched = append(matched, c)
 			} else {
@@ -113,7 +113,7 @@ func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
 	return b
 }
 
-func filterMeta(kind string, meta *bpb.ObjectMeta, o *Options) bool {
+func filterMeta(kind string, name string, meta *bpb.ObjectMeta, o *Options) bool {
 	for _, k := range o.Kinds {
 		if k == kind {
 			return true
@@ -126,7 +126,7 @@ func filterMeta(kind string, meta *bpb.ObjectMeta, o *Options) bool {
 	}
 	// We ignore kind, because Kind should always be cluster bundle.
 	for _, n := range o.Names {
-		if meta.GetName() == n {
+		if name == n {
 			return true
 		}
 	}

@@ -92,7 +92,7 @@ func (b *ImageFinder) WalkContainerImages(st *structpb.Struct, fn func(img strin
 // recommend that the Bundle be cloned.
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		compName := ca.GetMetadata().GetName()
+		compName := ca.GetSpec().GetName()
 		for _, obj := range ca.GetSpec().GetClusterObjects() {
 			objName := core.ObjectName(obj)
 			if obj == nil {

@@ -162,13 +162,11 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 var bundleExample = `
 apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
 spec:
+  name: 'testbundle-zork'
   components:
-  - metadata:
+  - spec:
       name: logger
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -187,18 +185,16 @@ spec:
             command:
                - /chopper
                - --logtostderr
-  - metadata:
+  - spec:
       name: zap
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
         metadata:
           name: zap-pod
 
-  - metadata:
+  - spec:
       name: dap
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -243,13 +239,11 @@ func TestImageFinder_Bundle(t *testing.T) {
 var bundleExampleNodeConfig = `
 apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
 spec:
+  name: 'testbundle-zork'
   components:
-  - metadata:
+  - spec:
       name: nodeconfig1
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-control-plane'
@@ -261,9 +255,8 @@ spec:
           - name: FOO_VAR
             value: 'foo-val'
 
-  - metadata:
+  - spec:
       name: nodeconfig2
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-cluster-node'
@@ -272,9 +265,8 @@ spec:
         osImage:
           url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
-  - metadata:
+  - spec:
       name: nodeconfig3
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-cluster-node-no-image'
@@ -305,13 +297,11 @@ func TestImageFinder_NodeImages(t *testing.T) {
 var bundleExampleAll = `
 apiVersion: 'bundle.k8s.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
 spec:
+  name: 'testbundle-zork'
   components:
-  - metadata:
+  - spec:
       name: nodeconfig1
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-control-plane'
@@ -323,9 +313,8 @@ spec:
           - name: FOO_VAR
             value: 'foo-val'
 
-  - metadata:
+  - spec:
       name: nodeconfig2
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-cluster-node'
@@ -334,18 +323,16 @@ spec:
         osImage:
           url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
-  - metadata:
+  - spec:
       name: nodeconfig3
-    spec:
       clusterObjects:
       - metadata:
           name: 'ubuntu-cluster-node-no-image'
         kind: NodeConfig
         initFile: "echo 'I'm another script'"
 
-  - metadata:
+  - spec:
       name: logger
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -364,18 +351,16 @@ spec:
             command:
                - /chopper
                - --logtostderr
-  - metadata:
+  - spec:
       name: zap
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
         metadata:
           name: zap-pod
 
-  - metadata:
+  - spec:
       name: dap
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod

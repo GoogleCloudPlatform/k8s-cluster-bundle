@@ -25,22 +25,19 @@ import (
 
 var validBundleExample = `apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
 spec:
+  name: 'testbundle-zork'
   components:
-  - metadata:
+  - spec:
       name: etcd-server
-    spec:
       clusterObjects:
       - metadata:
           name: pod
       - metadata:
           name: dwerp
 
-  - metadata:
+  - spec:
       name: kube-apiserver
-    spec:
       clusterObjects:
       - metadata:
           name: pod

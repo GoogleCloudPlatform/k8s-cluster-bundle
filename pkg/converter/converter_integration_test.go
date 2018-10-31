@@ -31,9 +31,9 @@ func TestRealisticBundleParse(t *testing.T) {
 	}
 	bp := ToBundle(b)
 
-	expID := "1.9.7.testbundle-zork"
-	if bp.GetMetadata().GetName() != expID {
-		t.Errorf("Got name %q, expected name %q", bp.GetMetadata().GetName(), expID)
+	expID := "testbundle"
+	if bp.GetSpec().GetName() != expID {
+		t.Errorf("Got name %q, expected name %q", bp.GetSpec().GetName(), expID)
 	}
 }
 
@@ -47,8 +47,8 @@ func TestRealisticBundleParseK8sBundle(t *testing.T) {
 		t.Fatalf("Error parsing file: %v", err)
 	}
 
-	expID := "1.9.7.testbundle-zork"
-	if bp.ObjectMeta.Name != expID {
+	expID := "testbundle"
+	if bp.Spec.Name != expID {
 		t.Errorf("Got name %q, expected name %q", bp.ObjectMeta.Name, expID)
 	}
 }

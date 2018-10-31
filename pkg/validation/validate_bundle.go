@@ -45,16 +45,16 @@ func (b *BundleValidator) Validate() []error {
 
 func (b *BundleValidator) validateBundle() []error {
 	var errs []error
-	n := b.Bundle.GetMetadata().GetName()
+	n := b.Bundle.GetSpec().GetName()
 	if n == "" {
 		errs = append(errs, fmt.Errorf("bundle name was empty, but must always be present"))
 	}
-	api := b.Bundle.GetApiVersion()
-	if !apiVersionPattern.MatchString(api) {
+
+	if api := b.Bundle.GetApiVersion(); !apiVersionPattern.MatchString(api) {
 		errs = append(errs, fmt.Errorf("bundle apiVersion must have form \"bundle.gke.io/<version>\". was %q", api))
 	}
-	k := b.Bundle.GetKind()
-	if k != "ClusterBundle" {
+
+	if k := b.Bundle.GetKind(); k != "ClusterBundle" {
 		errs = append(errs, fmt.Errorf("bundle kind must be \"ClusterBundle\". was %q", k))
 	}
 	return errs
@@ -64,17 +64,16 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 	var errs []error
 	objCollect := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		n := ca.GetMetadata().GetName()
+		n := ca.GetSpec().GetName()
 		if n == "" {
 			errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for config %v", ca))
 			continue
 		}
-		api := ca.GetApiVersion()
-		if !apiVersionPattern.MatchString(api) {
+
+		if api := ca.GetApiVersion(); !apiVersionPattern.MatchString(api) {
 			errs = append(errs, fmt.Errorf("cluster components apiversion have the apiVersion of \"bundle.gke.io/<version>\". was %q for config %v", api, ca))
 		}
-		k := ca.GetKind()
-		if k != "ComponentPackage" {
+		if k := ca.GetKind(); k != "ComponentPackage" {
 			errs = append(errs, fmt.Errorf("cluster component kind must be \"ComponentPackage\". was %q for config %v", k, ca))
 		}
 
@@ -92,7 +91,7 @@ func (b *BundleValidator) validateClusterObjNames() []error {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		compName := ca.GetMetadata().GetName()
+		compName := ca.GetSpec().GetName()
 		for _, obj := range ca.GetSpec().GetClusterObjects() {
 			// We could check if the GVK/ObjectRef is unique. But name can appear
 			// multiple times.

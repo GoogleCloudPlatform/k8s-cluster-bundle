@@ -31,8 +31,7 @@ message ClusterBundle {
   // Required. The Kubernetes `kind` for this object. Must be 'ClusterBundle'.
   string kind = 2;
 
-  // Required. Kubernetes ObjectMeta proto. The Metadata.name field must be
-  // filled out for each Bundle.
+  // Required. Kubernetes ObjectMeta proto.
   ObjectMeta metadata = 3;
 
   // Spec for the ClusterBundle, which specifies the intended Kubernetes cluster
@@ -42,6 +41,9 @@ message ClusterBundle {
 
 // A spec object that wraps the Cluster Bundle.
 message ClusterBundleSpec {
+  // Name of the cluster bundle.
+  string name = 1;
+
   // Version-string for this bundle. The version should be a SemVer string (see
   // https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
   // speaking, a major-version (changes should indicate breaking changes,
@@ -50,15 +52,15 @@ message ClusterBundleSpec {
   // the bundle, then the version string must be incremented.
   //
   // If a bundle is versioned, then all its components must be versioned.
-  string version = 1;
+  string version = 2;
 
   // Kubernetes objects grouped into component packages and versioned together.
   // These could be applications or they could be some sort of supporting
   // object collection.
-  repeated ComponentPackage components = 2;
+  repeated ComponentPackage components = 3;
 
   // Cluster components that are specified externally as Files. The process of inlining
   // for a bundle reads component files into components, and so after
   // inlining, this list will be empty.
-  repeated File component_files = 3;
+  repeated File component_files = 4;
 }

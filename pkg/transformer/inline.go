@@ -77,7 +77,7 @@ func (n *Inliner) Inline(ctx context.Context, b *bpb.ClusterBundle, opt *InlineO
 
 	// Process all the cluster object files.
 	for _, v := range spec.GetComponents() {
-		k := v.GetMetadata().GetName()
+		k := v.GetSpec().GetName()
 		if err := n.processClusterObjects(ctx, k, v); err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (n *Inliner) processComponentPackageFiles(ctx context.Context, b *bpb.Clust
 		}
 		for _, pb := range pbs {
 			comp := converter.ToComponentPackage(pb)
-			compName := comp.GetMetadata().GetName()
+			compName := comp.GetSpec().GetName()
 			if compName == "" {
 				return fmt.Errorf("no component name (metadata.name) found for component with url %q",
 					cf.GetUrl())

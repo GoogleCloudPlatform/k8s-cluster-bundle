@@ -29,18 +29,15 @@ import (
 const bundleWithRefs = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ClusterBundle
-metadata:
-  name: test-bundle
 spec:
+  name: test-bundle
   components:
-  - metadata:
+  - spec:
       name: kube-apiserver
-    spec:
       clusterObjectFiles:
       - url: 'file://path/to/kube_apiserver.yaml'
-  - metadata:
+  - spec:
       name: kubelet-config
-    spec:
       clusterObjectFiles:
       - url: 'file://path/to/kubelet/config.yaml'
 `
@@ -95,9 +92,8 @@ biff: bam`), nil
 
 	case "parent/kube_apiserver_component.yaml":
 		return []byte(`
-metadata:
-  name: kube-apiserver
 spec:
+  name: kube-apiserver
   clusterObjectFiles:
   - url: 'file://path/to/kube_apiserver.yaml'
   rawTextFiles:
@@ -212,9 +208,8 @@ metadata:
   name: test-bundle
 spec:
   components:
-  - metadata:
+  - spec:
       name: multidoc
-    spec:
       clusterObjectFiles:
       - url: 'file://path/to/multidoc.yaml'
 `
@@ -262,9 +257,8 @@ metadata:
   name: test-bundle
 spec:
   components:
-  - metadata:
+  - spec:
       name: textdoc
-    spec:
       rawTextFiles:
       - url: 'file://path/to/raw-text.yaml'
       - url: 'file://path/to/rawer-text.yaml'
