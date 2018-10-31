@@ -93,12 +93,6 @@ message ComponentPackageSpec {
   repeated File raw_text_files = 6;
 }
 
-// Unstructured represents raw Kubernetes objects and corresponds to the
-// Kubernetes `unstructured.Unstructured` type from apimachinery.
-message Unstructured {
-  google.protobuf.Struct zbject = 1;
-}
-
 // MinRequirement represents a component that this component must be packaged
 // with in a ClusterBundle (or must be satisfied in some other fashion). This is
 // roughly based on Semantic Import Versioning in the Go Language:
