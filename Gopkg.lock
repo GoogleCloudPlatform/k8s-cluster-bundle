@@ -234,11 +234,12 @@
 
 [[projects]]
   branch = "release-1.9"
-  digest = "1:5628cfe1ddd74be4500d6674a714ebbe1502a8480cbe57d7b43a77cf137a244d"
+  digest = "1:e9951bea492a205dfc85412e6c5a5795cb576f0fe2dcf249247e58d801193cd8"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/resource",
     "pkg/apis/meta/v1",
+    "pkg/apis/meta/v1/unstructured",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -290,7 +291,9 @@
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
     "k8s.io/apimachinery/pkg/runtime",
+    "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/runtime/serializer",
   ]
   solver-name = "gps-cdcl"
