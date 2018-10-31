@@ -47,13 +47,16 @@ message ComponentPackage {
 
 // ComponentPackageSpec represents the spec for the component.
 message ComponentPackageSpec {
+  // Name
+  string name = 1;
+
   // Version-string for this component. The version should be a SemVer 2 string
   // (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
   // major-version changes should indicate breaking changes, minor-versions
   // should indicate backwards compatible features, and patch changes should
   // indicate backwards compatible. If there are any changes to the component,
   // then the version string must be incremented.
-  string version = 1;
+  string version = 2;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashion.  These Kubernetes objects
