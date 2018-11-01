@@ -18,39 +18,25 @@ import (
 	"testing"
 )
 
-const bundleSimple = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: test-bundle
-spec:
-  components:
-  - metadata:
-      name: kube-apiserver
-    spec:
-      clusterObjectFiles:
-      - url: 'file://path/to/kube_apiserver.yaml'
+const componentDataExample = `
+components:
+- spec:
+    canonicalName: kube-apiserver
+    objectFiles:
+    - url: 'file://path/to/kube_apiserver.yaml'
 `
 
-func TestBundleParse(t *testing.T) {
-	b, err := Bundle.YAMLToProto([]byte(bundleSimple))
-	if err != nil {
-		t.Fatalf("Error parsing bundle: %v", err)
-	}
-	bp := ToBundle(b)
-
-	if bp.GetMetadata().GetName() != "test-bundle" {
-		t.Errorf("Got name %q, expected name %q", bp.Metadata.Name, "test-bundle")
-	}
-}
-
-func TestK8sBundleParse(t *testing.T) {
-	b, err := YAMLToK8sBundle([]byte(bundleSimple))
+func TestDataParse(t *testing.T) {
+	data, err := FromYAMLString(componentDataExample).ToComponentData()
 	if err != nil {
 		t.Fatalf("Error parsing bundle: %v", err)
 	}
 
-	if b.ObjectMeta.Name != "test-bundle" {
-		t.Errorf("Got name %q, expected name %q", b.ObjectMeta.Name, "test-bundle")
+	if l := len(data.Components); l == 0 {
+		t.Fatalf("Zero components found in the ComponentData; expected exactly 1")
+	}
+
+	if n := data.Components[0].Spec.CanonicalName; n != "kube-apiserver" {
+		t.Errorf("Got name %q, expected name %q", n, "kube-apiserver")
 	}
 }

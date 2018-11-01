@@ -17,12 +17,12 @@ package converter
 import (
 	"strings"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // ObjectExporter exports cluster objects
 type ObjectExporter struct {
-	Objects []*structpb.Struct
+	Objects []*unstructured.Unstructured
 }
 
 // ExportAsMultiYAML converts cluster objects into multiple YAML files.
@@ -30,7 +30,7 @@ func (e *ObjectExporter) ExportAsMultiYAML() ([]string, error) {
 	var out []string
 	var empty []string
 	for _, o := range e.Objects {
-		yaml, err := Struct.ProtoToYAML(o)
+		yaml, err := FromObject(o).ToYAML()
 		if err != nil {
 			return empty, err
 		}
@@ -44,7 +44,7 @@ func (e *ObjectExporter) ExportAsYAML() (string, error) {
 	numElements := len(e.Objects)
 	var sb strings.Builder
 	for i, o := range e.Objects {
-		yaml, err := Struct.ProtoToYAML(o)
+		yaml, err := FromObject(o).ToYAML()
 		if err != nil {
 			return "", err
 		}

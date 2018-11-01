@@ -15,17 +15,24 @@
 package find
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
-// ImageFinder finds container and OS Images in Bundles.
+// ImageFinder finds container and OS Images in components.
 type ImageFinder struct {
-	Bundle *bpb.ClusterBundle
+	components []*bundle.ComponentPackage
+}
+
+// NewImageFinder creates a new ImageFinder.
+func NewImageFinder(c []*bundle.ComponentPackage) *ImageFinder {
+	return &ImageFinder{c}
 }
 
 // ContainerImage is a helper struct for returning found container images for cluster objects.
@@ -45,7 +52,8 @@ func (c *ContainerImage) String() string {
 	return fmt.Sprintf("{Key:%v, Image:%q}", c.Key, c.Image)
 }
 
-// ContainerImages returns all the images from the cluster components in a Bundle.
+// ContainerImages returns all the images from the cluster components in a set
+// of components.
 func (b *ImageFinder) AllContainerImages() []*ContainerImage {
 	var images []*ContainerImage
 	b.WalkAllContainerImages(func(key core.ClusterObjectKey, img string) string {
@@ -56,10 +64,14 @@ func (b *ImageFinder) AllContainerImages() []*ContainerImage {
 }
 
 // ContainerImages returns all the images from a single Kubernetes object.
-func (b *ImageFinder) ContainerImages(key core.ClusterObjectKey, st *structpb.Struct) []*ContainerImage {
+func (b *ImageFinder) ContainerImages(key core.ComponentKey, st *unstructured.Unstructured) []*ContainerImage {
+	objkey := core.ClusterObjectKey{
+		Component: key,
+		Object:    core.ObjectRefFromUnstructured(st),
+	}
 	var images []*ContainerImage
 	b.WalkContainerImages(st, func(img string) string {
-		images = append(images, &ContainerImage{key, img})
+		images = append(images, &ContainerImage{objkey, img})
 		return img
 	})
 	return images
@@ -72,35 +84,30 @@ func (b *ImageFinder) ContainerImages(key core.ClusterObjectKey, st *structpb.St
 // If an image value is returned from the function that is not equal to the input
 // value, the value is replaced with the new value.
 //
-// This changes the Bundle object in-place, so if changes are intended, it is
-// recommend that the Bundle be cloned.
-func (b *ImageFinder) WalkContainerImages(st *structpb.Struct, fn func(img string) string) {
+// This changes the components object in-place, so if changes are intended, it is
+// recommend that the components be cloned.
+func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, fn func(img string) string) {
 	// It would be more robust to just be aware of Pods, Deployments, and the
 	// various K8S types that have container images rather then recursing through
 	// everything.  It's possible, for example, that we that we might encouncer
 	// an 'image' field in some options custom resource that's unintended.
-	containerImageRecurser("", "", &structpb.Value{
-		Kind: &structpb.Value_StructValue{st},
-	}, fn)
+	containerImageRecurser("", "", st.Object, fn)
 }
 
 // WalkAllContainerImages works the same as WalkContainerImages, except all
 // images are traversed. Additionally, the cluster object context is also
 // provided. Note that objects must be inlined to be walked.
 //
-// This changes the Bundle object in-place, so if changes are intended, it is
-// recommend that the Bundle be cloned.
+// This changes the components object in-place, so if changes are intended, it is
+// recommend that the components be cloned.
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
-	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		compName := ca.GetMetadata().GetName()
-		for _, obj := range ca.GetSpec().GetClusterObjects() {
-			objName := core.ObjectName(obj)
-			if obj == nil {
-				continue
-			}
+	for _, ca := range b.components {
+		key := core.KeyFromComponent(ca)
+		for _, obj := range ca.Spec.Objects {
+			ref := core.ObjectRefFromUnstructured(obj)
 			key := core.ClusterObjectKey{
-				ComponentName: compName,
-				ObjectName:    objName,
+				Component: key,
+				Object:    ref,
 			}
 			b.WalkContainerImages(obj, func(img string) string {
 				return fn(key, img)
@@ -109,39 +116,58 @@ func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, 
 	}
 }
 
+// imageMod represents a modification to an image.
+type imageMod struct {
+	key string
+	img string
+}
+
 // ContainerImageRecurser is a function that looks through a struct pb for
 // fields named "Image" and calls a function on the resulting value.
 //
 // If an image value is returned from the function and the value is not equal
 // to the input value.
-func containerImageRecurser(fieldName string, parentFieldName string, st *structpb.Value, fn func(img string) string) {
-	switch st.Kind.(type) {
-	case *structpb.Value_NullValue:
-	case *structpb.Value_NumberValue:
-	case *structpb.Value_StringValue:
-		// From my spotty research, it's almost always true that the parent name
-		// for the container object is 'container', 'containers' or
+func containerImageRecurser(fieldName string, parentFieldName string, elem interface{}, fn func(img string) string) *imageMod {
+	switch elem := elem.(type) {
+	case map[string]interface{}:
+		if elem == nil {
+			return nil
+		}
+		var changes []*imageMod
+		for key, val := range elem {
+			if o := containerImageRecurser(key, fieldName, val, fn); o != nil {
+				changes = append(changes, o)
+			}
+		}
+		// replace the image-keys
+		for _, c := range changes {
+			elem[c.key] = c.img
+		}
+		return nil
+	case string:
+		// It looks like it's frequently true that the parent name for the
+		// container object is 'container', 'containers' or
 		// 'somethingContainer[s]'.
 		if fieldName == "image" && (strings.Contains(parentFieldName, "container") || strings.Contains(parentFieldName, "Container")) ||
 			fieldName == "url" && parentFieldName == "osImage" { // hack to make finding images work with NodeConfigs
-			if ret := fn(st.GetStringValue()); ret != st.GetStringValue() {
-				st.Kind = &structpb.Value_StringValue{ret}
+			if ret := fn(elem); ret != elem {
+				return &imageMod{fieldName, ret}
 			}
 		}
-	case *structpb.Value_BoolValue:
-	case *structpb.Value_StructValue:
-		for k, v := range st.GetStructValue().GetFields() {
-			// Swap parentFieldName with fieldName
-			containerImageRecurser(k, fieldName, v, fn)
+		return nil
+	case []interface{}:
+		if elem == nil {
+			return nil
 		}
-	case *structpb.Value_ListValue:
-		for _, val := range st.GetListValue().GetValues() {
-			// Preserve the fieldname for the parent list object.
+		for _, val := range elem {
+			// Ignore any result here. image-fields should be singletons in maps.
 			containerImageRecurser(fieldName, parentFieldName, val, fn)
 		}
-	case nil:
+		return nil
+	case int64, bool, float64, nil, json.Number:
+		return nil
 	default:
-		// Shouldn't happen. But if it does, move on.
+		panic(fmt.Errorf("unexpected type; cannot tranverse %T", elem))
 	}
 }
 
@@ -149,8 +175,8 @@ func containerImageRecurser(fieldName string, parentFieldName string, st *struct
 // nodeConfigName or key will be filled out, based on whether the image is from
 // a node config or from a cluster object.
 //
-// This changes the Bundle object in-place, so if changes are intended, it is
-// recommend that the Bundle be cloned.
+// This changes the component objects in-place, so if changes are intended, it is
+// recommend that the components be cloned.
 func (b *ImageFinder) WalkAllImages(fn func(key core.ClusterObjectKey, img string) string) {
 	b.WalkAllContainerImages(fn)
 }

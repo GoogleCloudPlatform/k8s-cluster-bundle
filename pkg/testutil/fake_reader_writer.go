@@ -19,15 +19,21 @@ import (
 	"fmt"
 	"os"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 )
 
-// FakeBundle is simple fake bundle string that should always parse.
-var FakeBundle = `apiVersion: v1alpha1
-kind: ClusterBundle
-metadata:
-  name: test-bundle
+// FakeComponentData is simple fake component data string that should always
+// parse.
+var FakeComponentData = `
+components:
+- apiVersion: bundle.gke.io/v1alpha1
+  kind: ComponentPackage
+  metadata:
+    name: test-pkg
+  spec:
+    canonicalName: test-comp
+    version: 0.1.0
 `
 
 // FakeReaderWriter is a fake implementation of FileReaderWriter for unit
@@ -79,8 +85,8 @@ func (f *FakeReaderWriter) ReadFile(_ context.Context, path string) ([]byte, err
 }
 
 // ReadFilePB reads a File proto object by deferring to the internal map.
-func (f *FakeReaderWriter) ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error) {
-	return f.ReadFile(ctx, file.GetUrl())
+func (f *FakeReaderWriter) ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error) {
+	return f.ReadFile(ctx, file.URL)
 }
 
 // WriteFile checks write conditions based on path contents.
@@ -89,13 +95,6 @@ func (f *FakeReaderWriter) WriteFile(_ context.Context, path string, bytes []byt
 	if !ok {
 		return fmt.Errorf("error writing file: path not found %q ", path)
 	}
-	// It turns out comparing actual contents is pretty tedious. Maybe substrings?
-	//
-	// sbytes := string(bytes)
-	// if fc != sbytes {
-	// return fmt.Errorf("error writing bundle file. contents not equal. got contents %q but wanted %q",
-	// sbytes, fc)
-	// }
 	return nil
 }
 

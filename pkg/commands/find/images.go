@@ -39,12 +39,12 @@ func findAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 func runFindImages(ctx context.Context, _ *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
+	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	found := (&find.ImageFinder{b}).AllImages().Flattened()
+	found := find.NewImageFinder(b.Components).AllImages().Flattened()
 
 	return cmdlib.WriteStructuredContents(ctx, found, rw, gopt)
 }

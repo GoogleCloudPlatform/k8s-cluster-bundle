@@ -15,16 +15,21 @@
 package filter
 
 import (
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	log "github.com/golang/glog"
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
-// Filterer filters the components and objects in bundles to produce new,
-// smaller bundles
+// Filterer filters the components and objects to produce a new set of components.
 type Filterer struct {
-	Bundle *bpb.ClusterBundle
+	data []*bundle.ComponentPackage
+}
+
+func NewFilterer(comp []*bundle.ComponentPackage) *Filterer {
+	return &Filterer{comp}
 }
 
 // Options for filtering bundles. By default, if any of the options match, then
@@ -33,6 +38,8 @@ type Filterer struct {
 type Options struct {
 	// Kinds represent the Kinds to filter on.
 	Kinds []string
+
+	// TODO(kashomon): Support filtering on component names?
 
 	// Names represent the metadata.names to filter on.
 	Names []string
@@ -57,12 +64,12 @@ type Options struct {
 // components. By default components are removed, unless KeepOnly is set, and
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
-func (f *Filterer) FilterComponents(o *Options) *bpb.ClusterBundle {
-	b := converter.CloneBundle(f.Bundle)
-	var matched []*bpb.ComponentPackage
-	var notMatched []*bpb.ComponentPackage
-	for _, c := range b.GetSpec().GetComponents() {
-		matches := filterMeta(c.GetKind(), c.GetMetadata(), o)
+func (f *Filterer) FilterComponents(o *Options) []*bundle.ComponentPackage {
+	data := (&core.ComponentData{Components: f.data}).DeepCopy().Components
+	var matched []*bundle.ComponentPackage
+	var notMatched []*bundle.ComponentPackage
+	for _, c := range data {
+		matches := filterMeta(c.Kind, &c.ObjectMeta, o)
 		if matches {
 			matched = append(matched, c)
 		} else {
@@ -70,34 +77,22 @@ func (f *Filterer) FilterComponents(o *Options) *bpb.ClusterBundle {
 		}
 	}
 	if o.KeepOnly {
-		b.GetSpec().Components = matched
-		return b
+		return matched
 	}
-	b.GetSpec().Components = notMatched
-	return b
+	return notMatched
 }
 
 // FilterObjects filters objects based on the ObjectMeta properties of
 // the objects, returning a new cluster bundle with just filtered
 // objects. By default objectsare removed, unless KeepOnly is set, and
 // then the opposite is true.
-func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
-	b := converter.CloneBundle(f.Bundle)
-	for _, cp := range b.GetSpec().GetComponents() {
-		var matched []*structpb.Struct
-		var notMatched []*structpb.Struct
-		if cp.Spec == nil {
-			continue
-		}
-		for _, c := range cp.GetSpec().GetClusterObjects() {
-			meta, err := converter.ObjectMetaFromStruct(c)
-			if err != nil {
-				log.Infof("error converting cluster's object meta: %v", err)
-				// If this happens, then likely, the structure is invalid of the
-				// ObjectMeta.
-				continue
-			}
-			matches := filterMeta(c.GetFields()["kind"].GetStringValue(), meta, o)
+func (f *Filterer) FilterObjects(o *Options) []*bundle.ComponentPackage {
+	data := (&core.ComponentData{Components: f.data}).DeepCopy().Components
+	for _, cp := range data {
+		var matched []*unstructured.Unstructured
+		var notMatched []*unstructured.Unstructured
+		for _, c := range cp.Spec.Objects {
+			matches := filterMeta(c.GetKind(), converter.FromUnstructured(c).ExtractObjectMeta(), o)
 			if matches {
 				matched = append(matched, c)
 			} else {
@@ -105,15 +100,15 @@ func (f *Filterer) FilterObjects(o *Options) *bpb.ClusterBundle {
 			}
 		}
 		if o.KeepOnly {
-			cp.Spec.ClusterObjects = matched
+			cp.Spec.Objects = matched
 		} else {
-			cp.Spec.ClusterObjects = notMatched
+			cp.Spec.Objects = notMatched
 		}
 	}
-	return b
+	return data
 }
 
-func filterMeta(kind string, meta *bpb.ObjectMeta, o *Options) bool {
+func filterMeta(kind string, meta *metav1.ObjectMeta, o *Options) bool {
 	for _, k := range o.Kinds {
 		if k == kind {
 			return true

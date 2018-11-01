@@ -20,10 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	testutil "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
 type fakeBundleValidator struct {
@@ -55,24 +54,23 @@ func TestRunValidate(t *testing.T) {
 		},
 	}
 
-	brw := &converter.BundleReaderWriter{
-		testutil.NewFakeReaderWriterFromPairs(&testutil.FilePair{validFile, testutil.FakeBundle}),
-	}
+	rw := testutil.NewFakeReaderWriterFromPairs(
+		&testutil.FilePair{validFile, testutil.FakeComponentData})
 	opts := &options{}
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:  validFile,
-				InputFormat: "yaml",
+				ComponentDataFile: validFile,
+				InputFormat:       "yaml",
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
-			createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
+			createValidatorFn = func(b *core.ComponentData) bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}
 
-			err := runValidate(ctx, opts, brw, globalOpts)
+			err := runValidate(ctx, opts, rw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
 				t.Errorf("runInline() returned err: %v, Want Err: %v", err, tc.expectErrContains)
 			}

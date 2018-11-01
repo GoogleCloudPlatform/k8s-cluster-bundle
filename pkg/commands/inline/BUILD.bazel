@@ -10,9 +10,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/commands/cmdlib:go_default_library",
-        "//pkg/converter:go_default_library",
         "//pkg/files:go_default_library",
-        "//pkg/transformer:go_default_library",
+        "//pkg/inline:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",
     ],
@@ -24,7 +23,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//pkg/commands/cmdlib:go_default_library",
-        "//pkg/converter:go_default_library",
         "//pkg/testutil:go_default_library",
     ],
 )

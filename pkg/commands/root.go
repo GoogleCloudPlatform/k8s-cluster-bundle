@@ -19,7 +19,6 @@ import (
 	"flag"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
@@ -32,7 +31,7 @@ import (
 func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "bundler",
-		Short: "bundler is tool for inspecting and modifying cluster bundles.",
+		Short: "bundler is tool for inspecting, validation, and modifying components packages and component sets.",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
@@ -41,7 +40,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	// TODO(kashomon): Should the GlobalOptionsValues be de-globalized? It's
 	// certainly possible.
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.BundleFile, "bundle-file", "f", "", "The path to a bundle file")
+		&cmdlib.GlobalOptionsValues.ComponentDataFile, "component-data-file", "f", "", "The path to a bundle file")
 
 	rootCmd.PersistentFlags().StringVarP(
 		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "yaml", "The input file format. One of either 'json' or 'yaml'")
@@ -53,11 +52,11 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "yaml", "The output file format. One of either 'json' or 'yaml'")
 
 	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline the bundle before processing")
-	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.TopLayerInlineOnly, "only-inline-top", "", false, "Whether to inline just the top layer of the bundle (node config and component files)")
+		&cmdlib.GlobalOptionsValues.InlineComponents, "inline-components", "l", true, "Whether to inline the component data files before processing")
 
-	export.AddCommandsTo(ctx, rootCmd)
+	rootCmd.PersistentFlags().BoolVarP(
+		&cmdlib.GlobalOptionsValues.InlineObjects, "inline-objects", "", true, "Whether to inline tho components' object files")
+
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
 	inline.AddCommandsTo(ctx, rootCmd)

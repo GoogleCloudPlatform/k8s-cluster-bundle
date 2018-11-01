@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
@@ -60,20 +59,20 @@ func TestRunInline(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			var pairs []*testutil.FilePair
 			if tc.in == validInBundle {
-				pairs = append(pairs, &testutil.FilePair{tc.in, testutil.FakeBundle})
+				pairs = append(pairs, &testutil.FilePair{tc.in, testutil.FakeComponentData})
 			}
 			if tc.out == validOutBundle {
-				pairs = append(pairs, &testutil.FilePair{tc.out, testutil.FakeBundle})
+				pairs = append(pairs, &testutil.FilePair{tc.out, testutil.FakeComponentData})
 			}
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:   tc.in,
-				OutputFile:   tc.out,
-				InputFormat:  "yaml",
-				OutputFormat: "yaml",
+				ComponentDataFile: tc.in,
+				OutputFile:        tc.out,
+				InputFormat:       "yaml",
+				OutputFormat:      "yaml",
 			}
 
 			frw := testutil.NewFakeReaderWriterFromPairs(pairs...)
-			err := run(ctx, tc.opts, &converter.BundleReaderWriter{frw}, globalOpts)
+			err := run(ctx, tc.opts, frw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
 				t.Errorf("runInline(opts: %+v) returned err: %v, Want Err: %q", tc.opts, err, tc.expectErrContains)
 			}

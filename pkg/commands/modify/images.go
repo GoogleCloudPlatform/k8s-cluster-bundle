@@ -45,9 +45,9 @@ func modifyImagesAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundleContents(ctx, rw, gopt)
+	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading component data contents: %v", err)
 	}
 
 	var rules []*transformer.ImageSubRule
@@ -63,7 +63,7 @@ func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWrit
 		})
 	}
 
-	repl := (&transformer.ImageTransformer{b}).TransformImagesStringSub(rules)
+	repl := transformer.NewImageTransformer(b.Components).TransformImagesStringSub(rules)
 
 	return cmdlib.WriteStructuredContents(ctx, repl, rw, gopt)
 }

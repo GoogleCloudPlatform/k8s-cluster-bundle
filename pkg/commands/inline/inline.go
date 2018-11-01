@@ -19,9 +19,8 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
@@ -34,24 +33,25 @@ var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	gopt.Inline = true
-	brw := converter.NewFileSystemBundleReaderWriter()
-	if err := run(ctx, opts, brw, gopt); err != nil {
+	gopt.InlineComponents = true
+	gopt.InlineObjects = true
+	rw := &files.LocalFileSystemReaderWriter{}
+	if err := run(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
 // createInlinerFn creates an Inliner that works with the given current working
 // directory for the purposes of dependency injection.
-var createInlinerFn = func(pbr files.FilePBReader) *transformer.Inliner {
-	return &transformer.Inliner{pbr}
+var createInlinerFn = func(pbr files.FileObjReader) *inline.Inliner {
+	return &inline.Inliner{pbr}
 }
 
-func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundleContents(ctx, brw.RW, gopt)
+func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading component data contents: %v", err)
 	}
 
-	return cmdlib.WriteStructuredContents(ctx, b, brw.RW, gopt)
+	return cmdlib.WriteStructuredContents(ctx, b, rw, gopt)
 }

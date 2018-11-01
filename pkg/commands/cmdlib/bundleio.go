@@ -17,32 +17,30 @@ package cmdlib
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
-	"github.com/ghodss/yaml"
 	log "github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 )
 
-// ReadBundleContents reads bundle contents from a file or stdin.
-func ReadBundleContents(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
+// ReadComponentData reads component data file contents from a file or stdin.
+func ReadComponentData(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*core.ComponentData, error) {
 	var bytes []byte
 	var err error
-	if g.BundleFile != "" {
-		log.Infof("Reading bundle file %v", g.BundleFile)
-		bytes, err = rw.ReadFile(ctx, g.BundleFile)
+	if g.ComponentDataFile != "" {
+		log.Infof("Reading component data file %v", g.ComponentDataFile)
+		bytes, err = rw.ReadFile(ctx, g.ComponentDataFile)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		log.Info("No bundle file, reading from stdin")
+		log.Info("No component data file, reading from stdin")
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			bytes = append(bytes, scanner.Bytes()...)
@@ -53,86 +51,53 @@ func ReadBundleContents(ctx context.Context, rw files.FileReaderWriter, g *Globa
 		}
 	}
 
-	b, err := convertBundle(ctx, bytes, rw, g)
+	b, err := convertComponentData(ctx, bytes, g)
 	if err != nil {
 		return nil, err
 	}
 
-	// For now, we can only inline bundle files because we need the path context.
-	if g.Inline && g.BundleFile != "" {
-		opts := &transformer.InlineOptions{
-			TopLayerOnly: g.TopLayerInlineOnly,
-		}
-		return inlineBundle(ctx, b, g.BundleFile, rw, opts)
+	// For now, we can only inline component data files because we need the path
+	// context.
+	if (g.InlineComponents || g.InlineObjects) && g.ComponentDataFile != "" {
+		return inlineData(ctx, b, rw, g)
 	}
 	return b, nil
 }
 
-// convertBundle converts a bundle from raw bytes into a proto.
-func convertBundle(ctx context.Context, bytes []byte, rw files.FileReaderWriter, g *GlobalOptions) (*bpb.ClusterBundle, error) {
-	if g.InputFormat == "yaml" {
-		bi, err := converter.Bundle.YAMLToProto(bytes)
-		if err != nil {
-			return nil, fmt.Errorf("error converting bundle from yaml to proto: %v", err)
-		}
-		return converter.ToBundle(bi), nil
-	} else if g.InputFormat == "json" {
-		bi, err := converter.Bundle.JSONToProto(bytes)
-		if err != nil {
-			return nil, fmt.Errorf("error converting bundle from json to proto: %v", err)
-		}
-		return converter.ToBundle(bi), nil
-	}
-	return nil, fmt.Errorf("unknown input format: %q", g.InputFormat)
+func convertComponentData(ctx context.Context, bt []byte, g *GlobalOptions) (*core.ComponentData, error) {
+	return converter.FromContentType(g.InputFormat, bt).ToComponentData()
 }
 
-// inlineBundle inlines a cluster bundle before processing
-func inlineBundle(ctx context.Context, b *bpb.ClusterBundle, path string, rw files.FileReaderWriter, opts *transformer.InlineOptions) (*bpb.ClusterBundle, error) {
-	inliner := &transformer.Inliner{
-		&files.LocalFilePBReader{
-			WorkingDir: filepath.Dir(path),
+// inlineData inlines a cluster bundle before processing
+func inlineData(ctx context.Context, data *core.ComponentData, rw files.FileReaderWriter, g *GlobalOptions) (*core.ComponentData, error) {
+	inliner := &inline.Inliner{
+		&files.LocalFileObjReader{
+			WorkingDir: filepath.Dir(g.ComponentDataFile),
 			Rdr:        rw,
 		},
 	}
-	return inliner.Inline(ctx, b, opts)
+	var err error
+	if g.InlineComponents {
+		data, err = inliner.InlineComponentDataFiles(ctx, data)
+		if err != nil {
+			return nil, fmt.Errorf("error inlining component data files: %v", err)
+		}
+	}
+	if g.InlineObjects {
+		data, err = inliner.InlineComponentsInData(ctx, data)
+		if err != nil {
+			return nil, fmt.Errorf("error inlining objects: %v", err)
+		}
+	}
+	return data, nil
 }
 
 // WriteContentsStructured writes some structured contents. The contents must be serializable to both JSON and YAML.
 func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.FileReaderWriter, g *GlobalOptions) error {
-	var bytes []byte
-	var err error
-	if o, ok := obj.(proto.Message); ok {
-		// Use proto conversion for proto messages. There is some magic.
-		if g.OutputFormat == "yaml" {
-			bytes, err = converter.ProtoToYAML(o)
-			if err != nil {
-				return fmt.Errorf("error marshalling yaml: %v", err)
-			}
-		} else if g.OutputFormat == "json" {
-			bytes, err = converter.ProtoToJSON(o)
-			if err != nil {
-				return fmt.Errorf("error marshalling json: %v", err)
-			}
-		} else {
-			return fmt.Errorf("error: unknown output format %q", g.OutputFormat)
-		}
-	} else {
-		// Assume standard conversion
-		if g.OutputFormat == "yaml" {
-			bytes, err = yaml.Marshal(obj)
-			if err != nil {
-				return fmt.Errorf("error marshalling yaml: %v", err)
-			}
-		} else if g.OutputFormat == "json" {
-			bytes, err = json.Marshal(obj)
-			if err != nil {
-				return fmt.Errorf("error marshalling json: %v", err)
-			}
-		} else {
-			return fmt.Errorf("error: unknown output format %q", g.OutputFormat)
-		}
+	bytes, err := converter.FromObject(obj).ToContentType(g.OutputFormat)
+	if err != nil {
+		return fmt.Errorf("error writing contents: %v", err)
 	}
-
 	return WriteContents(ctx, g.OutputFile, bytes, rw)
 }
 

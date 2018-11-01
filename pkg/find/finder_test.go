@@ -18,40 +18,41 @@ import (
 	"reflect"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
-var validBundleExample = `apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  components:
-  - metadata:
-      name: etcd-server
-    spec:
-      clusterObjects:
-      - metadata:
-          name: pod
-      - metadata:
-          name: dwerp
+var validComponentExample = `
+components:
+- spec:
+    canonicalName: etcd-server
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: pod
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: dwerp
 
-  - metadata:
-      name: kube-apiserver
-    spec:
-      clusterObjects:
-      - metadata:
-          name: pod
+- spec:
+    name: kube-apiserver
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: pod
 `
 
 func TestBundleFinder(t *testing.T) {
-	b, err := converter.Bundle.YAMLToProto([]byte(validBundleExample))
+	b, err := converter.FromYAMLString(validComponentExample).ToComponentData()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}
-	finder, err := NewBundleFinder(converter.ToBundle(b))
+	finder := NewComponentFinder(b.Components)
 	if err != nil {
 		t.Fatalf("error creating bundle finder: %v", err)
 	}
@@ -86,8 +87,8 @@ func TestBundleFinder(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		if tc.objName != "" && tc.compName != "" {
-			vl := finder.ClusterObjects(tc.compName, core.ObjectRef{Name: tc.objName})
-			var v *structpb.Struct
+			vl := finder.Objects(core.ComponentKey{CanonicalName: tc.compName}, core.ObjectRef{Name: tc.objName})
+			var v *unstructured.Unstructured
 			if len(vl) > 0 {
 				v = vl[0]
 			}
@@ -98,7 +99,7 @@ func TestBundleFinder(t *testing.T) {
 			}
 
 		} else if tc.compName != "" {
-			v := finder.ComponentPackage(tc.compName)
+			v := finder.UniqueComponentFromName(tc.compName)
 			if v == nil && tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected nil response for cluster comp lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {
@@ -113,10 +114,9 @@ func TestBundleFinder(t *testing.T) {
 var validComponent = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
-metadata:
-  name: kube-apiserver
 spec:
-  clusterObjects:
+  canonicalName: kube-apiserver
+  objects:
   - apiVersion: v1
     kind: Pod
     metadata:
@@ -139,11 +139,11 @@ spec:
 `
 
 func TestComponentFinder_PartialLookup(t *testing.T) {
-	c, err := converter.ComponentPackage.YAMLToProto([]byte(validComponent))
+	c, err := converter.FromYAMLString(validComponent).ToComponentPackage()
 	if err != nil {
 		t.Fatalf("error converting componente: %v", err)
 	}
-	finder := &ComponentFinder{converter.ToComponentPackage(c)}
+	finder := NewObjectFinder(c)
 
 	testCases := []struct {
 		desc string
@@ -188,7 +188,7 @@ func TestComponentFinder_PartialLookup(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			found := finder.ClusterObjects(tc.ref)
+			found := finder.Objects(tc.ref)
 			names := getObjNames(found)
 			if !reflect.DeepEqual(names, tc.exp) {
 				t.Errorf("CluusterObjects(): got %v but wanted %v", names, tc.exp)
@@ -197,10 +197,10 @@ func TestComponentFinder_PartialLookup(t *testing.T) {
 	}
 }
 
-func getObjNames(obj []*structpb.Struct) []string {
+func getObjNames(objs []*unstructured.Unstructured) []string {
 	var names []string
-	for _, c := range obj {
-		names = append(names, core.ObjectName(c))
+	for _, o := range objs {
+		names = append(names, o.GetName())
 	}
 	return names
 }

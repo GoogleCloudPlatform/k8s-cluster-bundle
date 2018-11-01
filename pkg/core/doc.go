@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package core represents types and helpers that are used throughout the
-// bundle.
+// Package core represents foundational data types that are used throughout the
+// library, but are not part of the API.
 package core

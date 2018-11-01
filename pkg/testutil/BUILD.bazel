@@ -13,12 +13,3 @@ go_library(
         "//pkg/files:go_default_library",
     ],
 )
-
-filegroup(
-    name = "bundle_testdata",
-    srcs = glob([
-        "testdata/**/*.yaml",
-        "testdata/**/*.txt",
-    ]),
-    visibility = ["//visibility:public"],
-)

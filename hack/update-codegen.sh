@@ -38,33 +38,19 @@ cd ..
 deepcopy-gen \
   -h hack/boilerplate.go.txt \
   -O zz_generated.deepcopy \
-  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
-  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
 register-gen \
   -h hack/boilerplate.go.txt \
-  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
-  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
 client-gen --clientset-name=versioned \
   -h hack/boilerplate.go.txt \
-  --input-base=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/k8sbundle/v1alpha1 \
+  --input-base=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
 # Relies on ../PROJECT file
 # creates CRDS in ../config/crds/
 crd generate --skip-map-validation
-
-# Some hackery to rename k8sbundle to just bundle and remove k8sbundle
-# references
-for f in config/crds/*.yaml; do
-  mv "$f" "$(echo "$f" | sed s/k8sbundle/bundle/)"
-done
-
-for f in config/crds/*.yaml; do
-  sed 's/k8sbundle/bundle/g' $f > $f.t
-  mv $f.t $f
-done
-
-  # --input-dirs=./pkg/apis/k8sbundle/v1alpha1 \
-  # --included-types-overrides=gke.io/k8s-cluster-bundle/v1alpha1 \
