@@ -1,8 +1,7 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
-metadata:
-  name: 'node-config-ubuntu-node'
 spec:
+  name: 'node-config-ubuntu-node'
   clusterObjects:
   - apiVersion: 'bundleext.gke.io/v1alpha1'
     kind: NodeConfig

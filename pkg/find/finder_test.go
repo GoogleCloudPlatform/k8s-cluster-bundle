@@ -29,18 +29,16 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: etcd-server
-    spec:
       clusterObjects:
       - metadata:
           name: pod
       - metadata:
           name: dwerp
 
-  - metadata:
+  - spec:
       name: kube-apiserver
-    spec:
       clusterObjects:
       - metadata:
           name: pod
@@ -113,9 +111,8 @@ func TestBundleFinder(t *testing.T) {
 var validComponent = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
-metadata:
-  name: kube-apiserver
 spec:
+  name: kube-apiserver
   clusterObjects:
   - apiVersion: v1
     kind: Pod

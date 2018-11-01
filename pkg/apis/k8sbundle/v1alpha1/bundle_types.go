@@ -21,14 +21,12 @@ import (
 
 // ClusterBundleSpec is the the specification for the cluster bundle.
 type ClusterBundleSpec struct {
-	// Version-string for this bundle. The version should be a SemVer string (see
-	// https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  Generally
-	// speaking, a major-version (changes should indicate breaking changes,
-	// minor-versions should indicate backwards compatible features, and patch
-	// changes should indicate backwards compatible. If there are any changes to
-	// the bundle, then the version string must be incremented.
-	//
-	// If a bundle is versioned, then all its components must be versioned.
+	// Required. Version-string for this bundle. The version should be an
+	// a string of the form X.Y.Z (Major.Minor.Patch).  Generally speaking,
+	// major-version changes should indicate breaking changes, minor-versions
+	// should indicate backwards compatible features, and patch changes should
+	// indicate backwords compatible. If there are any changes to the bundle, then
+	// the version string must be incremented.
 	Version string `json:"version,omitempty"`
 
 	// Kubernetes objects grouped into component packages and versioned together.
@@ -55,12 +53,15 @@ type File struct {
 
 // ComponentPackageSpec represents the spec for the component.
 type ComponentPackageSpec struct {
-	// Version-string for this component. The version should be a SemVer 2 string
-	// (see https://semver.org/) of the form X.Y.Z (Major.Minor.Patch).  A
-	// major-version changes should indicate breaking changes, minor-versions
-	// should indicate backwards compatible features, and patch changes should
-	// indicate backwards compatible. If there are any changes to the component,
-	// then the version string must be incremented.
+	// Name is the canonical name of this component. For example, 'etcd' or
+	// 'kube-proxy'.
+	Name string `json:"name,omitempty"`
+
+	// Required. Version-string for this component. The version should be a string
+	// of the form X.Y.Z (Major.Minor.Patch).  Major-version changes indicate
+	// breaking changes, minor-versions indicate backwards compatible features,
+	// and patch changes indicate backwards compatible. If there are any changes
+	// to the component, then the version string must be incremented.
 	Version string `json:"version,omitempty"`
 
 	// Structured Kubenetes objects that run as part of this app, whether on the

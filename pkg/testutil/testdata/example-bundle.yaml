@@ -30,9 +30,8 @@ spec:
   #====================#
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: kubernetes-control-plane
     spec:
+      name: kubernetes-control-plane
       version: '11.0.0'
       clusterObjectFiles:
       - url: 'file://kube-apiserver.yaml'
@@ -44,9 +43,8 @@ spec:
   #========#
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: kubedns
     spec:
+      name: kubedns
       version: '2.0'
       clusterObjectFiles:
       - url: 'file://kubedns/service.yaml'
@@ -56,18 +54,16 @@ spec:
 
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: kubeproxy
     spec:
+      name: kubeproxy
       version: '2.1'
       clusterObjectFiles:
       - url: 'file://kubeproxy/kubeproxy.yaml'
 
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: data-blob
     spec:
+      name: data-blob
       version: '0.1'
       rawTextFiles:
       - url: 'file://some-data.txt'
@@ -77,9 +73,8 @@ spec:
   #=========#
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: options
     spec:
+      name: options-example
       version: '2.0'
       clusterObjectFiles:
       - url: 'file://options-example.yaml'
@@ -90,9 +85,8 @@ spec:
   #=============#
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: 'node-config-ubuntu-master'
     spec:
+      name: 'node-config-ubuntu-master'
       clusterObjects:
       - apiVersion: 'bundle.gke.io/v1alpha1'
         kind: NodeConfig

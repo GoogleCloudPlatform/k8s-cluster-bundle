@@ -25,9 +25,8 @@ metadata:
   name: test-bundle
 spec:
   components:
-  - metadata:
+  - spec:
       name: kube-apiserver
-    spec:
       clusterObjectFiles:
       - url: 'file://path/to/kube_apiserver.yaml'
 `

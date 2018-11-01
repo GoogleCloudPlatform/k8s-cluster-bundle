@@ -55,6 +55,8 @@ spec:
                         items:
                           type: object
                         type: array
+                      name:
+                        type: string
                       rawTextFiles:
                         items:
                           properties:

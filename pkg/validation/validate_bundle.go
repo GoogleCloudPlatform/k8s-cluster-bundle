@@ -76,9 +76,9 @@ func (b *BundleValidator) validateComponentPackageNames() []error {
 	var errs []error
 	objCollect := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.Bundle.GetSpec().GetComponents() {
-		n := ca.GetMetadata().GetName()
+		n := ca.GetSpec().GetName()
 		if n == "" {
-			errs = append(errs, fmt.Errorf("cluster components must always have a name. was empty for config %v", ca))
+			errs = append(errs, fmt.Errorf("cluster components must always have a Spec.Name. was empty for config %v", ca))
 			continue
 		}
 		api := ca.GetApiVersion()

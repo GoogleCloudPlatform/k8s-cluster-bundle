@@ -36,7 +36,7 @@ func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
 	b = converter.CloneBundle(b)
 	compConfigs := make(map[string]*bpb.ComponentPackage)
 	for _, ca := range b.GetSpec().GetComponents() {
-		n := ca.GetMetadata().GetName()
+		n := ca.GetSpec().GetName()
 		if n == "" {
 			return nil, fmt.Errorf("cluster components must always have a metadata.name. was empty for %v", ca)
 		}

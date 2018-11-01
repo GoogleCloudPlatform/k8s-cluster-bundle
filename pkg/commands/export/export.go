@@ -76,7 +76,7 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 
 		// If a write fails, just return the error and the user can rerun the command and rewrite
 		// any files that may have been written or partially written.
-		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), ea.GetMetadata().GetName())
+		path := fmt.Sprintf("%s/%s.yaml", filepath.Clean(o.outputDir), comp)
 		bytes, err := converter.ComponentPackage.ProtoToYAML(ea)
 		if err != nil {
 			return err

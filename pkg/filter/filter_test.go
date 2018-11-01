@@ -30,9 +30,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: zap
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -43,9 +42,8 @@ spec:
           annotations:
             foo: bar
           namespace: kube-system
-  - metadata:
+  - spec:
       name: bog
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -56,9 +54,8 @@ spec:
           annotations:
             foof: yar
           namespace: kube-system
-  - metadata:
+  - spec:
       name: nog
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Pod
@@ -69,9 +66,8 @@ spec:
           annotations:
             foof: narf
           namespace: kube
-  - metadata:
+  - spec:
       name: zog
-    spec:
       clusterObjects:
       - apiVersion: v1
         kind: Deployment
@@ -223,28 +219,31 @@ spec:
   components:
   - kind: ComponentPackage
     metadata:
-      name: zap-pod
       labels:
         component: zork
       annotations:
         foo: bar
       namespace: kube-system
+    spec:
+      name: zap-pod
   - kind: ComponentPackage
     metadata:
-      name: bog-pod
       labels:
         component: bork
       annotations:
         foof: yar
       namespace: kube-system
+    spec:
+      name: bog-pod
   - kind: ComponentPackage
     metadata:
-      name: nog-pod
       labels:
         component: nork
       annotations:
         foof: narf
       namespace: kube
+    spec:
+      name: nog-pod
   - kind: ComponentPackage
     metadata:
       name: zog-dep
@@ -252,7 +251,9 @@ spec:
         component: zork
       annotations:
         zoof: zarf
-      namespace: zube`
+      namespace: zube
+    spec:
+      name: zog-dep`
 
 func TestFilterComponents(t *testing.T) {
 	testcases := []struct {
@@ -377,7 +378,7 @@ func TestFilterComponents(t *testing.T) {
 func getCompObjNames(b *bpb.ClusterBundle) []string {
 	var names []string
 	for _, c := range b.GetSpec().GetComponents() {
-		names = append(names, c.GetMetadata().GetName())
+		names = append(names, c.GetSpec().GetName())
 	}
 	return names
 }

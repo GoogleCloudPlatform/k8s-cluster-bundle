@@ -91,9 +91,8 @@ spec:
   components:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: coolApp
     spec:
+      name: coolApp
       version: '2.10.1'`,
 			// no errors
 		},
@@ -106,7 +105,7 @@ metadata:
 spec:
   components:
   - apiVersion: bundle.gke.io/v1alpha1
-    metadata:
+    spec:
       name: coolApp`,
 			errSubstring: "cluster component kind",
 		},
@@ -118,9 +117,9 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp
-  - metadata:
+  - spec:
       name: coolApp`,
 			errSubstring: "duplicate cluster component key",
 		},
@@ -133,9 +132,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod
@@ -153,9 +151,8 @@ spec:
   components:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
-      name: coolApp
     spec:
+      name: coolApp
       version: '2.010.1'`,
 			errSubstring: "cluster component spec version is not a X.Y.Z version string",
 		},
@@ -170,7 +167,7 @@ spec:
   components:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: ComponentPackage
-    metadata:
+    spec:
       name: coolApp`,
 			errSubstring: "cluster component spec version is not a X.Y.Z version string",
 		},
@@ -183,9 +180,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod
@@ -201,9 +197,8 @@ metadata:
   name: '1.9.7.testbundle-zork'
 spec:
   components:
-  - metadata:
+  - spec:
       name: coolApp1
-    spec:
       clusterObjects:
       - metadata:
           name: pod

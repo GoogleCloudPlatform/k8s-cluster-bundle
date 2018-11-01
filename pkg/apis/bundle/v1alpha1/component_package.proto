@@ -34,11 +34,7 @@ message ComponentPackage {
   // 'ComponentPackage'.
   string kind = 2;
 
-  // Kubernetes Metadata for the component. The Metadata.name field must be
-  // filled out and each component in a bundle must have a unique name. For
-  // example you might have a 'kube-apiserver' component or perhaps even a
-  // 'kubernetes' component, depending on the granularity of the Bundle
-  // components.
+  // Kubernetes Metadata for the component.
   ObjectMeta metadata = 3;
 
   // Spec for the ComponentPackage.
@@ -47,12 +43,16 @@ message ComponentPackage {
 
 // ComponentPackageSpec represents the spec for the component.
 message ComponentPackageSpec {
+  // Name is the canonical name of this component. For example, 'etcd' or
+  // 'kube-proxy'.
+  string name = 1;
+
   // Required. Version-string for this component. The version should be a string
   // of the form X.Y.Z (Major.Minor.Patch).  Major-version changes indicate
   // breaking changes, minor-versions indicate backwards compatible features,
   // and patch changes indicate backwards compatible. If there are any changes
   // to the component, then the version string must be incremented.
-  string version = 1;
+  string version = 2;
 
   // Structured Kubenetes objects that run as part of this app, whether on the
   // master, on the nodes, or in some other fashion.  These Kubernetes objects
@@ -60,7 +60,7 @@ message ComponentPackageSpec {
   // `kind`, and `metadata`.
   //
   // This is essentially equivalent to the Kubernetes `Unstructured` type.
-  repeated google.protobuf.Struct cluster_objects = 4;
+  repeated google.protobuf.Struct cluster_objects = 3;
 
   // Cluster objects that are specified via a File-URL. The process of inlining
   // a component turns cluster object files into cluster objects.
@@ -70,7 +70,7 @@ message ComponentPackageSpec {
   //
   // Each cluster object file must be parsable into a Struct: In other words,
   // it should be representable as either YAML or JSON.
-  repeated File cluster_object_files = 5;
+  repeated File cluster_object_files = 4;
 
   // Raw files represent arbitrary string data. Unlike cluster object files,
   // these files don't need to be parsable as YAML or JSON. So, during the
@@ -79,5 +79,5 @@ message ComponentPackageSpec {
   // with the metadata.name and the data-key both being set to the base-file
   // name. Thus, if the url is something like 'file://foo/bar/biff.txt', the
   // metadata.name and data-key will be 'biff.txt'.
-  repeated File raw_text_files = 6;
+  repeated File raw_text_files = 5;
 }
