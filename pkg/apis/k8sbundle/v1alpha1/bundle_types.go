@@ -53,9 +53,9 @@ type File struct {
 
 // ComponentPackageSpec represents the spec for the component.
 type ComponentPackageSpec struct {
-	// Name is the canonical name of this component. For example, 'etcd' or
+	// CanonicalName for this component. For example, 'etcd' or
 	// 'kube-proxy'.
-	Name string `json:"name,omitempty"`
+	CanonicalName string `json:"name,omitempty"`
 
 	// Required. Version-string for this component. The version should be a string
 	// of the form X.Y.Z (Major.Minor.Patch).  Major-version changes indicate
