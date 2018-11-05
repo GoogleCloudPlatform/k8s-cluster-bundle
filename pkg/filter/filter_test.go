@@ -18,70 +18,60 @@ import (
 	"reflect"
 	"testing"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 var example = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  components:
-  - metadata:
-      name: zap
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: zap-pod
-          labels:
-            component: zork
-          annotations:
-            foo: bar
-          namespace: kube-system
-  - metadata:
-      name: bog
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: bog-pod
-          labels:
-            component: bork
-          annotations:
-            foof: yar
-          namespace: kube-system
-  - metadata:
-      name: nog
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: nog-pod
-          labels:
-            component: nork
-          annotations:
-            foof: narf
-          namespace: kube
-  - metadata:
-      name: zog
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Deployment
-        metadata:
-          name: zog-dep
-          labels:
-            component: zork
-          annotations:
-            zoof: zarf
-          namespace: zube`
+components:
+- spec:
+    canonicalName: zap
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap-pod
+        labels:
+          component: zork
+        annotations:
+          foo: bar
+        namespace: kube-system
+- spec:
+    canonicalName: bog
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bog-pod
+        labels:
+          component: bork
+        annotations:
+          foof: yar
+        namespace: kube-system
+- spec:
+    canonicalName: nog
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: nog-pod
+        labels:
+          component: nork
+        annotations:
+          foof: narf
+        namespace: kube
+- spec:
+    canonicalName: zog
+    objects:
+    - apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: zog-dep
+        labels:
+          component: zork
+        annotations:
+          zoof: zarf
+        namespace: zube`
 
 func TestFilterObjects(t *testing.T) {
 	testcases := []struct {
@@ -187,16 +177,15 @@ func TestFilterObjects(t *testing.T) {
 		},
 	}
 
-	b, err := converter.Bundle.YAMLToProto([]byte(example))
+	data, err := converter.FromYAMLString(example).ToComponentData()
 	if err != nil {
-		t.Fatalf("error converting bundle: %v", err)
+		t.Fatalf("error converting component data: %v", err)
 	}
-	bun := converter.ToBundle(b)
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			f := &Filterer{bun}
-			newb := f.FilterObjects(tc.opt)
-			onames := getObjNames(newb)
+			f := &Filterer{data.Components}
+			newData := f.FilterObjects(tc.opt)
+			onames := getObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("FilterObjects(): got %v but wanted %v", onames, tc.expObjNames)
 			}
@@ -204,55 +193,50 @@ func TestFilterObjects(t *testing.T) {
 	}
 }
 
-func getObjNames(b *bpb.ClusterBundle) []string {
+func getObjNames(comp []*bundle.ComponentPackage) []string {
 	var names []string
-	for _, c := range b.GetSpec().GetComponents() {
-		for _, o := range c.GetSpec().GetClusterObjects() {
-			names = append(names, core.ObjectName(o))
+	for _, c := range comp {
+		for _, o := range c.Spec.Objects {
+			names = append(names, o.GetName())
 		}
 	}
 	return names
 }
 
 var componentExample = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  components:
-  - kind: ComponentPackage
-    metadata:
-      name: zap-pod
-      labels:
-        component: zork
-      annotations:
-        foo: bar
-      namespace: kube-system
-  - kind: ComponentPackage
-    metadata:
-      name: bog-pod
-      labels:
-        component: bork
-      annotations:
-        foof: yar
-      namespace: kube-system
-  - kind: ComponentPackage
-    metadata:
-      name: nog-pod
-      labels:
-        component: nork
-      annotations:
-        foof: narf
-      namespace: kube
-  - kind: ComponentPackage
-    metadata:
-      name: zog-dep
-      labels:
-        component: zork
-      annotations:
-        zoof: zarf
-      namespace: zube`
+components:
+- kind: ComponentPackage
+  metadata:
+    name: zap-pod
+    labels:
+      component: zork
+    annotations:
+      foo: bar
+    namespace: kube-system
+- kind: ComponentPackage
+  metadata:
+    name: bog-pod
+    labels:
+      component: bork
+    annotations:
+      foof: yar
+    namespace: kube-system
+- kind: ComponentPackage
+  metadata:
+    name: nog-pod
+    labels:
+      component: nork
+    annotations:
+      foof: narf
+    namespace: kube
+- kind: ComponentPackage
+  metadata:
+    name: zog-dep
+    labels:
+      component: zork
+    annotations:
+      zoof: zarf
+    namespace: zube`
 
 func TestFilterComponents(t *testing.T) {
 	testcases := []struct {
@@ -357,16 +341,15 @@ func TestFilterComponents(t *testing.T) {
 		},
 	}
 
-	b, err := converter.Bundle.YAMLToProto([]byte(componentExample))
+	data, err := converter.FromYAMLString(componentExample).ToComponentData()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}
-	bun := converter.ToBundle(b)
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			f := &Filterer{bun}
-			newb := f.FilterComponents(tc.opt)
-			onames := getCompObjNames(newb)
+			f := &Filterer{data.Components}
+			newData := f.FilterComponents(tc.opt)
+			onames := getCompObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("FilterObjects(): got %v but wanted %v", onames, tc.expObjNames)
 			}
@@ -374,10 +357,10 @@ func TestFilterComponents(t *testing.T) {
 	}
 }
 
-func getCompObjNames(b *bpb.ClusterBundle) []string {
+func getCompObjNames(comp []*bundle.ComponentPackage) []string {
 	var names []string
-	for _, c := range b.GetSpec().GetComponents() {
-		names = append(names, c.GetMetadata().GetName())
+	for _, c := range comp {
+		names = append(names, c.ObjectMeta.Name)
 	}
 	return names
 }

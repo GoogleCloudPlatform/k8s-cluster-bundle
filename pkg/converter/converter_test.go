@@ -56,20 +56,21 @@ spec:
     name: logfile
 `
 
-func TestConvertStruct(t *testing.T) {
-	p, err := Struct.YAMLToProto([]byte(reschedulerManifest))
+func TestConvertUnstructured(t *testing.T) {
+	p, err := FromYAMLString(reschedulerManifest).ToUnstructured()
 	if err != nil {
 		t.Fatalf("unexpected error parsing manifest: %v", err)
 	}
 
 	// convert back for sanity
-	b, err := Struct.ProtoToYAML(p)
+	b, err := FromObject(p).ToYAML()
 	if err != nil {
 		t.Fatalf("unexpected error serializing manifest: %v", err)
 	}
 	str := string(b)
 
-	// Even though the YAMLs have maps, YAML generation sorts the keys based on name, and so it should be stable.
+	// Even though the YAMLs have maps, YAML generation sorts the keys based on
+	// name, and so it should be stable.
 	if strings.Trim(str, " \n\t") != strings.Trim(reschedulerManifest, " \n\t") {
 		t.Errorf("Got serilaized manifest:\n\n%s\nexpected it to equal:\n\n%s", str, reschedulerManifest)
 	}

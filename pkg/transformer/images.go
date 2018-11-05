@@ -17,8 +17,7 @@ package transformer
 import (
 	"strings"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 )
@@ -26,10 +25,16 @@ import (
 // ImageTransformer makes modifications to container and node images in
 // Bundles.
 type ImageTransformer struct {
-	Bundle *bpb.ClusterBundle
+	components []*bundle.ComponentPackage
 }
 
-// ImageSubRule represents string substitutions to preform on images in bundles.
+// NewImageTransformer creates a new ImageTransformer instance.
+func NewImageTransformer(comp []*bundle.ComponentPackage) *ImageTransformer {
+	return &ImageTransformer{comp}
+}
+
+// ImageSubRule represents string substitutions to preform on images in
+// bundles.
 type ImageSubRule struct {
 	Find    string
 	Replace string
@@ -41,9 +46,9 @@ type ImageSubRule struct {
 //
 // Rules are applied in order to images. If two rules apply, then they will be
 // applied in order.
-func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) *bpb.ClusterBundle {
-	b := converter.CloneBundle(t.Bundle)
-	finder := find.ImageFinder{b}
+func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) []*bundle.ComponentPackage {
+	newComp := (&core.ComponentData{Components: t.components}).DeepCopy().Components
+	finder := find.NewImageFinder(newComp)
 	finder.WalkAllImages(func(_ core.ClusterObjectKey, img string) string {
 		for _, r := range rules {
 			if strings.Contains(img, r.Find) {
@@ -54,5 +59,5 @@ func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) *bpb.
 		}
 		return img
 	})
-	return b
+	return newComp
 }

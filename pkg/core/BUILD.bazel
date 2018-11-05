@@ -3,10 +3,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
+        "component_data.go",
         "core.go",
         "doc.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core",
     visibility = ["//visibility:public"],
-    deps = ["//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library"],
+    deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
+    ],
 )

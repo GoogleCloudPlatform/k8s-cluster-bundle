@@ -22,7 +22,9 @@ spec:
           type: object
         spec:
           properties:
-            clusterObjectFiles:
+            canonicalName:
+              type: string
+            objectFiles:
               items:
                 properties:
                   hash:
@@ -31,7 +33,7 @@ spec:
                     type: string
                 type: object
               type: array
-            clusterObjects:
+            objects:
               items:
                 type: object
               type: array

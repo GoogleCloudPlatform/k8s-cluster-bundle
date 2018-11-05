@@ -18,9 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -37,8 +38,8 @@ var opts = &options{}
 // Action is the cobra command action for bundle validation.
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	// TODO(kashomon): Replace the BundleReaderWriter with a FileReaderWriter
-	if err := runValidate(ctx, opts, converter.NewFileSystemBundleReaderWriter(), gopt); err != nil {
+	rw := &files.LocalFileSystemReaderWriter{}
+	if err := runValidate(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -49,12 +50,14 @@ type bundleValidator interface {
 
 // createValidatorFn creates BundleValidator that works with the given current
 // working directory and allows for dependency injection.
-var createValidatorFn = func(b *bpb.ClusterBundle) bundleValidator {
-	return validation.NewBundleValidator(b)
+var createValidatorFn = func(b *core.ComponentData) bundleValidator {
+	// TODO(kashomon): Add support for component sets
+	var componentSet *bundle.ComponentSet
+	return validation.NewComponentValidator(b.Components, componentSet)
 }
 
-func runValidate(ctx context.Context, opts *options, brw *converter.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundleContents(ctx, brw.RW, gopt)
+func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}

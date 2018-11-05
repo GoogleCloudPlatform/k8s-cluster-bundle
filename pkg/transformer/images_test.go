@@ -22,89 +22,83 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 )
 
-var bundleExampleAll = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
-spec:
-  components:
-  - metadata:
-      name: 'nodes'
-    spec:
-      clusterObjects:
-      - metadata:
-          name: 'ubuntu-cluster-master'
-        kind: NodeConfig
-        initFile: "echo 'I'm a script'"
-        osImage:
-          url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
-        envVars:
-          - name: FOO_VAR
-            value: 'foo-val'
+var componentDataExampleAll = `
+components:
+- spec:
+    canonicalName: 'nodes'
+    objects:
+    - metadata:
+        name: 'ubuntu-cluster-master'
+      apiVersion: 'bundleext.gke.io/v1alpha1'
+      kind: NodeConfig
+      initFile: "echo 'I'm a script'"
+      osImage:
+        url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+      envVars:
+        - name: FOO_VAR
+          value: 'foo-val'
 
-      - metadata:
-          name: 'ubuntu-cluster-node'
-          kind: NodeConfig
-        initFile: "echo 'I'm another script'"
-        osImage:
-          url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
+    - metadata:
+        name: 'ubuntu-cluster-node'
+      apiVersion: 'bundleext.gke.io/v1alpha1'
+      kind: NodeConfig
+      initFile: "echo 'I'm another script'"
+      osImage:
+        url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
-      - metadata:
-          name: 'ubuntu-cluster-node-no-image'
-        initFile: "echo 'I'm another script'"
+    - metadata:
+        name: 'ubuntu-cluster-node-no-image'
+      apiVersion: 'bundleext.gke.io/v1alpha1'
+      kind: NodeConfig
+      initFile: "echo 'I'm another script'"
 
-  - metadata:
-      name: logger
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: logger-pod
-        spec:
-          dnsPolicy: Default
-          containers:
-          - name: logger
-            image: gcr.io/floof/logger
-            command:
-               - /logger
-               - --logtostderr
-          - name: chopper
-            image: gcr.io/floof/chopper
-            command:
-               - /chopper
-               - --logtostderr
-  - metadata:
-      name: zap
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: zap
-  - metadata:
-      name: dap
-    spec:
-      clusterObjects:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: dap-pod
-        spec:
-          containers:
-          - name: dapper
-            image: gcr.io/floof/dapper
-          - name: verydapper
-            image: gcr.io/floof/dapper`
+- spec:
+    canonicalName: logger
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: Default
+        containers:
+        - name: logger
+          image: gcr.io/floof/logger
+          command:
+             - /logger
+             - --logtostderr
+        - name: chopper
+          image: gcr.io/floof/chopper
+          command:
+             - /chopper
+             - --logtostderr
+- spec:
+    canonicalName: zap
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap
+- spec:
+    canonicalName: dap
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: dap-pod
+      spec:
+        containers:
+        - name: dapper
+          image: gcr.io/floof/dapper
+        - name: verydapper
+          image: gcr.io/floof/dapper`
 
 func TestTransformStringSub(t *testing.T) {
-	s, err := converter.Bundle.YAMLToProto([]byte(bundleExampleAll))
+	s, err := converter.FromYAMLString(componentDataExampleAll).ToComponentData()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}
-	bun := converter.ToBundle(s)
-	trans := &ImageTransformer{bun}
+	trans := NewImageTransformer(s.Components)
 	rules := []*ImageSubRule{{
 		Find:    "gcr.io",
 		Replace: "k8s.io",
@@ -119,9 +113,9 @@ func TestTransformStringSub(t *testing.T) {
 		Replace: "/mapper",
 	}}
 
-	newb := trans.TransformImagesStringSub(rules)
+	newComp := trans.TransformImagesStringSub(rules)
 
-	found := (&find.ImageFinder{converter.ToBundle(newb)}).AllImages().Flattened()
+	found := find.NewImageFinder(newComp).AllImages().Flattened()
 	expected := &find.AllImagesFlattened{
 		ContainerImages: []string{
 			"go://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
@@ -135,7 +129,7 @@ func TestTransformStringSub(t *testing.T) {
 	}
 
 	// Make sure the old bundle didn't change
-	oldFound := (&find.ImageFinder{converter.ToBundle(bun)}).AllImages().Flattened()
+	oldFound := find.NewImageFinder(s.Components).AllImages().Flattened()
 	oldExpected := &find.AllImagesFlattened{
 		ContainerImages: []string{
 			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",

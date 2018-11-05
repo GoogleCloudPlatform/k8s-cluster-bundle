@@ -17,76 +17,114 @@ package find
 import (
 	"fmt"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
-// BundleFinder is a wrapper which allows for efficient searching through
-// bundles. The BundleFinder is intended to be readonly; if modifications are
-// made to the bundle, subsequent lookups will fail.
-type BundleFinder struct {
-	bundle     *bpb.ClusterBundle
-	compLookup map[string]*bpb.ComponentPackage
-}
-
-// NewBundleFinder creates a new BundleFinder or returns an error.
-func NewBundleFinder(b *bpb.ClusterBundle) (*BundleFinder, error) {
-	b = converter.CloneBundle(b)
-	compConfigs := make(map[string]*bpb.ComponentPackage)
-	for _, ca := range b.GetSpec().GetComponents() {
-		n := ca.GetMetadata().GetName()
-		if n == "" {
-			return nil, fmt.Errorf("cluster components must always have a metadata.name. was empty for %v", ca)
-		}
-		compConfigs[n] = ca
-	}
-
-	return &BundleFinder{
-		bundle:     b,
-		compLookup: compConfigs,
-	}, nil
-}
-
-// ComponentPackage returns a found cluster component or nil.
-func (b *BundleFinder) ComponentPackage(name string) *bpb.ComponentPackage {
-	return b.compLookup[name]
-}
-
-// ClusterObjects returns ComponentPackage's Cluster objects (given some object ref) or nil.
-func (b *BundleFinder) ClusterObjects(compName string, ref core.ObjectRef) []*structpb.Struct {
-	comp := b.ComponentPackage(compName)
-	var out []*structpb.Struct
-	if comp == nil {
-		return out
-	}
-	return (&ComponentFinder{comp}).ClusterObjects(ref)
-}
-
-// ComponentFinder finds objects within components
+// ComponentFinder is a wrapper which allows for efficient searching through
+// component data. The data is intended to be readonly; if modifications are
+// made to the data, subsequent lookups will fail.
 type ComponentFinder struct {
-	Component *bpb.ComponentPackage
+	nameCompLookup map[string][]*bundle.ComponentPackage
+	keyCompLookup  map[core.ComponentKey]*bundle.ComponentPackage
+	data           []*bundle.ComponentPackage
 }
 
-// ClusterObjects finds cluster objects matching a certain ObjectRef key. If
+// NewComponentFinder creates a new ComponentFinder or returns an error.
+func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
+	nlup := make(map[string][]*bundle.ComponentPackage)
+	klup := make(map[core.ComponentKey]*bundle.ComponentPackage)
+	for _, comp := range data {
+		name := comp.Spec.CanonicalName
+		klup[core.KeyFromComponent(comp)] = comp
+		if list := nlup[name]; list == nil {
+			nlup[name] = []*bundle.ComponentPackage{comp}
+		} else {
+			nlup[name] = append(nlup[name], comp)
+		}
+	}
+	return &ComponentFinder{
+		nameCompLookup: nlup,
+		keyCompLookup:  klup,
+		data:           data,
+	}
+}
+
+// ComponentPackage returns the component package that matches a reference,
+// returning nil if no match is found.
+func (f *ComponentFinder) Component(ref core.ComponentKey) *bundle.ComponentPackage {
+	return f.keyCompLookup[ref]
+}
+
+// ComponentsFromName returns thes components that matches a string-name.
+func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.ComponentPackage {
+	return f.nameCompLookup[name]
+}
+
+// ComponentPackage returns the single component package that matches a
+// string-name. If no component is found, nil is returne. If there are two
+// components that match the name, the method panics.
+func (f *ComponentFinder) UniqueComponentFromName(name string) *bundle.ComponentPackage {
+	comps := f.ComponentsFromName(name)
+	if len(comps) == 0 {
+		return nil
+	} else if len(comps) > 1 {
+		panic(fmt.Sprintf("duplicate component found for name %q", name))
+	}
+	return comps[0]
+}
+
+// Objects returns ComponentPackage's Cluster objects (given some object
+// ref) or nil.
+func (f *ComponentFinder) Objects(cref core.ComponentKey, ref core.ObjectRef) []*unstructured.Unstructured {
+	comp := f.Component(cref)
+	if comp == nil {
+		return nil
+	}
+	return NewObjectFinder(comp).Objects(ref)
+}
+
+// ObjectsFromUniqueComponent gets the objects for a component, which
+// has the same behavior as Objects, except that the component name is
+// assumed to be unique (and so panics if that assumption does not hold).
+func (f *ComponentFinder) ObjectsFromUniqueComponent(name string, ref core.ObjectRef) []*unstructured.Unstructured {
+	comp := f.UniqueComponentFromName(name)
+	if comp == nil {
+		return nil
+	}
+	return NewObjectFinder(comp).Objects(ref)
+}
+
+// ObjectFinder finds objects within components
+type ObjectFinder struct {
+	component *bundle.ComponentPackage
+}
+
+// NewObjectFinder returns an ObjectFinder instance.
+func NewObjectFinder(component *bundle.ComponentPackage) *ObjectFinder {
+	return &ObjectFinder{component}
+}
+
+// Objects finds cluster objects matching a certain ObjectRef key. If
 // the ObjectRef is partially filled out, then only those fields will be used
 // for searching and the partial matches will be returned.
-func (c *ComponentFinder) ClusterObjects(ref core.ObjectRef) []*structpb.Struct {
-	var out []*structpb.Struct
-	for _, o := range c.Component.GetSpec().GetClusterObjects() {
+func (c *ObjectFinder) Objects(ref core.ObjectRef) []*unstructured.Unstructured {
+	var out []*unstructured.Unstructured
+	for _, o := range c.component.Spec.Objects {
 		var key core.ObjectRef
 		if ref.Name != "" {
 			// Doing a search based on name
-			key.Name = core.ObjectName(o)
+			key.Name = o.GetName()
 		}
 		if ref.APIVersion != "" {
 			// Doing a search based on API version
-			key.APIVersion = core.ObjectAPIVersion(o)
+			key.APIVersion = o.GetAPIVersion()
 		}
 		if ref.Kind != "" {
 			// Doing a search based on kind
-			key.Kind = core.ObjectKind(o)
+			key.Kind = o.GetKind()
 		}
 		if key == ref {
 			out = append(out, o)

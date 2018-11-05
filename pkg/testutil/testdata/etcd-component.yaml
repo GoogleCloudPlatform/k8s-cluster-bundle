@@ -1,8 +1,0 @@
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentPackage
-metadata:
-  name: etcd-component
-spec:
-  version: '30.0.2'
-  clusterObjectFiles:
-  - url: 'file://etcd-server.yaml'

@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	bpb "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
 // FileWriter is an interface for writing files. This interface is
@@ -72,23 +72,15 @@ type LocalFileSystemReaderWriter struct {
 	LocalFileSystemWriter
 }
 
-// FilePBReader provides a generic file-reading interface for reading file
-// protos.
-type FilePBReader interface {
-	ReadFilePB(ctx context.Context, file *bpb.File) ([]byte, error)
+// FileObjReader provides a generic file-reading interface for reading file
+// objects
+type FileObjReader interface {
+	ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error)
 }
 
-// NewLocalFilePBReader creates a local-filesystem based file reader.
-func NewLocalFilePBReader(dirOverride string) FilePBReader {
-	return &LocalFilePBReader{
-		WorkingDir: dirOverride,
-		Rdr:        &LocalFileSystemReader{},
-	}
-}
-
-// LocalFilePBReader is File proto reader that defers to another FileReader that
+// LocalFileObjReader is File proto reader that defers to another FileReader that
 // reads based on paths.
-type LocalFilePBReader struct {
+type LocalFileObjReader struct {
 	// WorkingDir specifies a working directory override. This is necessary
 	// because paths for inlined files are specified relative to the bundle, not
 	// the working directory of the user.
@@ -101,10 +93,10 @@ type LocalFilePBReader struct {
 	Rdr FileReader
 }
 
-// ReadFilePB reads a file proto from the local filesystem by deferring to a
+// ReadFileObj reads a file proto from the local filesystem by deferring to a
 // local file reader.
-func (r *LocalFilePBReader) ReadFilePB(ctx context.Context, fpb *bpb.File) ([]byte, error) {
-	url := fpb.GetUrl()
+func (r *LocalFileObjReader) ReadFileObj(ctx context.Context, fpb bundle.File) ([]byte, error) {
+	url := fpb.URL
 	if url == "" {
 		return nil, fmt.Errorf("file %v was specified but no file url was provided", fpb)
 	}

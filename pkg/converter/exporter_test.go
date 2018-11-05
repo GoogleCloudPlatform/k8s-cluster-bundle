@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var (
@@ -36,13 +36,13 @@ metadata:
 )
 
 func TestExporterMulti(t *testing.T) {
-	var obj []*structpb.Struct
+	var obj []*unstructured.Unstructured
 	for _, o := range objForExport {
-		spb, err := Struct.YAMLToProto([]byte(o))
+		un, err := FromYAMLString(o).ToUnstructured()
 		if err != nil {
 			t.Fatalf("Failed to parse yaml:%v \n%s", err, o)
 		}
-		obj = append(obj, ToStruct(spb))
+		obj = append(obj, un)
 	}
 	exp := ObjectExporter{obj}
 
@@ -56,13 +56,13 @@ func TestExporterMulti(t *testing.T) {
 }
 
 func TestExporterSingle(t *testing.T) {
-	var obj []*structpb.Struct
+	var obj []*unstructured.Unstructured
 	for _, o := range objForExport {
-		spb, err := Struct.YAMLToProto([]byte(o))
+		un, err := FromYAMLString(o).ToUnstructured()
 		if err != nil {
 			t.Fatalf("Failed to parse yaml:%v \n%s", err, o)
 		}
-		obj = append(obj, ToStruct(spb))
+		obj = append(obj, un)
 	}
 	exp := ObjectExporter{obj}
 

@@ -3,27 +3,21 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "bundle_reader_writer.go",
-        "clone.go",
         "converter.go",
-        "doc.go",
+        "demuxer.go",
         "exporter.go",
-        "k8sbundle.go",
-        "kube.go",
+        "muxer.go",
         "name.go",
+        "unstructured.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
-        "//pkg/apis/bundleext/v1alpha1:go_default_library",
-        "//pkg/apis/k8sbundle/v1alpha1:go_default_library",
-        "//pkg/files:go_default_library",
+        "//pkg/core:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
-        "//vendor/github.com/golang/protobuf/jsonpb:go_default_library",
-        "//vendor/github.com/golang/protobuf/proto:go_default_library",
-        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
-        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )
 
@@ -34,15 +28,14 @@ go_test(
         "converter_test.go",
         "example_test.go",
         "exporter_test.go",
-        "kube_test.go",
         "name_test.go",
     ],
     data = [
-        "//pkg/testutil:bundle_testdata",
+        "//examples:component_testdata",
     ],
     embed = [":go_default_library"],
     deps = [
         "//pkg/testutil:go_default_library",
-        "//vendor/github.com/golang/protobuf/ptypes/struct:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )

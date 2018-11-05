@@ -20,46 +20,19 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
-func TestRealisticBundleParse(t *testing.T) {
-	bundleContents, err := testutil.ReadTestBundle("../testutil/testdata")
+func TestRealisticDataParse(t *testing.T) {
+
+	b, err := testutil.ReadData("../../", "examples/component-data-files.yaml")
 	if err != nil {
-		t.Fatalf("Error reading bundle file %v", err)
+		t.Fatalf("Error reading file %v", err)
 	}
-	b, err := Bundle.YAMLToProto(bundleContents)
+
+	dataFiles, err := FromYAML(b).ToComponentData()
 	if err != nil {
-		t.Fatalf("Error parsing file: %v", err)
-	}
-	bp := ToBundle(b)
-
-	expID := "1.9.7.testbundle-zork"
-	if bp.GetMetadata().GetName() != expID {
-		t.Errorf("Got name %q, expected name %q", bp.GetMetadata().GetName(), expID)
+		t.Fatalf("Error calling ToComponentDataFiles(): %v", err)
 	}
 
-	if l := len(bp.GetSpec().GetComponents()); l != 6 {
-		t.Errorf("Got %d components, expected 6", l)
-	}
-}
-
-func TestRealisticBundleParseK8sBundle(t *testing.T) {
-	bundleContents, err := testutil.ReadTestBundle("../testutil/testdata")
-	if err != nil {
-		t.Fatalf("Error reading bundle file %v", err)
-	}
-	bp, err := YAMLToK8sBundle(bundleContents)
-	if err != nil {
-		t.Fatalf("Error parsing file: %v", err)
-	}
-	if bp == nil {
-		t.Fatalf("Error: nil bundle")
-	}
-
-	expID := "1.9.7.testbundle-zork"
-	if bp.ObjectMeta.Name != expID {
-		t.Errorf("Got name %q, expected name %q", bp.ObjectMeta.Name, expID)
-	}
-
-	if l := len(bp.Spec.Components); l != 6 {
-		t.Errorf("Got %d components, expected 6", l)
+	if l := len(dataFiles.ComponentFiles); l == 0 {
+		t.Fatalf("found zero files, but expected some")
 	}
 }

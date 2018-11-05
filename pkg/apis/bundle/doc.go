@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +k8s:deepcopy-gen=package,register
+// +groupName=bundle.gke.io
+
 // Package bundle is the internal version of the API.
 package bundle

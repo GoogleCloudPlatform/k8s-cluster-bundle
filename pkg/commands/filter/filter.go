@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"strings"
 
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -34,7 +36,7 @@ type options struct {
 	// Comma-separated kinds to filter
 	kinds string
 
-	// Comma-separated names to filter
+	// Comma-separated metadata.names to filter
 	names string
 
 	// Comma-separated namespaces to filter
@@ -57,17 +59,16 @@ var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	gopt.Inline = true
-	brw := converter.NewFileSystemBundleReaderWriter()
-	if err := run(ctx, opts, brw, gopt); err != nil {
+	rw := &files.LocalFileSystemReaderWriter{}
+	if err := run(ctx, opts, rw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundleContents(ctx, brw.RW, gopt)
+func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading component data contents: %v", err)
 	}
 
 	fopts := &filter.Options{}
@@ -104,11 +105,13 @@ func run(ctx context.Context, o *options, brw *converter.BundleReaderWriter, gop
 	}
 	fopts.KeepOnly = o.keepOnly
 
+	var out []*bundle.ComponentPackage
 	if o.filterType == "components" {
-		b = (&filter.Filterer{b}).FilterComponents(fopts)
+		out = filter.NewFilterer(b.Components).FilterComponents(fopts)
 	} else {
-		b = (&filter.Filterer{b}).FilterObjects(fopts)
+		out = filter.NewFilterer(b.Components).FilterObjects(fopts)
 	}
 
-	return cmdlib.WriteStructuredContents(ctx, b, brw.RW, gopt)
+	outd := &core.ComponentData{ComponentFiles: b.ComponentFiles, Components: out}
+	return cmdlib.WriteStructuredContents(ctx, outd, rw, gopt)
 }

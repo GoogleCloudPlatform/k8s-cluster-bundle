@@ -10,7 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/commands/cmdlib:go_default_library",
-        "//pkg/commands/export:go_default_library",
         "//pkg/commands/filter:go_default_library",
         "//pkg/commands/find:go_default_library",
         "//pkg/commands/inline:go_default_library",

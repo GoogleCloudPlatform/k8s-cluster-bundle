@@ -3,10 +3,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "custom_resource.go",
         "doc.go",
         "errors.go",
-        "validate_bundle.go",
+        "validate_component.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation",
     visibility = ["//visibility:public"],
@@ -18,7 +17,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["validate_bundle_test.go"],
+    srcs = ["validate_component_test.go"],
     embed = [":go_default_library"],
     deps = ["//pkg/converter:go_default_library"],
 )
