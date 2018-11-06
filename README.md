@@ -12,37 +12,40 @@ clusters and applications at scale in both GKE and GKE On-Prem.
 It is currently experimental and will have likely have frequent, breaking
 changes for a while until the API settles down.
 
-## An Introduction to Cluster Bundle
+## An Introduction to Packaging in the Cluster Bundle
 
-![Cluster Bundle](https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-cluster-bundle/master/cluster_bundle.png)
+Packaging in the cluster bundle revolves around a new type, called the
+Component Package:
 
-Some Terminology:
-
-* **Cluster Object**: A Kubernetes object, such as a pod, deployment, and so on.
-* **Component Package**: A versioned collection of Kubernetes objects.
+* **Component Package**: A versioned collection of Kubernetes objects. This
+  should correspond to a logical application. For example, it
+* **Component Set**: A set of references to Component Packages.
 * **Bundle**: A versioned collection of Kubernetes component packages.
 
 The Cluster Bundle APIs are minimal and focused. In particular, they are
 designed to represent Kubernetes components without worrying about deployment.
-It is assumed that external deployment mechanisms (like a CLI) will consume the
-components and apply the components to a cluster.
+It is assumed that external deployment mechanisms like a command line interface
+or a deployment controller will consume the components and apply the components
+to a cluster.
 
 ### Component Packages
 
 In the wild, component packages look something like the following:
 
 ```yaml
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
-metadata:
-  name: etcd-component
 spec:
+  # A human readable name for the component. The combination of name + version
+  # should be unique in a cluster.
+  canonicalName: etcd-component
+
   # Version of the component, representing changes to the manifest (like a flag
   # change) or the to container image[s].
-  version: '30.0.2'
+  version: 30.0.2
 
   # Kubernetes objects that make up this component.
-  clusterObjectFiles:
+  objectFiles:
   - url: 'file://etcd-server.yaml'
 ```
 
@@ -51,13 +54,12 @@ into the component, which allows the component object to hermetically describe
 the component. After inlining, the component might look like:
 
 ```yaml
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
+apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
-metadata:
-  name: etcd-component
 spec:
-  version: '30.0.2'
-  clusterObjects:
+  canonicalName: etcd-component
+  version: 30.0.2
+  objects:
   - apiVersion: v1
     kind: Pod
     metadata:
@@ -77,76 +79,78 @@ Additionally, raw text can be imported into a component package. When inlined,
 this text is converted into a config map and then added to the ClusterObjects:
 
 ```yaml
-apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
+apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
-metadata:
-  name: data-blob
 spec:
-  version: '0.1'
+  canonicalName: data-blob
+  version: 0.1.0
   rawTextFiles:
   - url: 'file://some-data.txt'
 ```
 
-### Bundles
+### ComponentSets
 
-Bundles are collections of components, which makes it possible publish,
-validate, and deploy components as a single unit. Like components, Bundles can
-contain inlined or externalized components:
+Component Sets are collections of components, which makes it possible publish,
+validate, and deploy components as a single unit.
 
 ```yaml
-apiVersion: 'gke.io/k8s-cluster-bundle/v1alpha1'
-kind: ClusterBundle
-metadata:
-  name: '1.9.7.testbundle-zork'
+apiVersion: 'bundle.gke.io/v1alpha1'
+kind: Component Set
 spec:
   version: '2.3.4'
 
-  componentFiles:
-  - url: 'file://etcd-component.yaml'
-
   components:
-  - apiVersion: gke.io/k8s-cluster-bundle/v1alpha1
-    kind: ComponentPackage
-    metadata:
-      name: kubernetes-control-plane
-    spec:
-      version: '11.0.0'
-      componentApiVersion: '1.9.7'
-      clusterObjectFiles:
-      - url: 'file://kube-apiserver.yaml'
-      - url: 'file://kube-scheduler.yaml'
-      - url: 'file://kube-controller-manager.yaml'
+  - etcd-server-30.0.2
+  - data-blob-0.1.0
 ```
 
 ## Bundle CLI (bundlectl)
 
-`bundlectl` is the name for the Bundle command line interface and is the
-standard way for interacting with Bundles.
+`bundlectl` is the name for the command line interface and is the
+standard way for interacting with components and component sets
 
 Install with `go install
 github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl`
 
 ### Validation
 
-Bundles have various constraints that must be validated. For functions in the
-Bundle library to work, the Bundle is generalled assumed to have already been
-validated. To validate a Bundle, run:
+Components and ComponentSets have various constraints that must be validated.
+For functions in the library to work, the components are generalled assumed to
+have already been validated. For the ease of validating collections of
+components, the Bundle CLI knows about a type called `ComponentData` and has the
+form:
+
+```yaml
+componentFiles:
+- url: <component>
+```
+
+And so, in the examples directory, you will see:
+
+```yaml
+componentFiles:
+- url: 'file://etcd/etcd-component.yaml'
+- url: 'file://nodes/nodes-component.yaml'
+- url: 'file://kubernetes/kubernetes-component.yaml'
+- url: 'file://kubedns/kubedns-component.yaml'
+- url: 'file://kubeproxy/kube-proxy-component.yaml'
+- url: 'file://datablob/data-blob-component.yaml'
+```
+
+To validate component data, run:
 
 ```
-bundle validate -f <bundle>
+bundlectl validate -f <component-data>
 ```
 
 ### Inlining
 
 Inlining pulls files from the various URLs and imports the contents directly
-into the component. To inline a bundle, run:
+into the component. To inline component data, run:
 
 ```
-bundle inline -f <bundle>
+bundlectl inline -f <component-data>
 ```
-
-Additionally, most commands will allow you to inline the bundle by specifying
-`--inline`
 
 ### Filtering
 
@@ -154,10 +158,10 @@ Filtering allows removal of components and objects from the bundle.
 
 ```
 # Filter all config map objects
-bundle filter -f <bundle> --kind=ConfigMap 
+bundlectl filter -f <component-data> --kind=ConfigMap
 
 # Keep only config map objects.
-bundle filter -f <bundle> --kind=ConfigMap --keep-only
+bundlectl filter -f <component-data> --kind=ConfigMap --keep-only
 ```
 
 ## Development
