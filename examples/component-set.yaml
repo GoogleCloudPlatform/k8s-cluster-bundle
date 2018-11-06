@@ -13,8 +13,8 @@
 # limitations under the License.
 
 apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ClusterBundle
+kind: ComponentSet
 metadata:
-  name: 'example-set-1.9.7'
+  name: 'example-set-2.3.4'
 spec:
   version: '2.3.4'

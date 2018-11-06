@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // +domain=bundle.gke.io
+// +k8s:deepcopy-gen=package,register
 
 // Package apis represents the directory for bundle APIs. No code should live
 // in this package.

@@ -23,7 +23,7 @@ import (
 )
 
 // GroupName specifies the group name used to register the objects.
-const GroupName = "bundle"
+const GroupName = "bundle.gke.io"
 
 // GroupVersion specifies the group and the version used to register the objects.
 var GroupVersion = v1.GroupVersion{Group: GroupName, Version: "v1alpha1"}
@@ -57,7 +57,9 @@ func init() {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&ComponentPackage{},
+		&ComponentPackageList{},
 		&ComponentSet{},
+		&ComponentSetList{},
 	)
 	// AddToGroupVersion allows the serialization of client types like ListOptions.
 	v1.AddToGroupVersion(scheme, SchemeGroupVersion)
