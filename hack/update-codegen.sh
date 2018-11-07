@@ -42,25 +42,24 @@ cd "$(dirname "$0")"
 # **Note**: For all commands, the working directory is the parent directory
 cd ..
 
-# We can't use deepcopy-gen until issues/128 is fixed (or we write our own copy logic).
-# https://github.com/kubernetes/gengo/issues/128
-# deepcopy-gen \
-  # -h hack/boilerplate.go.txt \
-  # -O zz_generated.deepcopy \
-  # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
+deepcopy-gen \
+  -h hack/boilerplate.go.txt \
+  -O zz_generated.deepcopy \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
-# register-gen \
-  # -h hack/boilerplate.go.txt \
-  # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
+register-gen \
+  -h hack/boilerplate.go.txt \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
-# client-gen --clientset-name=versioned \
-  # -h hack/boilerplate.go.txt \
-  # --input-base "" \
-  # --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
+client-gen --clientset-name=versioned \
+  -h hack/boilerplate.go.txt \
+  --input-base "" \
+  --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
+# TODO(kashomon): Should we add this?
 # lister-gen \
   # -h hack/boilerplate.go.txt \
   # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
@@ -75,16 +74,10 @@ do
   echo "Fixing ${f}"
   # Not using sed -i because darwin / bash have different behaviors for -i =(
 
-  # make a must function
-  # sed $'s/func init() {/func init() {\\\n\\\tmust := func(err error) { panic(err) }\\\n/' $f > $f.t
-  # mv $f.t $f
-
-  # # # Replace GoogleCloudPLatform
+  # Replace googlecloudplatform with GoogleCloudPlatform
   sed $'s/googlecloudplatform/GoogleCloudPlatform/' $f > $f.t
   mv $f.t $f
 
-  # sed '/utilruntime/d' $f > $f.t
-  # mv $f.t $f
 done
 
 # Relies on ../PROJECT file
