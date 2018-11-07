@@ -13,7 +13,6 @@
 // limitations under the License.
 
 // +k8s:deepcopy-gen=package,register
+// +k8s:defaulter-gen=TypeMeta
 // +groupName=bundle.gke.io
-
-// Package bundle is the internal version of the API.
 package bundle

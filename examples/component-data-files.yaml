@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The component data files is useful for collecting together components for
+# The component data files are useful for collecting together components for
 # using in release and automation systems.
 componentFiles:
 - url: 'file://etcd/etcd-component.yaml'

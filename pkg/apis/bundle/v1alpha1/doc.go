@@ -15,6 +15,5 @@
 // +k8s:deepcopy-gen=package,register
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=bundle.gke.io
-
 // Package v1alpha1 represents the v1alpha1 version of the Cluster Bundle API.
 package v1alpha1
