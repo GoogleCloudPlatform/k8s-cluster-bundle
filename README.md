@@ -18,7 +18,7 @@ Packaging in the cluster bundle revolves around a new type, called the
 Component Package:
 
 * **Component Package**: A versioned collection of Kubernetes objects. This
-  should correspond to a logical application. For example, it
+  should correspond to a logical application.
 * **Component Set**: A set of references to Component Packages.
 * **Bundle**: A versioned collection of Kubernetes component packages.
 
