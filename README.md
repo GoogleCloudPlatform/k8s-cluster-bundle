@@ -20,7 +20,6 @@ Component Package:
 * **Component Package**: A versioned collection of Kubernetes objects. This
   should correspond to a logical application.
 * **Component Set**: A set of references to Component Packages.
-* **Bundle**: A versioned collection of Kubernetes component packages.
 
 The Cluster Bundle APIs are minimal and focused. In particular, they are
 designed to represent Kubernetes components without worrying about deployment.
@@ -49,8 +48,8 @@ spec:
   - url: 'file://etcd-server.yaml'
 ```
 
-All cluster objects can be 'inlined', which means they are imported directly
-into the component, which allows the component object to hermetically describe
+All cluster objects can be *inlined*, which means they are imported directly
+into the component, which allows the component package to hermetically describe
 the component. After inlining, the component might look like:
 
 ```yaml
@@ -76,7 +75,7 @@ spec:
 ```
 
 Additionally, raw text can be imported into a component package. When inlined,
-this text is converted into a config map and then added to the ClusterObjects:
+this text is converted into a config map and then added to the objects list:
 
 ```yaml
 apiVersion: bundle.gke.io/v1alpha1
@@ -172,6 +171,7 @@ This directory should follow the structure the standard Go package layout
 specified in https://github.com/golang-standards/project-layout
 
 *   `pkg/`: Library code.
+*   `examples/`: Examples of components and component packages.
 *   `pkg/apis`: APIs and schema for the Cluster Bundle.
 *   `cmd/`: Binaries. In particular, this contains the `bundler` CLI which
     assists in modifying and inspecting Bundles.
@@ -205,14 +205,13 @@ To automatically write the Build targets, run:
 bazel run //:gazelle
 ```
 
-### Generating Proto Go Files
+### Regenerate Generated Code
 
-Currently, the schema for the Cluster Bundle is specified as Proto files. To
-generate the Go client libraries, first install
-[protoc-gen-go](https://github.com/golang/protobuf#installation) and run:
+We rely heavily on Kubernetes code generation. To regenerate the code,
+run: 
 
 ```shell
-pkg/apis/bundle/v1alpha1/regenerate-sources.sh
+hacke/update-codegen.sh
 ```
 
 If new files are added, will to re-run Gazelle (see above).
