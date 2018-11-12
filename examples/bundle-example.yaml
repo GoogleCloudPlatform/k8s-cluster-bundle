@@ -14,10 +14,16 @@
 
 # The component data files are useful for collecting together components for
 # using in release and automation systems.
+apiVersion: bundle.gke.io/v1alpha1
+kind: Bundle
+metadata:
+  name: bundle-example-2.3.4
+setName: bundle-example
+version: 2.3.4
 componentFiles:
-- url: 'file://etcd/etcd-component.yaml'
-- url: 'file://nodes/nodes-component.yaml'
-- url: 'file://kubernetes/kubernetes-component.yaml'
-- url: 'file://kubedns/kubedns-component.yaml'
-- url: 'file://kubeproxy/kube-proxy-component.yaml'
-- url: 'file://datablob/data-blob-component.yaml'
+- url: file://etcd/etcd-component.yaml
+- url: file://nodes/nodes-component.yaml
+- url: file://kubernetes/kubernetes-component.yaml
+- url: file://kubedns/kubedns-component.yaml
+- url: file://kubeproxy/kube-proxy-component.yaml
+- url: file://datablob/data-blob-component.yaml

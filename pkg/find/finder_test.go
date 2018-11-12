@@ -20,6 +20,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
@@ -27,7 +28,7 @@ import (
 var validComponentExample = `
 components:
 - spec:
-    canonicalName: etcd-server
+    componentName: etcd-server
     objects:
     - apiVersion: v1
       kind: Pod
@@ -48,7 +49,7 @@ components:
 `
 
 func TestBundleFinder(t *testing.T) {
-	b, err := converter.FromYAMLString(validComponentExample).ToComponentData()
+	b, err := converter.FromYAMLString(validComponentExample).ToBundle()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}
@@ -87,7 +88,7 @@ func TestBundleFinder(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		if tc.objName != "" && tc.compName != "" {
-			vl := finder.Objects(core.ComponentKey{CanonicalName: tc.compName}, core.ObjectRef{Name: tc.objName})
+			vl := finder.Objects(bundle.ComponentReference{ComponentName: tc.compName}, core.ObjectRef{Name: tc.objName})
 			var v *unstructured.Unstructured
 			if len(vl) > 0 {
 				v = vl[0]
@@ -115,7 +116,7 @@ var validComponent = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
 spec:
-  canonicalName: kube-apiserver
+  componentName: kube-apiserver
   objects:
   - apiVersion: v1
     kind: Pod
@@ -191,7 +192,7 @@ func TestComponentFinder_PartialLookup(t *testing.T) {
 			found := finder.Objects(tc.ref)
 			names := getObjNames(found)
 			if !reflect.DeepEqual(names, tc.exp) {
-				t.Errorf("CluusterObjects(): got %v but wanted %v", names, tc.exp)
+				t.Errorf("ClusterObjects(): got %v but wanted %v", names, tc.exp)
 			}
 		})
 	}

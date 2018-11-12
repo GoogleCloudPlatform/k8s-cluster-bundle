@@ -15,8 +15,8 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 spec:
-  canonicalName: options
+  componentName: options
   version: 2.0.0
   objectFiles:
-  - url: 'file://options-example.yaml'
-  - url: 'file://options-crd.yaml'
+  - url: file://options-example.yaml
+  - url: file://options-crd.yaml

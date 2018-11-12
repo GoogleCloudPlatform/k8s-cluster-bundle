@@ -22,6 +22,12 @@ spec:
           type: object
         spec:
           properties:
+            components:
+              items:
+                type: object
+              type: array
+            setName:
+              type: string
             version:
               type: string
           type: object

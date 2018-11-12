@@ -16,8 +16,8 @@ package cmdlib
 
 // GlobalOptions are options that apply to all commands
 type GlobalOptions struct {
-	// A path to a component data file.
-	ComponentDataFile string
+	// A path to a bundle file.
+	BundleFile string
 
 	// Format for the input. By default, assumes YAML.
 	InputFormat string
@@ -28,7 +28,7 @@ type GlobalOptions struct {
 	// The format for any output. By default, assumes YAML.
 	OutputFormat string
 
-	// Whether to inline the components before doing any processing
+	// Whether to inline the components in the bundle before doing any processing
 	InlineComponents bool
 
 	// Whether to inline tho objects before doing any processing (typically
@@ -42,11 +42,11 @@ var GlobalOptionsValues = &GlobalOptions{}
 
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
-		ComponentDataFile: g.ComponentDataFile,
-		InputFormat:       g.InputFormat,
-		OutputFile:        g.OutputFile,
-		OutputFormat:      g.OutputFormat,
-		InlineComponents:  g.InlineComponents,
-		InlineObjects:     g.InlineObjects,
+		BundleFile:       g.BundleFile,
+		InputFormat:      g.InputFormat,
+		OutputFile:       g.OutputFile,
+		OutputFormat:     g.OutputFormat,
+		InlineComponents: g.InlineComponents,
+		InlineObjects:    g.InlineObjects,
 	}
 }

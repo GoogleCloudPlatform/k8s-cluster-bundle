@@ -15,7 +15,9 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 spec:
-  canonicalName: data-blob
+  componentName: data-blob
   version: 0.1.0
   rawTextFiles:
-  - url: 'file://some-data.txt'
+  - name: data-blob
+    files:
+    - url: file://some-data.txt

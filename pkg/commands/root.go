@@ -40,7 +40,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	// TODO(kashomon): Should the GlobalOptionsValues be de-globalized? It's
 	// certainly possible.
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.ComponentDataFile, "component-data-file", "f", "", "The path to a bundle file")
+		&cmdlib.GlobalOptionsValues.BundleFile, "bundle-file", "f", "", "The path to a bundle file")
 
 	rootCmd.PersistentFlags().StringVarP(
 		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "yaml", "The input file format. One of either 'json' or 'yaml'")

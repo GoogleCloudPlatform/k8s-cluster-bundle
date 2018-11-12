@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
-        "//pkg/core:go_default_library",
         "//pkg/files:go_default_library",
         "//pkg/inline:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",

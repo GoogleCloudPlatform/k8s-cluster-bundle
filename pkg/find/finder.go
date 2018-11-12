@@ -28,17 +28,17 @@ import (
 // made to the data, subsequent lookups will fail.
 type ComponentFinder struct {
 	nameCompLookup map[string][]*bundle.ComponentPackage
-	keyCompLookup  map[core.ComponentKey]*bundle.ComponentPackage
+	keyCompLookup  map[bundle.ComponentReference]*bundle.ComponentPackage
 	data           []*bundle.ComponentPackage
 }
 
 // NewComponentFinder creates a new ComponentFinder or returns an error.
 func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
 	nlup := make(map[string][]*bundle.ComponentPackage)
-	klup := make(map[core.ComponentKey]*bundle.ComponentPackage)
+	klup := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
 	for _, comp := range data {
-		name := comp.Spec.CanonicalName
-		klup[core.KeyFromComponent(comp)] = comp
+		name := comp.Spec.ComponentName
+		klup[comp.MakeComponentReference()] = comp
 		if list := nlup[name]; list == nil {
 			nlup[name] = []*bundle.ComponentPackage{comp}
 		} else {
@@ -54,7 +54,7 @@ func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
 
 // ComponentPackage returns the component package that matches a reference,
 // returning nil if no match is found.
-func (f *ComponentFinder) Component(ref core.ComponentKey) *bundle.ComponentPackage {
+func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.ComponentPackage {
 	return f.keyCompLookup[ref]
 }
 
@@ -78,7 +78,7 @@ func (f *ComponentFinder) UniqueComponentFromName(name string) *bundle.Component
 
 // Objects returns ComponentPackage's Cluster objects (given some object
 // ref) or nil.
-func (f *ComponentFinder) Objects(cref core.ComponentKey, ref core.ObjectRef) []*unstructured.Unstructured {
+func (f *ComponentFinder) Objects(cref bundle.ComponentReference, ref core.ObjectRef) []*unstructured.Unstructured {
 	comp := f.Component(cref)
 	if comp == nil {
 		return nil

@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 // FromYAMLString creates a Muxer instance from a YAML string.
@@ -93,9 +92,9 @@ func (m *Muxer) mux(f interface{}) error {
 	}
 }
 
-// ToComponentData converts input data to the ComponentData type.
-func (m *Muxer) ToComponentData() (*core.ComponentData, error) {
-	d := &core.ComponentData{}
+// ToBundle converts input data to the Bundle type.
+func (m *Muxer) ToBundle() (*bundle.Bundle, error) {
+	d := &bundle.Bundle{}
 	if err := m.mux(d); err != nil {
 		return nil, err
 	}

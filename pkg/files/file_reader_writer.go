@@ -29,7 +29,7 @@ import (
 // used by the export and patch commands in this package. There is a fake
 // implementation in the testing package.
 type FileWriter interface {
-	// WriteFile writes a ComponentPackage to the given file path.
+	// WriteFile writes a ComponentPackage or Bundle to the given file path.
 	WriteFile(ctx context.Context, path string, bytes []byte, permissions os.FileMode) error
 }
 

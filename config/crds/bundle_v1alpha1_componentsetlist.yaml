@@ -16,11 +16,7 @@ spec:
       properties:
         apiVersion:
           type: string
-        kind:
-          type: string
-        metadata:
-          type: object
-        spec:
+        items:
           items:
             properties:
               apiVersion:
@@ -31,11 +27,21 @@ spec:
                 type: object
               spec:
                 properties:
+                  components:
+                    items:
+                      type: object
+                    type: array
+                  setName:
+                    type: string
                   version:
                     type: string
                 type: object
             type: object
           type: array
+        kind:
+          type: string
+        metadata:
+          type: object
   version: v1alpha1
 status:
   acceptedNames:

@@ -25,7 +25,7 @@ import (
 var example = `
 components:
 - spec:
-    canonicalName: zap
+    componentName: zap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -37,7 +37,7 @@ components:
           foo: bar
         namespace: kube-system
 - spec:
-    canonicalName: bog
+    componentName: bog
     objects:
     - apiVersion: v1
       kind: Pod
@@ -49,7 +49,7 @@ components:
           foof: yar
         namespace: kube-system
 - spec:
-    canonicalName: nog
+    componentName: nog
     objects:
     - apiVersion: v1
       kind: Pod
@@ -61,7 +61,7 @@ components:
           foof: narf
         namespace: kube
 - spec:
-    canonicalName: zog
+    componentName: zog
     objects:
     - apiVersion: v1
       kind: Deployment
@@ -177,9 +177,9 @@ func TestFilterObjects(t *testing.T) {
 		},
 	}
 
-	data, err := converter.FromYAMLString(example).ToComponentData()
+	data, err := converter.FromYAMLString(example).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting component data: %v", err)
+		t.Fatalf("error converting data: %v", err)
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -341,7 +341,7 @@ func TestFilterComponents(t *testing.T) {
 		},
 	}
 
-	data, err := converter.FromYAMLString(componentExample).ToComponentData()
+	data, err := converter.FromYAMLString(componentExample).ToBundle()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}

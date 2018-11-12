@@ -15,8 +15,8 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 spec:
-  canonicalName: node-config
+  componentName: node-config
   version: 2.3.4
   objectFiles:
-  - url: 'file://ubuntu-cluster-node.yaml'
-  - url: 'file://ubuntu-master-node.yaml'
+  - url: file://ubuntu-cluster-node.yaml
+  - url: file://ubuntu-master-node.yaml

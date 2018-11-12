@@ -4,19 +4,28 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: componentpackagelists.bundle.gke.io
+  name: bundles.bundle.gke.io
 spec:
   group: bundle.gke.io
   names:
-    kind: ComponentPackageList
-    plural: componentpackagelists
+    kind: Bundle
+    plural: bundles
   scope: Namespaced
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
           type: string
-        items:
+        componentFiles:
+          items:
+            properties:
+              hash:
+                type: string
+              url:
+                type: string
+            type: object
+          type: array
+        components:
           items:
             properties:
               apiVersion:
@@ -67,6 +76,10 @@ spec:
           type: string
         metadata:
           type: object
+        setName:
+          type: string
+        version:
+          type: string
   version: v1alpha1
 status:
   acceptedNames:

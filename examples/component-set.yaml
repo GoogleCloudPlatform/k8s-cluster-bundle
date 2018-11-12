@@ -12,9 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: 'bundle.gke.io/v1alpha1'
+apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentSet
 metadata:
-  name: 'example-set-2.3.4'
+  name: example-bundle-2.3.4
 spec:
-  version: '2.3.4'
+  setName: example-bundle
+  version: 2.3.4
+  components:
+  - componentName: data-blob
+    version: 0.1.0
+  - componentName: etcd-component
+    version: 30.0.2
+  - componentName: kubedns
+    version: 2.0.0
+  - componentName: kubeproxy
+    version: 2.1.0
+  - componentName: kubernetes
+    version: 11.0.0
+  - componentName: node-config
+    version: 2.3.4
+  - componentName: options
+    version: 2.0.0

@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/golang/glog"
+	"github.com/spf13/cobra"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
-	log "github.com/golang/glog"
-	"github.com/spf13/cobra"
 )
 
 // options represents options flags for the images command.
@@ -45,9 +46,9 @@ func modifyImagesAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
+	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading component data contents: %v", err)
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
 	var rules []*transformer.ImageSubRule

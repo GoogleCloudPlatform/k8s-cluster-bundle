@@ -23,19 +23,19 @@ import (
 
 	log "github.com/golang/glog"
 
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 )
 
-// ReadComponentData reads component data file contents from a file or stdin.
-func ReadComponentData(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*core.ComponentData, error) {
+// ReadBundle reads component data file contents from a file or stdin.
+func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
 	var bytes []byte
 	var err error
-	if g.ComponentDataFile != "" {
-		log.Infof("Reading component data file %v", g.ComponentDataFile)
-		bytes, err = rw.ReadFile(ctx, g.ComponentDataFile)
+	if g.BundleFile != "" {
+		log.Infof("Reading bundle file %v", g.BundleFile)
+		bytes, err = rw.ReadFile(ctx, g.BundleFile)
 		if err != nil {
 			return nil, err
 		}
@@ -51,40 +51,40 @@ func ReadComponentData(ctx context.Context, rw files.FileReaderWriter, g *Global
 		}
 	}
 
-	b, err := convertComponentData(ctx, bytes, g)
+	b, err := convertBundle(ctx, bytes, g)
 	if err != nil {
 		return nil, err
 	}
 
 	// For now, we can only inline component data files because we need the path
 	// context.
-	if (g.InlineComponents || g.InlineObjects) && g.ComponentDataFile != "" {
+	if (g.InlineComponents || g.InlineObjects) && g.BundleFile != "" {
 		return inlineData(ctx, b, rw, g)
 	}
 	return b, nil
 }
 
-func convertComponentData(ctx context.Context, bt []byte, g *GlobalOptions) (*core.ComponentData, error) {
-	return converter.FromContentType(g.InputFormat, bt).ToComponentData()
+func convertBundle(ctx context.Context, bt []byte, g *GlobalOptions) (*bundle.Bundle, error) {
+	return converter.FromContentType(g.InputFormat, bt).ToBundle()
 }
 
 // inlineData inlines a cluster bundle before processing
-func inlineData(ctx context.Context, data *core.ComponentData, rw files.FileReaderWriter, g *GlobalOptions) (*core.ComponentData, error) {
+func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
 	inliner := &inline.Inliner{
 		&files.LocalFileObjReader{
-			WorkingDir: filepath.Dir(g.ComponentDataFile),
+			WorkingDir: filepath.Dir(g.BundleFile),
 			Rdr:        rw,
 		},
 	}
 	var err error
 	if g.InlineComponents {
-		data, err = inliner.InlineComponentDataFiles(ctx, data)
+		data, err = inliner.InlineBundleFiles(ctx, data)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining component data files: %v", err)
 		}
 	}
 	if g.InlineObjects {
-		data, err = inliner.InlineComponentsInData(ctx, data)
+		data, err = inliner.InlineComponentsInBundle(ctx, data)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining objects: %v", err)
 		}
