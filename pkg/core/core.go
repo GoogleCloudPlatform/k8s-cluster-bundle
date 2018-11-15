@@ -20,29 +20,12 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// ComponentKey references a component and provides a unique identifier for the
-// component.
-type ComponentKey struct {
-	// CanonicalName of the component
-	CanonicalName string
-
-	// Version of the component, as a sem-ver string.
-	Version string
-}
-
-func KeyFromComponent(c *bundle.ComponentPackage) ComponentKey {
-	return ComponentKey{
-		CanonicalName: c.Spec.CanonicalName,
-		Version:       c.Spec.Version,
-	}
-}
-
-var EmptyComponentKey = ComponentKey{}
+var EmptyComponentRef = bundle.ComponentReference{}
 
 // ClusterObjectKey is a key representing a specific cluster object.
 type ClusterObjectKey struct {
 	// Component references a single component.
-	Component ComponentKey
+	Component bundle.ComponentReference
 
 	// Object represents a unique key for this object within a component.
 	Object ObjectRef
@@ -50,7 +33,8 @@ type ClusterObjectKey struct {
 
 var EmptyClusterObjectKey = ClusterObjectKey{}
 
-// TODO(kashomon): Replace ObjectRef with corev1.TypedLocalObjectReference
+// TODO(kashomon): Replace ObjectRef with corev1.TypedLocalObjectReference when
+// the Bundle library can depend on Kubernetes v1.12 or greater.
 
 // ObjectRef is a stripped-down version of the Kubernetes corev1.ObjectReference type.
 type ObjectRef struct {

@@ -20,7 +20,6 @@ import (
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 // Filterer filters the components and objects to produce a new set of components.
@@ -65,7 +64,7 @@ type Options struct {
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
 func (f *Filterer) FilterComponents(o *Options) []*bundle.ComponentPackage {
-	data := (&core.ComponentData{Components: f.data}).DeepCopy().Components
+	data := (&bundle.Bundle{Components: f.data}).DeepCopy().Components
 	var matched []*bundle.ComponentPackage
 	var notMatched []*bundle.ComponentPackage
 	for _, c := range data {
@@ -87,7 +86,7 @@ func (f *Filterer) FilterComponents(o *Options) []*bundle.ComponentPackage {
 // objects. By default objectsare removed, unless KeepOnly is set, and
 // then the opposite is true.
 func (f *Filterer) FilterObjects(o *Options) []*bundle.ComponentPackage {
-	data := (&core.ComponentData{Components: f.data}).DeepCopy().Components
+	data := (&bundle.Bundle{Components: f.data}).DeepCopy().Components
 	for _, cp := range data {
 		var matched []*unstructured.Unstructured
 		var notMatched []*unstructured.Unstructured

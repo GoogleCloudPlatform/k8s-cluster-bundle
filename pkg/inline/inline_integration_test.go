@@ -20,39 +20,48 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 )
 
 func TestRealisticDataParseAndInline(t *testing.T) {
 	ctx := context.Background()
-	b, err := testutil.ReadData("../../", "examples/component-data-files.yaml")
+	b, err := testutil.ReadData("../../", "examples/bundle-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
-	dataFiles, err := converter.FromYAML(b).ToComponentData()
+	dataFiles, err := converter.FromYAML(b).ToBundle()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentDataFiles(): %v", err)
+		t.Fatalf("error converting data: %v", err)
 	}
 
 	if l := len(dataFiles.ComponentFiles); l == 0 {
 		t.Fatalf("found zero files, but expected some")
 	}
 
-	pathPrefix := testutil.TestPathPrefix("../../", "examples/component-data-files.yaml")
+	pathPrefix := testutil.TestPathPrefix("../../", "examples/bundle-example.yaml")
 	inliner := NewLocalInliner(pathPrefix)
 
-	newData, err := inliner.InlineComponentDataFiles(ctx, dataFiles)
+	newData, err := inliner.InlineBundleFiles(ctx, dataFiles)
 	if err != nil {
-		t.Fatalf("Error calling InlineComponentDataFiles(): %v", err)
+		t.Fatalf("Error calling InlineBundleFiles(): %v", err)
 	}
 
-	moreInlined, err := inliner.InlineComponentsInData(ctx, newData)
+	moreInlined, err := inliner.InlineComponentsInBundle(ctx, newData)
 	if err != nil {
-		t.Fatalf("Error calling InlineComponentsInData(): %v", err)
+		t.Fatalf("Error calling InlineComponentsInBundle(): %v", err)
 	}
 
 	_, err = converter.FromObject(moreInlined).ToYAML()
 	if err != nil {
 		t.Fatalf("Error converting the inlined data back into YAML: %v", err)
+	}
+
+	// Ensure it validates
+	val := validation.NewComponentValidator(moreInlined.Components, nil)
+	if errs := val.Validate(); len(errs) > 0 {
+		for _, e := range errs {
+			t.Errorf("Errors in validaton: %q", e.Error())
+		}
 	}
 }

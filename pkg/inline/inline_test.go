@@ -29,11 +29,11 @@ import (
 const componentData = `
 components:
 - spec:
-    canonicalName: kube-apiserver
+    componentName: kube-apiserver
     objectFiles:
     - url: 'file://path/to/kube_apiserver.yaml'
 - spec:
-    canonicalName: kubelet-config
+    componentName: kubelet-config
     objectFiles:
     - url: 'file://path/to/kubelet/config.yaml'
 `
@@ -97,11 +97,13 @@ biff: bam`), nil
 	case "parent/kube_apiserver_component.yaml":
 		return []byte(`
 spec:
-  canonicalName: kube-apiserver
+  componentName: kube-apiserver
   objectFiles:
   - url: 'file://path/to/kube_apiserver.yaml'
   rawTextFiles:
-  - url: 'file://path/to/raw-text.yaml'`), nil
+  - name: some-raw-text
+    files:
+    - url: 'file://path/to/raw-text.yaml'`), nil
 
 	default:
 		return nil, fmt.Errorf("unexpected file path %q", file.URL)
@@ -110,7 +112,7 @@ spec:
 
 func TestInlineBundle(t *testing.T) {
 	ctx := context.Background()
-	data, err := converter.FromYAMLString(componentData).ToComponentData()
+	data, err := converter.FromYAMLString(componentData).ToBundle()
 	if err != nil {
 		t.Fatalf("Error parsing bundle: %v", err)
 	}
@@ -118,7 +120,7 @@ func TestInlineBundle(t *testing.T) {
 		Reader: &fakeLocalReader{},
 	}
 
-	newdata, err := inliner.InlineComponentsInData(ctx, data)
+	newdata, err := inliner.InlineComponentsInBundle(ctx, data)
 	if err != nil {
 		t.Fatalf("Error inlining bundle: %v", err)
 	}
@@ -156,7 +158,7 @@ componentFiles:
 
 func TestInlineDataFiles(t *testing.T) {
 	ctx := context.Background()
-	data, err := converter.FromYAMLString(componentDataFiles).ToComponentData()
+	data, err := converter.FromYAMLString(componentDataFiles).ToBundle()
 	if err != nil {
 		t.Fatalf("Error parsing component data: %v", err)
 	}
@@ -164,7 +166,7 @@ func TestInlineDataFiles(t *testing.T) {
 		Reader: &fakeLocalReader{},
 	}
 
-	newdata, err := inliner.InlineComponentDataFiles(ctx, data)
+	newdata, err := inliner.InlineBundleFiles(ctx, data)
 	if err != nil {
 		t.Fatalf("Error inlining component data files: %v", err)
 	}
@@ -182,7 +184,7 @@ func TestInlineDataFiles(t *testing.T) {
 	}
 
 	// now try to inline again
-	moreInlined, err := inliner.InlineComponentsInData(ctx, newdata)
+	moreInlined, err := inliner.InlineComponentsInBundle(ctx, newdata)
 	finder = find.NewComponentFinder(moreInlined.Components)
 
 	ref := core.ObjectRef{Name: "biffbam"}
@@ -196,7 +198,7 @@ func TestInlineDataFiles(t *testing.T) {
 		t.Errorf("found %v, %t but expected value %q", foundval, ok, "bam")
 	}
 
-	ref = core.ObjectRef{Name: "raw-text.yaml"}
+	ref = core.ObjectRef{Name: "some-raw-text"}
 	found = finder.ObjectsFromUniqueComponent(comp, ref)
 	if found == nil || len(found) != 1 {
 		t.Fatalf("could not find exactly one object in component %q named %v", comp, ref)
@@ -206,20 +208,20 @@ func TestInlineDataFiles(t *testing.T) {
 const componentsWithMultidoc = `
 components:
 - spec:
-    canonicalName: multidoc
+    componentName: multidoc
     objectFiles:
     - url: 'file://path/to/multidoc.yaml'
 `
 
 func TestMultiDoc(t *testing.T) {
 	ctx := context.Background()
-	data, err := converter.FromYAMLString(componentsWithMultidoc).ToComponentData()
+	data, err := converter.FromYAMLString(componentsWithMultidoc).ToBundle()
 	if err != nil {
 		t.Fatalf("Error parsing component data: %v", err)
 	}
 	inliner := &Inliner{Reader: &fakeLocalReader{}}
 
-	newdata, err := inliner.InlineComponentsInData(ctx, data)
+	newdata, err := inliner.InlineComponentsInBundle(ctx, data)
 	if err != nil {
 		t.Fatalf("Error inlining component data: %v", err)
 	}
@@ -257,21 +259,23 @@ func TestMultiDoc(t *testing.T) {
 const componentWithText = `
 components:
 - spec:
-    canonicalName: textdoc
+    componentName: textdoc
     rawTextFiles:
-    - url: 'file://path/to/raw-text.yaml'
-    - url: 'file://path/to/rawer-text.yaml'
+    - name: raw-collection
+      files:
+      - url: 'file://path/to/raw-text.yaml'
+      - url: 'file://path/to/rawer-text.yaml'
 `
 
 func TestBundleRawText(t *testing.T) {
 	ctx := context.Background()
-	data, err := converter.FromYAMLString(componentWithText).ToComponentData()
+	data, err := converter.FromYAMLString(componentWithText).ToBundle()
 	if err != nil {
 		t.Fatalf("Error parsing component data: %v", err)
 	}
 	inliner := &Inliner{Reader: &fakeLocalReader{}}
 
-	newdata, err := inliner.InlineComponentsInData(ctx, data)
+	newdata, err := inliner.InlineComponentsInBundle(ctx, data)
 	if err != nil {
 		t.Fatalf("Error inlining components in data: %v", err)
 	}
@@ -288,7 +292,8 @@ func TestBundleRawText(t *testing.T) {
 		}
 	}
 
-	name := "raw-text.yaml"
+	name := "raw-collection"
+	fname := "raw-text.yaml"
 	comp := "textdoc"
 	objs := finder.ObjectsFromUniqueComponent(comp, core.ObjectRef{Name: name})
 	if l := len(objs); l != 1 {
@@ -303,12 +308,15 @@ func TestBundleRawText(t *testing.T) {
 	if !ok {
 		t.Fatalf("Expected data to be a map of string to interface for comp %q in object %q", comp, name)
 	}
-	val, ok := dataMap[name].(string)
-	if !ok || val != "foobar" {
-		t.Fatalf("Could not find text object with key %q value %q for comp %q in object %q", name, "foobar", comp, name)
+	val, ok := dataMap[fname].(string)
+	if !ok {
+		t.Fatalf("Could not find text object with key %q value %q for comp %q in object %q", fname, "foobar", comp, name)
+	}
+	if val != "foobar" {
+		t.Fatalf("Got value %q for key %q but expected value %q for comp %q in object %q", val, fname, "foobar", comp, name)
 	}
 
-	name = "rawer-text.yaml"
+	fname = "rawer-text.yaml"
 	comp = "textdoc"
 	objs = finder.ObjectsFromUniqueComponent(comp, core.ObjectRef{Name: name})
 	if l := len(objs); l != 1 {
@@ -323,8 +331,8 @@ func TestBundleRawText(t *testing.T) {
 	if !ok {
 		t.Fatalf("Expected data to be a map of string to interface for comp %q in object %q", comp, name)
 	}
-	val, ok = dataMap[name].(string)
+	val, ok = dataMap[fname].(string)
 	if !ok || val != "biffbam" {
-		t.Fatalf("Could not find text object with key %q value %q for comp %q in object %q", name, "biffbam", comp, name)
+		t.Fatalf("Could not find text object with key %q value %q for comp %q in object %q", fname, "biffbam", comp, name)
 	}
 }

@@ -64,7 +64,7 @@ func (b *ImageFinder) AllContainerImages() []*ContainerImage {
 }
 
 // ContainerImages returns all the images from a single Kubernetes object.
-func (b *ImageFinder) ContainerImages(key core.ComponentKey, st *unstructured.Unstructured) []*ContainerImage {
+func (b *ImageFinder) ContainerImages(key bundle.ComponentReference, st *unstructured.Unstructured) []*ContainerImage {
 	objkey := core.ClusterObjectKey{
 		Component: key,
 		Object:    core.ObjectRefFromUnstructured(st),
@@ -102,7 +102,7 @@ func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, fn func
 // recommend that the components be cloned.
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.components {
-		key := core.KeyFromComponent(ca)
+		key := ca.MakeComponentReference()
 		for _, obj := range ca.Spec.Objects {
 			ref := core.ObjectRefFromUnstructured(obj)
 			key := core.ClusterObjectKey{

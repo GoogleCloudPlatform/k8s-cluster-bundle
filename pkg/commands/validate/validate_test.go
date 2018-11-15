@@ -20,8 +20,8 @@ import (
 	"strings"
 	"testing"
 
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
@@ -61,12 +61,12 @@ func TestRunValidate(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			globalOpts := &cmdlib.GlobalOptions{
-				ComponentDataFile: validFile,
-				InputFormat:       "yaml",
+				BundleFile:  validFile,
+				InputFormat: "yaml",
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
-			createValidatorFn = func(b *core.ComponentData) bundleValidator {
+			createValidatorFn = func(b *bundle.Bundle) bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}
 

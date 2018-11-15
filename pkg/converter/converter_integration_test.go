@@ -21,18 +21,33 @@ import (
 )
 
 func TestRealisticDataParse(t *testing.T) {
-
-	b, err := testutil.ReadData("../../", "examples/component-data-files.yaml")
+	b, err := testutil.ReadData("../../", "examples/bundle-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
-	dataFiles, err := FromYAML(b).ToComponentData()
+	dataFiles, err := FromYAML(b).ToBundle()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentDataFiles(): %v", err)
+		t.Fatalf("Error calling ToBundle(): %v", err)
 	}
 
 	if l := len(dataFiles.ComponentFiles); l == 0 {
 		t.Fatalf("found zero files, but expected some")
+	}
+}
+
+func TestRealisticDataParse_ComponentSet(t *testing.T) {
+	b, err := testutil.ReadData("../../", "examples/component-set.yaml")
+	if err != nil {
+		t.Fatalf("Error reading file %v", err)
+	}
+
+	cset, err := FromYAML(b).ToComponentSet()
+	if err != nil {
+		t.Fatalf("Error calling ToComponentSet(): %v", err)
+	}
+
+	if l := len(cset.Spec.Components); l == 0 {
+		t.Fatalf("found zero components, but expected some")
 	}
 }

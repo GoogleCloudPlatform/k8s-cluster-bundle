@@ -26,15 +26,18 @@ var defaultComponentSet = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: foo-set
   version: 1.0.2
   components:
-  - name: foo-comp-1.0.2
+  - componentName: foo-comp
+    version: 1.0.2
 `
 
 var defaultComponentSetNoRefs = `
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: bar-set
   version: 1.0.2
 `
 
@@ -45,14 +48,14 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2
 - apiVersion: 'bundle.gke.io/v1alpha1'
   kind: ComponentPackage
   metadata:
-    name: bar-comp-1.0.3
+    name: bar-comp-2.0.3
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 2.0.3
 `
 
@@ -129,7 +132,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2`,
 			errSubstring: "component kind",
 		},
@@ -143,14 +146,14 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2
 - apiVersion: 'bundle.gke.io/v1alpha1'
   kind: ComponentPackage
   metadata:
     name: foo-comp-1.0.2-zed
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2`,
 			errSubstring: "duplicate component key",
 		},
@@ -165,7 +168,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 2.010.1`,
 			errSubstring: "component spec version is invalid",
 		},
@@ -179,7 +182,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp`,
+    componentName: foo-comp`,
 			errSubstring: "component spec version missing",
 		},
 
@@ -193,7 +196,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2
     objects:
     - apiVersion: v1
@@ -211,7 +214,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2
     objects:
     - apiVersion: v1
@@ -234,7 +237,7 @@ components:
   metadata:
     name: foo-comp-1.0.2
   spec:
-    canonicalName: foo-comp
+    componentName: foo-comp
     version: 1.0.2
     objects:
     - apiVersion: v1
@@ -249,7 +252,7 @@ components:
 			if err != nil {
 				t.Fatalf("error converting component set: %v", err)
 			}
-			comp, err := converter.FromYAMLString(tc.components).ToComponentData()
+			comp, err := converter.FromYAMLString(tc.components).ToBundle()
 			if err != nil {
 				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
 			}

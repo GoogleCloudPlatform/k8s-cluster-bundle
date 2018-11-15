@@ -25,7 +25,7 @@ import (
 var componentDataExampleAll = `
 components:
 - spec:
-    canonicalName: 'nodes'
+    componentName: 'nodes'
     objects:
     - metadata:
         name: 'ubuntu-cluster-master'
@@ -53,7 +53,7 @@ components:
       initFile: "echo 'I'm another script'"
 
 - spec:
-    canonicalName: logger
+    componentName: logger
     objects:
     - apiVersion: v1
       kind: Pod
@@ -73,14 +73,14 @@ components:
              - /chopper
              - --logtostderr
 - spec:
-    canonicalName: zap
+    componentName: zap
     objects:
     - apiVersion: v1
       kind: Pod
       metadata:
         name: zap
 - spec:
-    canonicalName: dap
+    componentName: dap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -94,7 +94,7 @@ components:
           image: gcr.io/floof/dapper`
 
 func TestTransformStringSub(t *testing.T) {
-	s, err := converter.FromYAMLString(componentDataExampleAll).ToComponentData()
+	s, err := converter.FromYAMLString(componentDataExampleAll).ToBundle()
 	if err != nil {
 		t.Fatalf("error converting bundle: %v", err)
 	}

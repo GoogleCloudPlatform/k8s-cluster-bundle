@@ -25,7 +25,6 @@ import (
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 )
 
@@ -44,10 +43,10 @@ func NewLocalInliner(cwd string) *Inliner {
 	}
 }
 
-// Inline converts dereferences file-references in for component data files and
-// turns them into components. Thus, the returned data is a copy with the
+// Inline converts dereferences file-references in for bundle files and turns
+// them into components. Thus, the returned data is a copy with the
 // file-references removed.
-func (n *Inliner) InlineComponentDataFiles(ctx context.Context, data *core.ComponentData) (*core.ComponentData, error) {
+func (n *Inliner) InlineBundleFiles(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {
 	var out []*bundle.ComponentPackage
 	for _, f := range data.ComponentFiles {
 		contents, err := n.readFile(ctx, f)
@@ -63,27 +62,29 @@ func (n *Inliner) InlineComponentDataFiles(ctx context.Context, data *core.Compo
 		// relative to the location of the component, we need to transform the
 		// references to be based on the location of the component data file.
 		compUrl := f.URL
-		var newObjFiles []bundle.File
-		for _, o := range comp.Spec.ObjectFiles {
+		for i, o := range comp.Spec.ObjectFiles {
 			if strings.HasPrefix(o.URL, "file://") && strings.HasPrefix(compUrl, "file://") {
 				o.URL = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(o.URL))
 			}
-			newObjFiles = append(newObjFiles, o)
+			comp.Spec.ObjectFiles[i] = o
 		}
-		comp.Spec.ObjectFiles = newObjFiles
 
 		// Do the same with the text files.
-		var newTextFiles []bundle.File
-		for _, o := range comp.Spec.RawTextFiles {
-			if strings.HasPrefix(o.URL, "file://") && strings.HasPrefix(compUrl, "file://") {
-				o.URL = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(o.URL))
+		for i, fg := range comp.Spec.RawTextFiles {
+			for j, o := range fg.Files {
+				if strings.HasPrefix(o.URL, "file://") && strings.HasPrefix(compUrl, "file://") {
+					o.URL = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(o.URL))
+				}
+				fg.Files[j] = o
 			}
-			newTextFiles = append(newTextFiles, o)
+			comp.Spec.RawTextFiles[i] = fg
 		}
-		comp.Spec.RawTextFiles = newTextFiles
 		out = append(out, comp)
 	}
-	return &core.ComponentData{Components: out}, nil
+	newBundle := data.DeepCopy()
+	newBundle.Components = out
+	newBundle.ComponentFiles = nil
+	return newBundle, nil
 }
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
@@ -93,7 +94,7 @@ var multiDoc = regexp.MustCompile("---(\n|$)")
 // The returned components are copies with the file-references removed.
 func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPackage) (*bundle.ComponentPackage, error) {
 	comp = comp.DeepCopy()
-	name := comp.Spec.CanonicalName
+	name := comp.Spec.ComponentName
 	var newObjs []*unstructured.Unstructured
 	for _, cf := range comp.Spec.ObjectFiles {
 		contents, err := n.readFile(ctx, cf)
@@ -122,18 +123,24 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 		}
 	}
 
-	for _, cf := range comp.Spec.RawTextFiles {
-		text, err := n.readFile(ctx, cf)
-		if err != nil {
-			return nil, fmt.Errorf("error reading raw text object for component %q: %v", name, err)
+	for _, fg := range comp.Spec.RawTextFiles {
+		fgName := fg.Name
+		if fgName == "" {
+			return nil, fmt.Errorf("error reading raw text file group object for component %q; name was empty ", name)
 		}
+		m := newConfigMapMaker(fgName)
+		for _, cf := range fg.Files {
+			text, err := n.readFile(ctx, cf)
+			if err != nil {
+				return nil, fmt.Errorf("error reading raw text object for component %q: %v", name, err)
+			}
 
-		name := filepath.Base(cf.URL)
-		m := newConfigMapMaker(name)
-		m.addData(name, string(text))
+			dataName := filepath.Base(cf.URL)
+			m.addData(dataName, string(text))
+		}
 		uns, err := m.toUnstructured()
 		if err != nil {
-			return nil, fmt.Errorf("error converting text object to unstructured for component %q: %v", name, err)
+			return nil, fmt.Errorf("error converting text object to unstructured for component %q and file group %q: %v", name, fgName, err)
 		}
 		newObjs = append(newObjs, uns)
 	}
@@ -157,15 +164,15 @@ func (n *Inliner) InlineAllComponents(ctx context.Context, packs []*bundle.Compo
 	return out, nil
 }
 
-// InlineComponentsInData inlines all the components' objects in a ComponentData object.
-func (n *Inliner) InlineComponentsInData(ctx context.Context, data *core.ComponentData) (*core.ComponentData, error) {
+// InlineComponentsInBundle inlines all the components' objects in a Bundle object.
+func (n *Inliner) InlineComponentsInBundle(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {
 	cmp, err := n.InlineAllComponents(ctx, data.Components)
 	if err != nil {
 		return nil, err
 	}
-	return &core.ComponentData{
-		Components: cmp,
-	}, nil
+	newb := data.DeepCopy()
+	newb.Components = cmp
+	return newb, nil
 }
 
 // readFile from either a local or remote location.

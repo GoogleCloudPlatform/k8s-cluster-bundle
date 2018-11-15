@@ -57,12 +57,11 @@ func (v *ComponentValidator) Validate() []error {
 
 func (v *ComponentValidator) validateComponentPackages() []error {
 	var errs []error
-	objCollect := make(map[core.ComponentKey]bool)
+	objCollect := make(map[bundle.ComponentReference]bool)
 	for _, ca := range v.components {
-		n := ca.Spec.CanonicalName
-		if n == "" {
-			errs = append(errs, fmt.Errorf("components must always have a canonical name. was empty for config %v", ca))
-			continue
+		n := ca.Spec.ComponentName
+		if err := ValidateName(n); err != nil {
+			errs = append(errs, fmt.Errorf("the component name %q was invalid config %v", n, ca))
 		}
 
 		api := ca.APIVersion
@@ -82,7 +81,7 @@ func (v *ComponentValidator) validateComponentPackages() []error {
 			errs = append(errs, fmt.Errorf("component spec version is invalid. was %q for component %q but must be of the form X.Y.Z", ver, n))
 		}
 
-		key := core.ComponentKey{CanonicalName: n, Version: ver}
+		key := bundle.ComponentReference{ComponentName: n, Version: ver}
 		if _, ok := objCollect[key]; ok {
 			errs = append(errs, fmt.Errorf("duplicate component key %v", key))
 			continue
@@ -97,6 +96,11 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 	if v.componentSet == nil {
 		return nil
 	}
+	n := v.componentSet.Spec.SetName
+	if err := ValidateName(n); err != nil {
+		errs = append(errs, fmt.Errorf("the component set name %q was invalid config %v", n, v.componentSet))
+	}
+
 	api := v.componentSet.APIVersion
 	if !apiVersionPattern.MatchString(api) {
 		errs = append(errs, fmt.Errorf("component set APIVersion must have an apiVersion of the form \"bundle.gke.io/<version>\". was %q", api))
@@ -114,17 +118,17 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 		errs = append(errs, fmt.Errorf("component set spec version is invalid. was %q but must be of the form X.Y.Z", ver))
 	}
 
-	compMap := make(map[string]*bundle.ComponentPackage)
+	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
 	for _, c := range v.components {
-		compMap[c.ObjectMeta.Name] = c
+		compMap[c.MakeComponentReference()] = c
 	}
 
 	// It is possible for there to be components that the component set does not
 	// know about, but all components in the component set must be in the
 	// components list
 	for _, ref := range v.componentSet.Spec.Components {
-		if _, ok := compMap[ref.Name]; !ok {
-			errs = append(errs, fmt.Errorf("could not find component reference %q in the metadata.ename for any of the components", ref.Name))
+		if _, ok := compMap[ref]; !ok {
+			errs = append(errs, fmt.Errorf("could not find component reference %v for any of the components", ref))
 		}
 	}
 	return errs
@@ -135,12 +139,15 @@ func (b *ComponentValidator) validateObjects() []error {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 	for _, ca := range b.components {
-		compName := ca.Spec.CanonicalName
+		compName := ca.Spec.ComponentName
 		for i, obj := range ca.Spec.Objects {
 			n := obj.GetName()
 			if n == "" {
 				errs = append(errs, fmt.Errorf("objects must always have a metadata.name. was empty object %d in component %q", i, compName))
 				continue
+			}
+			if err := ValidateName(n); err != nil {
+				errs = append(errs, fmt.Errorf("invalid name %q for object %d: %v", n, i, err))
 			}
 
 			ref := core.ObjectRefFromUnstructured(obj)

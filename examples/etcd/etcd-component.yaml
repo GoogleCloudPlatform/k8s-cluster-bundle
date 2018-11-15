@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: 'bundle.gke.io/v1alpha1'
+apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 spec:
-  canonicalName: etcd-component
+  componentName: etcd-component
   version: 30.0.2
   objectFiles:
-  - url: 'file://etcd-server.yaml'
+  - url: file://etcd-server.yaml

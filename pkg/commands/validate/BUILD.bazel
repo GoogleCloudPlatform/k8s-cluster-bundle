@@ -11,7 +11,6 @@ go_library(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",
-        "//pkg/core:go_default_library",
         "//pkg/files:go_default_library",
         "//pkg/validation:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
@@ -24,8 +23,8 @@ go_test(
     srcs = ["validate_test.go"],
     embed = [":go_default_library"],
     deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",
-        "//pkg/core:go_default_library",
         "//pkg/testutil:go_default_library",
     ],
 )

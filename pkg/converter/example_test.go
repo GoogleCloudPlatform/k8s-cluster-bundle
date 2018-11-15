@@ -21,22 +21,23 @@ import (
 const componentDataExample = `
 components:
 - spec:
-    canonicalName: kube-apiserver
+    componentName: kube-apiserver
+    version: 1.0.0
     objectFiles:
     - url: 'file://path/to/kube_apiserver.yaml'
 `
 
 func TestDataParse(t *testing.T) {
-	data, err := FromYAMLString(componentDataExample).ToComponentData()
+	data, err := FromYAMLString(componentDataExample).ToBundle()
 	if err != nil {
 		t.Fatalf("Error parsing bundle: %v", err)
 	}
 
 	if l := len(data.Components); l == 0 {
-		t.Fatalf("Zero components found in the ComponentData; expected exactly 1")
+		t.Fatalf("Zero components found in the Bundle; expected exactly 1")
 	}
 
-	if n := data.Components[0].Spec.CanonicalName; n != "kube-apiserver" {
+	if n := data.Components[0].Spec.ComponentName; n != "kube-apiserver" {
 		t.Errorf("Got name %q, expected name %q", n, "kube-apiserver")
 	}
 }

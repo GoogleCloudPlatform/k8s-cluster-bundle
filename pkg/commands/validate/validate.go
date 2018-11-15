@@ -20,7 +20,6 @@ import (
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
 	log "github.com/golang/glog"
@@ -50,14 +49,14 @@ type bundleValidator interface {
 
 // createValidatorFn creates BundleValidator that works with the given current
 // working directory and allows for dependency injection.
-var createValidatorFn = func(b *core.ComponentData) bundleValidator {
+var createValidatorFn = func(b *bundle.Bundle) bundleValidator {
 	// TODO(kashomon): Add support for component sets
 	var componentSet *bundle.ComponentSet
 	return validation.NewComponentValidator(b.Components, componentSet)
 }
 
 func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
+	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}

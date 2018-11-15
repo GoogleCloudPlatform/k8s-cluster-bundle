@@ -15,7 +15,7 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentPackage
 spec:
-  canonicalName: kubeproxy
+  componentName: kubeproxy
   version: 2.1.0
   objectFiles:
-  - url: 'file://kubeproxy.yaml'
+  - url: file://kubeproxy.yaml

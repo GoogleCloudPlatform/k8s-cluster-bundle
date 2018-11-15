@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
@@ -57,7 +58,7 @@ func TestImageFinder_Found(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error converting obj: %v", err)
 	}
-	key := core.ComponentKey{"foo", "bar"}
+	key := bundle.ComponentReference{"foo", "bar"}
 
 	expkey := core.ClusterObjectKey{
 		Component: key,
@@ -109,7 +110,7 @@ func TestImageFinder_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error converting obj: %v", err)
 	}
-	key := core.ComponentKey{"foo", "biff"}
+	key := bundle.ComponentReference{"foo", "biff"}
 	f := ImageFinder{}
 	found := f.ContainerImages(key, s)
 	if len(found) != 0 {
@@ -141,7 +142,7 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error converting obj: %v", err)
 	}
-	key := core.ComponentKey{"gloo", "logger"}
+	key := bundle.ComponentReference{"gloo", "logger"}
 	expkey := core.ClusterObjectKey{
 		Component: key,
 		Object: core.ObjectRef{
@@ -177,7 +178,7 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 var componentsExample = `
 components:
 - spec:
-    canonicalName: logger
+    componentName: logger
     objects:
     - apiVersion: v1
       kind: Pod
@@ -197,7 +198,7 @@ components:
              - /chopper
              - --logtostderr
 - spec:
-    canonicalName: zap
+    componentName: zap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -205,7 +206,7 @@ components:
         name: zap-pod
 
 - spec:
-    canonicalName: dap
+    componentName: dap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -217,9 +218,9 @@ components:
           image: gcr.io/floof/dapper`
 
 func TestImageFinder_Bundle(t *testing.T) {
-	s, err := converter.FromYAMLString(componentsExample).ToComponentData()
+	s, err := converter.FromYAMLString(componentsExample).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting components data: %v", err)
+		t.Fatalf("error converting data: %v", err)
 	}
 
 	found := NewImageFinder(s.Components).AllContainerImages()
@@ -227,21 +228,21 @@ func TestImageFinder_Bundle(t *testing.T) {
 	expected := []*ContainerImage{
 		&ContainerImage{
 			core.ClusterObjectKey{
-				Component: core.ComponentKey{CanonicalName: "logger"},
+				Component: bundle.ComponentReference{ComponentName: "logger"},
 				Object:    core.ObjectRef{APIVersion: "v1", Kind: "Pod", Name: "logger-pod"},
 			},
 			"gcr.io/floof/logger",
 		},
 		&ContainerImage{
 			core.ClusterObjectKey{
-				Component: core.ComponentKey{CanonicalName: "logger"},
+				Component: bundle.ComponentReference{ComponentName: "logger"},
 				Object:    core.ObjectRef{APIVersion: "v1", Kind: "Pod", Name: "logger-pod"},
 			},
 			"gcr.io/floof/chopper",
 		},
 		&ContainerImage{
 			core.ClusterObjectKey{
-				Component: core.ComponentKey{CanonicalName: "dap"},
+				Component: bundle.ComponentReference{ComponentName: "dap"},
 				Object:    core.ObjectRef{APIVersion: "v1", Kind: "Pod", Name: "dap"},
 			},
 			"gcr.io/floof/dapper",
@@ -256,7 +257,7 @@ func TestImageFinder_Bundle(t *testing.T) {
 var componentDataNodeConfig = `
 components:
 - spec:
-    canonicalName: nodeconfig1
+    componentName: nodeconfig1
     version: 0.1.2
     objects:
     - metadata:
@@ -271,7 +272,7 @@ components:
           value: 'foo-val'
 
 - spec:
-    canonicalName: nodeconfig2
+    componentName: nodeconfig2
     objects:
     - metadata:
         name: 'ubuntu-control-node'
@@ -281,7 +282,7 @@ components:
         url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
 - spec:
-    canonicalName: nodeconfig3
+    componentName: nodeconfig3
     objects:
     - metadata:
         name: 'ubuntu-cluster-node-no-image'
@@ -289,23 +290,23 @@ components:
       initFile: "echo 'I'm another script'"`
 
 func TestImageFinder_NodeImages(t *testing.T) {
-	s, err := converter.FromYAMLString(componentDataNodeConfig).ToComponentData()
+	s, err := converter.FromYAMLString(componentDataNodeConfig).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting component data: %v", err)
+		t.Fatalf("error converting data: %v", err)
 	}
 
 	found := NewImageFinder(s.Components).AllContainerImages()
 	expected := []*ContainerImage{
 		&ContainerImage{
 			core.ClusterObjectKey{
-				Component: core.ComponentKey{CanonicalName: "nodeconfig1", Version: "0.1.2"},
+				Component: bundle.ComponentReference{ComponentName: "nodeconfig1", Version: "0.1.2"},
 				Object:    core.ObjectRef{APIVersion: "bundleext.gke.io/v1alpha1", Kind: "NodeConfig", Name: "ubuntu-control-plane"},
 			},
 			"gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1",
 		},
 		&ContainerImage{
 			core.ClusterObjectKey{
-				Component: core.ComponentKey{CanonicalName: "nodeconfig2"},
+				Component: bundle.ComponentReference{ComponentName: "nodeconfig2"},
 				Object:    core.ObjectRef{Kind: "NodeConfig", Name: "ubuntu-control-node"},
 			},
 			"gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1",
@@ -320,7 +321,7 @@ func TestImageFinder_NodeImages(t *testing.T) {
 var componentExampleAll = `
 components:
 - spec:
-    canonicalName: nodeconfig1
+    componentName: nodeconfig1
     objects:
     - metadata:
         name: 'ubuntu-control-plane'
@@ -333,7 +334,7 @@ components:
           value: 'foo-val'
 
 - spec:
-    canonicalName: nodeconfig2
+    componentName: nodeconfig2
     objects:
     - metadata:
         name: 'ubuntu-cluster-node'
@@ -343,7 +344,7 @@ components:
         url: 'gs://google-images/ubuntu/ubuntu-1604-xenial-20180509-1'
 
 - spec:
-    canonicalName: nodeconfig3
+    componentName: nodeconfig3
     objects:
     - metadata:
         name: 'ubuntu-cluster-node-no-image'
@@ -351,7 +352,7 @@ components:
       initFile: "echo 'I'm another script'"
 
 - spec:
-    canonicalName: logger
+    componentName: logger
     objects:
     - apiVersion: v1
       kind: Pod
@@ -372,7 +373,7 @@ components:
              - --logtostderr
 
 - spec:
-    canonicalName: zap
+    componentName: zap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -380,7 +381,7 @@ components:
         name: zap-pod
 
 - spec:
-    canonicalName: dap
+    componentName: dap
     objects:
     - apiVersion: v1
       kind: Pod
@@ -394,9 +395,9 @@ components:
           image: gcr.io/floof/dapper`
 
 func TestImageFinder_AllFlattened(t *testing.T) {
-	s, err := converter.FromYAMLString(componentExampleAll).ToComponentData()
+	s, err := converter.FromYAMLString(componentExampleAll).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting ComponentData: %v", err)
+		t.Fatalf("error converting data: %v", err)
 	}
 
 	found := NewImageFinder(s.Components).AllImages().Flattened()
@@ -414,9 +415,9 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 }
 
 func TestImageFinder_WalkTransform(t *testing.T) {
-	s, err := converter.FromYAMLString(componentExampleAll).ToComponentData()
+	s, err := converter.FromYAMLString(componentExampleAll).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting ComponentData: %v", err)
+		t.Fatalf("error converting bundle: %v", err)
 	}
 
 	finder := NewImageFinder(s.Components)
@@ -424,7 +425,7 @@ func TestImageFinder_WalkTransform(t *testing.T) {
 		if key.Object.Name == "ubuntu-control-plane" && strings.HasPrefix(img, "gs://") {
 			return "go://" + strings.TrimPrefix(img, "gs://")
 		}
-		if key.Component.CanonicalName == "dap" && strings.HasPrefix(img, "gcr.io") {
+		if key.Component.ComponentName == "dap" && strings.HasPrefix(img, "gcr.io") {
 			return "k8s.io" + strings.TrimPrefix(img, "gcr.io")
 		}
 		return img

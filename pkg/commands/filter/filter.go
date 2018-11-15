@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"strings"
 
-	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
+
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 )
 
 // options represents options flags for the filter command.
@@ -66,9 +66,9 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadComponentData(ctx, rw, gopt)
+	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading component data contents: %v", err)
+		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
 	fopts := &filter.Options{}
@@ -112,6 +112,7 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 		out = filter.NewFilterer(b.Components).FilterObjects(fopts)
 	}
 
-	outd := &core.ComponentData{ComponentFiles: b.ComponentFiles, Components: out}
-	return cmdlib.WriteStructuredContents(ctx, outd, rw, gopt)
+	outData := b.DeepCopy()
+	outData.Components = out
+	return cmdlib.WriteStructuredContents(ctx, outData, rw, gopt)
 }
