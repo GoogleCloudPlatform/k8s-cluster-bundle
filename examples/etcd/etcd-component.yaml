@@ -18,4 +18,4 @@ spec:
   componentName: etcd-component
   version: 30.0.2
   objectFiles:
-  - url: file://etcd-server.yaml
+  - url: file:///etcd/etcd-server.yaml

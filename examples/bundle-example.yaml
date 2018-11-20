@@ -17,13 +17,16 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: Bundle
 metadata:
-  name: bundle-example-2.3.4
+  name: bundle-example-2.3.5
 setName: bundle-example
-version: 2.3.4
+version: 2.3.5
+
+# Here we use absolute paths for identifying the components, with the root
+# directory being the 'examples' directory.
 componentFiles:
-- url: file://etcd/etcd-component.yaml
-- url: file://nodes/nodes-component.yaml
-- url: file://kubernetes/kubernetes-component.yaml
-- url: file://kubedns/kubedns-component.yaml
-- url: file://kubeproxy/kube-proxy-component.yaml
-- url: file://datablob/data-blob-component.yaml
+- url: file:///etcd/etcd-component.yaml
+- url: file:///nodes/nodes-component.yaml
+- url: file:///kubernetes/kubernetes-component.yaml
+- url: file:///kubedns/kubedns-component.yaml
+- url: file:///kubeproxy/kube-proxy-component.yaml
+- url: file:///datablob/data-blob-component.yaml

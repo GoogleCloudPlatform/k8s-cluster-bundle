@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -72,7 +73,7 @@ func TestMakeComponentReference(t *testing.T) {
 		},
 	}
 	exp := ComponentReference{"zip", "1.2.3"}
-	if got := comp.MakeComponentReference(); got != exp {
+	if got := comp.ComponentReference(); got != exp {
 		t.Errorf("GetAllLocalObjectRefs: got %v, but wanted %v", got, exp)
 	}
 }
@@ -152,7 +153,7 @@ func TestMakeComponentSet(t *testing.T) {
 		Components: []*ComponentPackage{comp1, comp2},
 	}
 
-	got := b.MakeComponentSet()
+	got := b.ComponentSet()
 	exp := &ComponentSet{
 		Spec: ComponentSetSpec{
 			SetName: "zorp",
@@ -164,6 +165,70 @@ func TestMakeComponentSet(t *testing.T) {
 		},
 	}
 	if !reflect.DeepEqual(got, exp) {
-		t.Errorf("MakeComponentSet: got %v, but wanted %v", got, exp)
+		t.Errorf("ComponentSet: got %v, but wanted %v", got, exp)
+	}
+}
+
+func TestParseURL(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		in           string
+		scheme       string
+		path         string
+		expErrSubstr string
+	}{
+		{
+			desc:   "success: normal file url",
+			in:     "file:///foo/bar",
+			scheme: "file",
+			path:   "/foo/bar",
+		},
+		{
+			desc:   "success: normal file url with localhost",
+			in:     "file://localhost/foo/bar",
+			scheme: "file",
+			path:   "/foo/bar",
+		},
+		{
+			desc:         "fail: empty URL",
+			in:           "",
+			expErrSubstr: "no URL was provided",
+		},
+		{
+			desc:         "fail: bad parsing",
+			in:           "file@://foo",
+			expErrSubstr: "error parsing url",
+		},
+		{
+			desc: "success: no scheme",
+			in:   "foo/bar/biff",
+			path: "foo/bar/biff",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			file := File{URL: tc.in}
+			parsed, err := file.ParsedURL()
+			if err != nil {
+				if tc.expErrSubstr == "" {
+					t.Errorf("Unexpceted error: %v", err)
+					return
+				}
+				if !strings.Contains(err.Error(), tc.expErrSubstr) {
+					t.Errorf("error %v did not contain expected substring %q", err, tc.expErrSubstr)
+				}
+				return
+			}
+			if err != nil && tc.expErrSubstr != "" {
+				t.Errorf("got nil error, but expected error with substring %q", tc.expErrSubstr)
+				return
+			}
+			if parsed.Scheme != tc.scheme {
+				t.Errorf("got scheme %q, but wanted scheme %q", parsed.Scheme, tc.scheme)
+			}
+			if parsed.Path != tc.path {
+				t.Errorf("got path %q, but wanted path %q", parsed.Path, tc.path)
+			}
+		})
 	}
 }

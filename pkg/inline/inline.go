@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -31,15 +30,32 @@ import (
 // Inliner inlines data files by reading them from the local or a remote
 // filesystem.
 type Inliner struct {
-	// Local reader reads from the local filesystem.
-	Reader files.FileObjReader
+	// Reader reads from the local filesystem.
+	Readers   map[files.URLScheme]files.FileObjReader
+	Rewriters map[files.URLScheme]PathRewriter
 }
 
 // NewInliner creates a new inliner. If the data is stored on disk, the cwd
 // should be the relative path to the directory containing the data file on disk.
 func NewLocalInliner(cwd string) *Inliner {
+	return NewInlinerWithScheme(
+		files.FileScheme,
+		&files.LocalFileObjReader{filepath.Dir(cwd), &files.LocalFileSystemReader{}},
+		DefaultPathRewriter,
+	)
+}
+
+// NewInlinerWithScheme creates a new inliner given a URL scheme.
+func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader, pathRW PathRewriter) *Inliner {
+	rdrMap := map[files.URLScheme]files.FileObjReader{
+		scheme: objReader,
+	}
+	rwMap := map[files.URLScheme]PathRewriter{
+		scheme: pathRW,
+	}
 	return &Inliner{
-		Reader: &files.LocalFileObjReader{filepath.Dir(cwd), &files.LocalFileSystemReader{}},
+		Readers:   rdrMap,
+		Rewriters: rwMap,
 	}
 }
 
@@ -61,24 +77,11 @@ func (n *Inliner) InlineBundleFiles(ctx context.Context, data *bundle.Bundle) (*
 		// Because the components can themselves have file references that are
 		// relative to the location of the component, we need to transform the
 		// references to be based on the location of the component data file.
-		compUrl := f.URL
-		for i, o := range comp.Spec.ObjectFiles {
-			if strings.HasPrefix(o.URL, "file://") && strings.HasPrefix(compUrl, "file://") {
-				o.URL = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(o.URL))
-			}
-			comp.Spec.ObjectFiles[i] = o
+		err = n.rewriteObjectPaths(ctx, f, comp)
+		if err != nil {
+			return nil, fmt.Errorf("error rewriting object paths: %v", err)
 		}
 
-		// Do the same with the text files.
-		for i, fg := range comp.Spec.RawTextFiles {
-			for j, o := range fg.Files {
-				if strings.HasPrefix(o.URL, "file://") && strings.HasPrefix(compUrl, "file://") {
-					o.URL = "file://" + filepath.Join(filepath.Dir(shortFileUrl(compUrl)), shortFileUrl(o.URL))
-				}
-				fg.Files[j] = o
-			}
-			comp.Spec.RawTextFiles[i] = fg
-		}
 		out = append(out, comp)
 	}
 	newBundle := data.DeepCopy()
@@ -99,7 +102,7 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 	for _, cf := range comp.Spec.ObjectFiles {
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
-			return nil, fmt.Errorf("error reading file for component %q: %v", name, err)
+			return nil, fmt.Errorf("error reading file %v for component %q: %v", cf, name, err)
 		}
 		ext := filepath.Ext(cf.URL)
 		if ext == ".yaml" && multiDoc.Match(contents) {
@@ -112,6 +115,12 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 				if err != nil {
 					return nil, fmt.Errorf("error converting multi-doc object number %d for component %q in file %q", i, name, cf.URL)
 				}
+				annot := obj.GetAnnotations()
+				if annot == nil {
+					annot = make(map[string]string)
+				}
+				annot[string(bundle.InlineTypeIdentifier)] = string(bundle.KubeObjectInline)
+				obj.SetAnnotations(annot)
 				newObjs = append(newObjs, obj)
 			}
 		} else {
@@ -119,6 +128,12 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 			if err != nil {
 				return nil, fmt.Errorf("error converting object for component %q in file %q", name, cf.URL)
 			}
+			annot := obj.GetAnnotations()
+			if annot == nil {
+				annot = make(map[string]string)
+			}
+			annot[string(bundle.InlineTypeIdentifier)] = string(bundle.KubeObjectInline)
+			obj.SetAnnotations(annot)
 			newObjs = append(newObjs, obj)
 		}
 	}
@@ -134,10 +149,10 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 			if err != nil {
 				return nil, fmt.Errorf("error reading raw text object for component %q: %v", name, err)
 			}
-
 			dataName := filepath.Base(cf.URL)
 			m.addData(dataName, string(text))
 		}
+		m.cfgMap.ObjectMeta.Annotations[string(bundle.InlineTypeIdentifier)] = string(bundle.RawStringInline)
 		uns, err := m.toUnstructured()
 		if err != nil {
 			return nil, fmt.Errorf("error converting text object to unstructured for component %q and file group %q: %v", name, fgName, err)
@@ -177,26 +192,66 @@ func (n *Inliner) InlineComponentsInBundle(ctx context.Context, data *bundle.Bun
 
 // readFile from either a local or remote location.
 func (n *Inliner) readFile(ctx context.Context, file bundle.File) ([]byte, error) {
-	url := file.URL
-	if url == "" {
-		return nil, fmt.Errorf("file %v was specified but no file path/url was provided", file)
+	parsed, err := file.ParsedURL()
+	if err != nil {
+		return nil, err
 	}
-	switch {
-	case strings.HasPrefix("gs://", url):
-		return nil, fmt.Errorf("url-type (GCS) not supported; file was %q", url)
-	case strings.HasPrefix("https://", url) || strings.HasPrefix("http://", url):
-		return nil, fmt.Errorf("url-type (HTTP[S]) not supported; file was %q", url)
-	case strings.HasPrefix("file://", url):
-		return n.Reader.ReadFileObj(ctx, file)
-	default:
-		// By default, assume that the user expects to read from the local filesystem.
-		return n.Reader.ReadFileObj(ctx, file)
+	scheme := files.URLScheme(parsed.Scheme)
+	if scheme == files.EmptyScheme {
+		scheme = files.FileScheme
 	}
+	rdr, ok := n.Readers[scheme]
+	if !ok {
+		return nil, fmt.Errorf("could not find file reader for scheme %q for url %q", parsed.Scheme, file.URL)
+	}
+	return rdr.ReadFileObj(ctx, file)
 }
 
-func shortFileUrl(url string) string {
-	if strings.HasPrefix(url, "file://") {
-		url = strings.TrimPrefix(url, "file://")
+// rewriteObjPaths rewrites relative-path'd file-references during component
+// inlining.
+func (n *Inliner) rewriteObjectPaths(ctx context.Context, compFile bundle.File, comp *bundle.ComponentPackage) error {
+	compURL, err := compFile.ParsedURL()
+	if err != nil {
+		return err
 	}
-	return url
+
+	for i, o := range comp.Spec.ObjectFiles {
+		objURL, err := o.ParsedURL()
+		if err != nil {
+			return err
+		}
+		scheme := files.URLScheme(objURL.Scheme)
+		if scheme == files.EmptyScheme {
+			scheme = files.FileScheme
+		}
+		rw, ok := n.Rewriters[scheme]
+		if !ok {
+			// It's not really an error to not rewrite paths; Most URL schemes won't
+			// provide the ability to rewrite paths.
+			continue
+		}
+		comp.Spec.ObjectFiles[i].URL = rw.RewriteObjectPath(compURL, objURL)
+	}
+
+	for i, fg := range comp.Spec.RawTextFiles {
+		for j, o := range fg.Files {
+			objURL, err := o.ParsedURL()
+			if err != nil {
+				return err
+			}
+			scheme := files.URLScheme(objURL.Scheme)
+			if scheme == files.EmptyScheme {
+				scheme = files.FileScheme
+			}
+			rw, ok := n.Rewriters[scheme]
+			if !ok {
+				// It's not really an error to not rewrite paths; Most URL schemes won't
+				// provide the ability to rewrite paths.
+				continue
+			}
+			fg.Files[j].URL = rw.RewriteObjectPath(compURL, objURL)
+		}
+		comp.Spec.RawTextFiles[i] = fg
+	}
+	return nil
 }

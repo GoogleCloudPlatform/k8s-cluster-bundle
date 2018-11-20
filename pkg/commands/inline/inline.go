@@ -44,7 +44,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 // createInlinerFn creates an Inliner that works with the given current working
 // directory for the purposes of dependency injection.
 var createInlinerFn = func(pbr files.FileObjReader) *inline.Inliner {
-	return &inline.Inliner{pbr}
+	return inline.NewInlinerWithScheme(files.FileScheme, pbr, inline.DefaultPathRewriter)
 }
 
 func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {

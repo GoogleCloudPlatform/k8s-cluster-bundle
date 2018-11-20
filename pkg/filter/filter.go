@@ -24,11 +24,13 @@ import (
 
 // Filterer filters the components and objects to produce a new set of components.
 type Filterer struct {
-	data []*bundle.ComponentPackage
+	// ChangeInPlace controls whether to change the objects in place or to make
+	// copies. By default, the Filterer returns deep copies of objects.
+	ChangeInPlace bool
 }
 
-func NewFilterer(comp []*bundle.ComponentPackage) *Filterer {
-	return &Filterer{comp}
+func Filter() *Filterer {
+	return &Filterer{}
 }
 
 // Options for filtering bundles. By default, if any of the options match, then
@@ -38,9 +40,8 @@ type Options struct {
 	// Kinds represent the Kinds to filter on.
 	Kinds []string
 
-	// TODO(kashomon): Support filtering on component names?
-
-	// Names represent the metadata.names to filter on.
+	// Names represent the names to filter on. For objects, this is the
+	// metadata.name field. For components, this is the ComponentName.
 	Names []string
 
 	// Annotations contain key/value pairs to filter on. An empty string value matches
@@ -58,17 +59,33 @@ type Options struct {
 	KeepOnly bool
 }
 
-// FilterComponents filters components based on the ObjectMeta properties of
+// Components filters components based on the ObjectMeta properties of
 // the components, returning a new cluster bundle with just filtered
 // components. By default components are removed, unless KeepOnly is set, and
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
-func (f *Filterer) FilterComponents(o *Options) []*bundle.ComponentPackage {
-	data := (&bundle.Bundle{Components: f.data}).DeepCopy().Components
+func (f *Filterer) Components(data []*bundle.ComponentPackage, o *Options) []*bundle.ComponentPackage {
+	if !f.ChangeInPlace {
+		var newData []*bundle.ComponentPackage
+		for _, cp := range data {
+			newData = append(newData, cp.DeepCopy())
+		}
+		data = newData
+	}
+	// nil options should not imply any change.
+	if o == nil {
+		return data
+	}
+
 	var matched []*bundle.ComponentPackage
 	var notMatched []*bundle.ComponentPackage
 	for _, c := range data {
-		matches := filterMeta(c.Kind, &c.ObjectMeta, o)
+		od := &objectData{
+			kind: c.Kind,
+			name: c.Spec.ComponentName,
+			meta: &c.ObjectMeta,
+		}
+		matches := filterMeta(od, o)
 		if matches {
 			matched = append(matched, c)
 		} else {
@@ -81,62 +98,107 @@ func (f *Filterer) FilterComponents(o *Options) []*bundle.ComponentPackage {
 	return notMatched
 }
 
-// FilterObjects filters objects based on the ObjectMeta properties of
+// Objects kfilters objects based on the ObjectMeta properties of
 // the objects, returning a new cluster bundle with just filtered
 // objects. By default objectsare removed, unless KeepOnly is set, and
 // then the opposite is true.
-func (f *Filterer) FilterObjects(o *Options) []*bundle.ComponentPackage {
-	data := (&bundle.Bundle{Components: f.data}).DeepCopy().Components
-	for _, cp := range data {
-		var matched []*unstructured.Unstructured
-		var notMatched []*unstructured.Unstructured
-		for _, c := range cp.Spec.Objects {
-			matches := filterMeta(c.GetKind(), converter.FromUnstructured(c).ExtractObjectMeta(), o)
-			if matches {
-				matched = append(matched, c)
-			} else {
-				notMatched = append(notMatched, c)
-			}
+func (f *Filterer) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
+	if !f.ChangeInPlace {
+		var newData []*unstructured.Unstructured
+		for _, oj := range data {
+			newData = append(newData, oj.DeepCopy())
 		}
-		if o.KeepOnly {
-			cp.Spec.Objects = matched
+		data = newData
+	}
+	// nil options should not imply any change.
+	if o == nil {
+		return data
+	}
+
+	var matched []*unstructured.Unstructured
+	var notMatched []*unstructured.Unstructured
+	for _, cp := range data {
+		od := &objectData{
+			kind: cp.GetKind(),
+			name: cp.GetName(),
+			meta: converter.FromUnstructured(cp).ExtractObjectMeta(),
+		}
+		matches := filterMeta(od, o)
+		if matches {
+			matched = append(matched, cp)
 		} else {
-			cp.Spec.Objects = notMatched
+			notMatched = append(notMatched, cp)
 		}
 	}
-	return data
+	if o.KeepOnly {
+		return matched
+	}
+	return notMatched
 }
 
-func filterMeta(kind string, meta *metav1.ObjectMeta, o *Options) bool {
-	for _, k := range o.Kinds {
-		if k == kind {
-			return true
+// objectData contains data about the object being filtered.
+type objectData struct {
+	// Kind of the object
+	kind string
+
+	// name of the object. For unstructured objects, this is is metadata.name.
+	// For components, this is ComponentName
+	name string
+
+	meta *metav1.ObjectMeta
+}
+
+// filterMeta returns whether an object matches the given
+func filterMeta(d *objectData, o *Options) bool {
+	matchesKinds := true
+	if len(o.Kinds) > 0 {
+		matchesKinds = false
+		for _, optk := range o.Kinds {
+			if optk == d.kind {
+				matchesKinds = true
+				break
+			}
 		}
 	}
-	for _, n := range o.Namespaces {
-		if n == meta.Namespace {
-			return true
+	matchesNS := true
+	if len(o.Namespaces) > 0 {
+		matchesNS = false
+		for _, optn := range o.Namespaces {
+			if optn == d.meta.Namespace {
+				matchesNS = true
+				break
+			}
 		}
 	}
-	// We ignore kind, because Kind should always be cluster bundle.
-	for _, n := range o.Names {
-		if meta.GetName() == n {
-			return true
+	matchesNames := true
+	if len(o.Names) > 0 {
+		matchesNames = false
+		for _, optn := range o.Names {
+			if optn == d.meta.GetName() {
+				matchesNames = true
+				break
+			}
 		}
 	}
-	if len(meta.Annotations) > 0 {
+	matchesAnnot := true
+	if len(o.Annotations) > 0 {
+		matchesAnnot = false
 		for key, v := range o.Annotations {
-			if val, ok := meta.Annotations[key]; ok && val == v {
-				return true
+			if val, ok := d.meta.Annotations[key]; ok && val == v {
+				matchesAnnot = true
+				break
 			}
 		}
 	}
-	if len(meta.Labels) > 0 {
+	matchesLabels := true
+	if len(o.Labels) > 0 {
+		matchesLabels = false
 		for key, v := range o.Labels {
-			if val, ok := meta.Labels[key]; ok && val == v {
-				return true
+			if val, ok := d.meta.Labels[key]; ok && val == v {
+				matchesLabels = true
+				break
 			}
 		}
 	}
-	return false
+	return matchesKinds && matchesNS && matchesNames && matchesAnnot && matchesLabels
 }

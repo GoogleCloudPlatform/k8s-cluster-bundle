@@ -120,7 +120,7 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 
 	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
 	for _, c := range v.components {
-		compMap[c.MakeComponentReference()] = c
+		compMap[c.ComponentReference()] = c
 	}
 
 	// It is possible for there to be components that the component set does not

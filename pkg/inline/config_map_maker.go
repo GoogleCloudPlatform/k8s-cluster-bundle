@@ -41,7 +41,8 @@ func newConfigMapMaker(name string) *configMapMaker {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: sanitizedName,
+			Name:        sanitizedName,
+			Annotations: make(map[string]string),
 		},
 		Data: make(map[string]string),
 	}

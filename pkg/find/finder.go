@@ -38,7 +38,7 @@ func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
 	klup := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
 	for _, comp := range data {
 		name := comp.Spec.ComponentName
-		klup[comp.MakeComponentReference()] = comp
+		klup[comp.ComponentReference()] = comp
 		if list := nlup[name]; list == nil {
 			nlup[name] = []*bundle.ComponentPackage{comp}
 		} else {
@@ -58,22 +58,22 @@ func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.Compo
 	return f.keyCompLookup[ref]
 }
 
-// ComponentsFromName returns thes components that matches a string-name.
+// ComponentsFromName returns the components that matches a string-name.
 func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.ComponentPackage {
 	return f.nameCompLookup[name]
 }
 
 // ComponentPackage returns the single component package that matches a
-// string-name. If no component is found, nil is returne. If there are two
-// components that match the name, the method panics.
-func (f *ComponentFinder) UniqueComponentFromName(name string) *bundle.ComponentPackage {
+// string-name. If no component is found, nil is returned. If there are two
+// components that match the name, the method returns an error.
+func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.ComponentPackage, error) {
 	comps := f.ComponentsFromName(name)
 	if len(comps) == 0 {
-		return nil
+		return nil, nil
 	} else if len(comps) > 1 {
-		panic(fmt.Sprintf("duplicate component found for name %q", name))
+		return nil, fmt.Errorf("duplicate component found for name %q", name)
 	}
-	return comps[0]
+	return comps[0], nil
 }
 
 // Objects returns ComponentPackage's Cluster objects (given some object
@@ -89,12 +89,15 @@ func (f *ComponentFinder) Objects(cref bundle.ComponentReference, ref core.Objec
 // ObjectsFromUniqueComponent gets the objects for a component, which
 // has the same behavior as Objects, except that the component name is
 // assumed to be unique (and so panics if that assumption does not hold).
-func (f *ComponentFinder) ObjectsFromUniqueComponent(name string, ref core.ObjectRef) []*unstructured.Unstructured {
-	comp := f.UniqueComponentFromName(name)
-	if comp == nil {
-		return nil
+func (f *ComponentFinder) ObjectsFromUniqueComponent(name string, ref core.ObjectRef) ([]*unstructured.Unstructured, error) {
+	comp, err := f.UniqueComponentFromName(name)
+	if err != nil {
+		return nil, err
 	}
-	return NewObjectFinder(comp).Objects(ref)
+	if comp == nil {
+		return nil, nil
+	}
+	return NewObjectFinder(comp).Objects(ref), nil
 }
 
 // ObjectFinder finds objects within components

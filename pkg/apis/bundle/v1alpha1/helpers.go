@@ -15,6 +15,9 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"net/url"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -60,18 +63,18 @@ func (c *ComponentPackage) MakeAndSetName() {
 	return
 }
 
-// MakeComponentReference creates a ComponentReference from a component.
-func (c *ComponentPackage) MakeComponentReference() ComponentReference {
+// ComponentReference creates a ComponentReference from a component.
+func (c *ComponentPackage) ComponentReference() ComponentReference {
 	return ComponentReference{
 		ComponentName: c.Spec.ComponentName,
 		Version:       c.Spec.Version,
 	}
 }
 
-// MakeComponentSet creates a ComponentSet from a Bundle. Only components that
+// ComponentSet creates a ComponentSet from a Bundle. Only components that
 // are inlined into the Bundle are considered for the purposes of ComponentSet
 // creation.
-func (b *Bundle) MakeComponentSet() *ComponentSet {
+func (b *Bundle) ComponentSet() *ComponentSet {
 	cset := &ComponentSet{
 		Spec: ComponentSetSpec{
 			SetName: b.SetName,
@@ -79,7 +82,7 @@ func (b *Bundle) MakeComponentSet() *ComponentSet {
 		},
 	}
 	for _, comp := range b.Components {
-		cset.Spec.Components = append(cset.Spec.Components, comp.MakeComponentReference())
+		cset.Spec.Components = append(cset.Spec.Components, comp.ComponentReference())
 	}
 	return cset
 }
@@ -99,4 +102,18 @@ func (b *Bundle) MakeAndSetAllNames() {
 		comp.MakeAndSetName()
 	}
 	return
+}
+
+// ParsedURL parses the URL in a file object. If no scheme is present, the
+// scheme is assumed to be a filepath on the local filesystem.
+func (f File) ParsedURL() (*url.URL, error) {
+	u := f.URL
+	if u == "" {
+		return nil, fmt.Errorf("file %v was specified but no URL was provided", f)
+	}
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing url %q: %v", u, err)
+	}
+	return parsedURL, nil
 }

@@ -100,7 +100,10 @@ func TestBundleFinder(t *testing.T) {
 			}
 
 		} else if tc.compName != "" {
-			v := finder.UniqueComponentFromName(tc.compName)
+			v, err := finder.UniqueComponentFromName(tc.compName)
+			if err != nil {
+				t.Fatalf("unexpected duplicate component error: %v", err)
+			}
 			if v == nil && tc.shouldFind {
 				t.Errorf("Test %v: Got unexpected nil response for cluster comp lookup", tc.desc)
 			} else if v != nil && !tc.shouldFind {

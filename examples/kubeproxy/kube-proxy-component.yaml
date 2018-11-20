@@ -18,4 +18,4 @@ spec:
   componentName: kubeproxy
   version: 2.1.0
   objectFiles:
-  - url: file://kubeproxy.yaml
+  - url: file:///kubeproxy/kubeproxy.yaml
