@@ -48,7 +48,7 @@ var createInlinerFn = func(pbr files.FileObjReader) *inline.Inliner {
 }
 
 func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
+	b, err := cmdlib.ReadObject(ctx, rw, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}

@@ -27,10 +27,11 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ReadBundle reads component data file contents from a file or stdin.
-func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
+// readBytes reads data file contents from a file or stdin.
+func readBytes(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) ([]byte, error) {
 	var bytes []byte
 	var err error
 	if g.BundleFile != "" {
@@ -50,6 +51,15 @@ func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions
 			return nil, err
 		}
 	}
+	return bytes, err
+}
+
+// ReadBundle reads component data file contents from a file or stdin.
+func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
+	bytes, err := readBytes(ctx, rw, g)
+	if err != nil {
+		return nil, err
+	}
 
 	b, err := convertBundle(ctx, bytes, g)
 	if err != nil {
@@ -59,17 +69,48 @@ func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions
 	// For now, we can only inline component data files because we need the path
 	// context.
 	if (g.InlineComponents || g.InlineObjects) && g.BundleFile != "" {
-		return inlineData(ctx, b, rw, g)
+		o, err := inlineData(ctx, b, rw, g)
+		if err != nil {
+			return nil, err
+		}
+		b = o.(*bundle.Bundle)
 	}
 	return b, nil
+}
+
+// ReadObject reads a bundle object from a file or stdin.
+func ReadObject(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (runtime.Object, error) {
+	bytes, err := readBytes(ctx, rw, g)
+	if err != nil {
+		return nil, err
+	}
+
+	o, err := convertToObject(ctx, bytes, g)
+	if err != nil {
+		return nil, err
+	}
+
+	// For now, we can only inline component data files because we need the path
+	// context.
+	if (g.InlineComponents || g.InlineObjects) && g.BundleFile != "" {
+		o, err = inlineData(ctx, o, rw, g)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return o, nil
 }
 
 func convertBundle(ctx context.Context, bt []byte, g *GlobalOptions) (*bundle.Bundle, error) {
 	return converter.FromContentType(g.InputFormat, bt).ToBundle()
 }
 
+func convertToObject(ctx context.Context, bt []byte, g *GlobalOptions) (runtime.Object, error) {
+	return converter.FromContentType(g.InputFormat, bt).ToObject()
+}
+
 // inlineData inlines a cluster bundle before processing
-func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
+func inlineData(ctx context.Context, data runtime.Object, rw files.FileReaderWriter, g *GlobalOptions) (runtime.Object, error) {
 	inliner := &inline.Inliner{
 		&files.LocalFileObjReader{
 			WorkingDir: filepath.Dir(g.BundleFile),
@@ -78,15 +119,32 @@ func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWri
 	}
 	var err error
 	if g.InlineComponents {
-		data, err = inliner.InlineBundleFiles(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("error inlining component data files: %v", err)
+		switch v := data.(type) {
+		case *bundle.Bundle:
+			data, err = inliner.InlineBundleFiles(ctx, v)
+			if err != nil {
+				return nil, fmt.Errorf("error inlining component data files: %v", err)
+			}
+		case *bundle.ComponentPackage:
+			data, err = inliner.InlineComponent(ctx, v)
+			if err != nil {
+				return nil, fmt.Errorf("error inlining ComponentPackage data files: %v", err)
+			}
+		default:
+			return nil, fmt.Errorf("unhandled type for inlining: %T", data)
 		}
 	}
 	if g.InlineObjects {
-		data, err = inliner.InlineComponentsInBundle(ctx, data)
-		if err != nil {
-			return nil, fmt.Errorf("error inlining objects: %v", err)
+		switch v := data.(type) {
+		case *bundle.Bundle:
+			data, err = inliner.InlineComponentsInBundle(ctx, v)
+			if err != nil {
+				return nil, fmt.Errorf("error inlining objects: %v", err)
+			}
+		case *bundle.ComponentPackage:
+			// No objects (?)
+		default:
+			return nil, fmt.Errorf("unhandled type for inlining: %T", data)
 		}
 	}
 	return data, nil

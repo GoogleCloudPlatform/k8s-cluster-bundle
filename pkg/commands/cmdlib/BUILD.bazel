@@ -17,5 +17,6 @@ go_library(
         "//pkg/inline:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
     ],
 )

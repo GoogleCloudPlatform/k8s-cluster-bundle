@@ -22,6 +22,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
@@ -126,4 +127,25 @@ func (m *Muxer) ToUnstructured() (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 	return d, nil
+}
+
+// ToObject converts input data to the correct structured type.
+func (m *Muxer) ToObject() (runtime.Object, error) {
+	// TODO: I think we can just use a Scheme for this
+	u, err := m.ToUnstructured()
+	if err != nil {
+		return nil, err
+	}
+
+	kind := u.GetObjectKind().GroupVersionKind().Kind
+	switch kind {
+	case "Bundle":
+		return m.ToBundle()
+	case "ComponentPackage":
+		return m.ToComponentPackage()
+	case "ComponentSet":
+		return m.ToComponentSet()
+	default:
+		return nil, fmt.Errorf("unknown Kind: %q", kind)
+	}
 }
