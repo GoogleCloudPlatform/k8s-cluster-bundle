@@ -107,9 +107,9 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 
 	var out []*bundle.ComponentPackage
 	if o.filterType == "components" {
-		out = filter.NewFilterer(b.Components).FilterComponents(fopts)
+		out = filter.Filter().Components(b.Components, fopts)
 	} else {
-		out = filter.NewFilterer(b.Components).FilterObjects(fopts)
+		return fmt.Errorf("only filtering components is currently supported")
 	}
 
 	outData := b.DeepCopy()

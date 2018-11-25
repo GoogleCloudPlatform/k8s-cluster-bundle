@@ -51,7 +51,9 @@ func (e *ObjectExporter) ExportAsYAML() (string, error) {
 		sb.Write(yaml)
 		if i < numElements-1 {
 			// Join the objects into one document.
-			sb.WriteString("\n---\n")
+			// Note: Each doc ends with a newline (from the ToYAML step), so we don't
+			// need to write an additional newline
+			sb.WriteString("---\n")
 		}
 	}
 	return sb.String(), nil

@@ -18,5 +18,5 @@ spec:
   componentName: node-config
   version: 2.3.4
   objectFiles:
-  - url: file://ubuntu-cluster-node.yaml
-  - url: file://ubuntu-master-node.yaml
+  - url: file:///nodes/ubuntu-cluster-node.yaml
+  - url: file:///nodes/ubuntu-master-node.yaml

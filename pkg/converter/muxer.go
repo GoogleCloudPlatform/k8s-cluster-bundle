@@ -127,3 +127,9 @@ func (m *Muxer) ToUnstructured() (*unstructured.Unstructured, error) {
 	}
 	return d, nil
 }
+
+// ToObject converts to an arbitrary object via standard YAML / JSON
+// serialization.
+func (m *Muxer) ToObject(obj interface{}) error {
+	return m.mux(obj)
+}

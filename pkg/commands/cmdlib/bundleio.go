@@ -70,12 +70,11 @@ func convertBundle(ctx context.Context, bt []byte, g *GlobalOptions) (*bundle.Bu
 
 // inlineData inlines a cluster bundle before processing
 func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
-	inliner := &inline.Inliner{
-		&files.LocalFileObjReader{
-			WorkingDir: filepath.Dir(g.BundleFile),
-			Rdr:        rw,
-		},
-	}
+	inliner := inline.NewInlinerWithScheme(
+		files.FileScheme,
+		&files.LocalFileObjReader{filepath.Dir(g.BundleFile), rw},
+		inline.DefaultPathRewriter,
+	)
 	var err error
 	if g.InlineComponents {
 		data, err = inliner.InlineBundleFiles(ctx, data)

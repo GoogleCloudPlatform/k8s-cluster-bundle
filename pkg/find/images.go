@@ -102,7 +102,7 @@ func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, fn func
 // recommend that the components be cloned.
 func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.components {
-		key := ca.MakeComponentReference()
+		key := ca.ComponentReference()
 		for _, obj := range ca.Spec.Objects {
 			ref := core.ObjectRefFromUnstructured(obj)
 			key := core.ClusterObjectKey{

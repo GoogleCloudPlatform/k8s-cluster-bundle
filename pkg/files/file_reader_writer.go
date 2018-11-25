@@ -78,7 +78,7 @@ type FileObjReader interface {
 	ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error)
 }
 
-// LocalFileObjReader is File proto reader that defers to another FileReader that
+// LocalFileObjReader is File object reader that defers to another FileReader that
 // reads based on paths.
 type LocalFileObjReader struct {
 	// WorkingDir specifies a working directory override. This is necessary
@@ -93,12 +93,12 @@ type LocalFileObjReader struct {
 	Rdr FileReader
 }
 
-// ReadFileObj reads a file proto from the local filesystem by deferring to a
+// ReadFileObj reads a file object from the local filesystem by deferring to a
 // local file reader.
-func (r *LocalFileObjReader) ReadFileObj(ctx context.Context, fpb bundle.File) ([]byte, error) {
-	url := fpb.URL
+func (r *LocalFileObjReader) ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error) {
+	url := file.URL
 	if url == "" {
-		return nil, fmt.Errorf("file %v was specified but no file url was provided", fpb)
+		return nil, fmt.Errorf("file %v was specified but no file url was provided", file)
 	}
 	if strings.HasPrefix(url, "file://") {
 		url = strings.TrimPrefix(url, "file://")

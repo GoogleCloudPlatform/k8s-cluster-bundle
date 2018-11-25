@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "config_map_maker.go",
         "inline.go",
+        "path_rewriter.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline",
     visibility = ["//visibility:public"],
@@ -31,6 +32,7 @@ go_test(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/core:go_default_library",
+        "//pkg/files:go_default_library",
         "//pkg/find:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/validation:go_default_library",

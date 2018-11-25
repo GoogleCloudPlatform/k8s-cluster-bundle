@@ -18,5 +18,5 @@ spec:
   componentName: options
   version: 2.0.0
   objectFiles:
-  - url: file://options-example.yaml
-  - url: file://options-crd.yaml
+  - url: file:///options/options-example.yaml
+  - url: file:///options/options-crd.yaml

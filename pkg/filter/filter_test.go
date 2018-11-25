@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 )
@@ -80,19 +82,18 @@ func TestFilterObjects(t *testing.T) {
 		expObjNames []string
 	}{
 		{
-			desc:        "fiter-success: no change",
-			opt:         &Options{},
-			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
+			desc: "filter-success: matches everything",
+			opt:  &Options{},
 		},
 		{
-			desc: "fiter-success: name filter",
+			desc: "filter-success: name filter",
 			opt: &Options{
 				Names: []string{"zap-pod"},
 			},
 			expObjNames: []string{"bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: labels filter",
+			desc: "filter-success: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
@@ -101,7 +102,7 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"zap-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: annotations filter",
+			desc: "filter-success: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
@@ -110,14 +111,14 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: namespace filter",
+			desc: "filter-success: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 			},
 			expObjNames: []string{"nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: kind filter",
+			desc: "filter-success: kind filter",
 			opt: &Options{
 				Kinds: []string{"Pod"},
 			},
@@ -126,13 +127,14 @@ func TestFilterObjects(t *testing.T) {
 
 		// KeepOnly
 		{
-			desc: "fiter-success keeponly: empty",
+			desc: "filter-success keeponly: empty",
 			opt: &Options{
 				KeepOnly: true,
 			},
+			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success keeponly: name filter",
+			desc: "filter-success keeponly: name filter",
 			opt: &Options{
 				Names:    []string{"zap-pod"},
 				KeepOnly: true,
@@ -140,7 +142,7 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"zap-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: labels filter",
+			desc: "filter-success keeponly: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
@@ -150,7 +152,7 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"bog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: annotations filter",
+			desc: "filter-success keeponly: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
@@ -160,7 +162,7 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"nog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: namespace filter",
+			desc: "filter-success keeponly: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 				KeepOnly:   true,
@@ -168,12 +170,26 @@ func TestFilterObjects(t *testing.T) {
 			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: kind filter",
+			desc: "filter-success keeponly: kind filter",
 			opt: &Options{
 				Kinds:    []string{"Pod"},
 				KeepOnly: true,
 			},
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod"},
+		},
+
+		// Multiple-options filter
+		{
+			desc: "filter-success keeponly: kind filter",
+			opt: &Options{
+				Kinds: []string{"Pod", "Deployment"}, // Pod or Deployment
+				Annotations: map[string]string{
+					"foof": "yar",
+					"foo":  "bar",
+				},
+				KeepOnly: true,
+			},
+			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 	}
 
@@ -183,22 +199,29 @@ func TestFilterObjects(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			f := &Filterer{data.Components}
-			newData := f.FilterObjects(tc.opt)
+			newData := Filter().Objects(flatten(data.Components), tc.opt)
 			onames := getObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
-				t.Errorf("FilterObjects(): got %v but wanted %v", onames, tc.expObjNames)
+				t.Errorf("Filter.Objects(): got %v but wanted %v", onames, tc.expObjNames)
 			}
 		})
 	}
 }
 
-func getObjNames(comp []*bundle.ComponentPackage) []string {
-	var names []string
+func flatten(comp []*bundle.ComponentPackage) []*unstructured.Unstructured {
+	var out []*unstructured.Unstructured
 	for _, c := range comp {
-		for _, o := range c.Spec.Objects {
-			names = append(names, o.GetName())
+		for _, obj := range c.Spec.Objects {
+			out = append(out, obj)
 		}
+	}
+	return out
+}
+
+func getObjNames(obj []*unstructured.Unstructured) []string {
+	var names []string
+	for _, o := range obj {
+		names = append(names, o.GetName())
 	}
 	return names
 }
@@ -245,19 +268,18 @@ func TestFilterComponents(t *testing.T) {
 		expObjNames []string
 	}{
 		{
-			desc:        "fiter-success: no change",
-			opt:         &Options{},
-			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
+			desc: "filter-success: matches everything",
+			opt:  &Options{},
 		},
 		{
-			desc: "fiter-success: name filter",
+			desc: "filter-success: name filter",
 			opt: &Options{
 				Names: []string{"zap-pod"},
 			},
 			expObjNames: []string{"bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: labels filter",
+			desc: "filter-success: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
@@ -266,7 +288,7 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"zap-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: annotations filter",
+			desc: "filter-success: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
@@ -275,14 +297,14 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: namespace filter",
+			desc: "filter-success: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 			},
 			expObjNames: []string{"nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success: kind filter",
+			desc: "filter-success: kind filter",
 			opt: &Options{
 				Kinds: []string{"ComponentPackage"},
 			},
@@ -290,13 +312,14 @@ func TestFilterComponents(t *testing.T) {
 
 		// KeepOnly
 		{
-			desc: "fiter-success keeponly: empty",
+			desc: "filter-success keeponly: matches everything",
 			opt: &Options{
 				KeepOnly: true,
 			},
+			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "fiter-success keeponly: name filter",
+			desc: "filter-success keeponly: name filter",
 			opt: &Options{
 				Names:    []string{"zap-pod"},
 				KeepOnly: true,
@@ -304,7 +327,7 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"zap-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: labels filter",
+			desc: "filter-success keeponly: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
@@ -314,7 +337,7 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"bog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: annotations filter",
+			desc: "filter-success keeponly: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
@@ -324,7 +347,7 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"nog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: namespace filter",
+			desc: "filter-success keeponly: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 				KeepOnly:   true,
@@ -332,7 +355,7 @@ func TestFilterComponents(t *testing.T) {
 			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 		{
-			desc: "fiter-success keeponly: kind filter",
+			desc: "filter-success keeponly: kind filter",
 			opt: &Options{
 				Kinds:    []string{"ComponentPackage"},
 				KeepOnly: true,
@@ -347,11 +370,10 @@ func TestFilterComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			f := &Filterer{data.Components}
-			newData := f.FilterComponents(tc.opt)
+			newData := Filter().Components(data.Components, tc.opt)
 			onames := getCompObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
-				t.Errorf("FilterObjects(): got %v but wanted %v", onames, tc.expObjNames)
+				t.Errorf("FilterComponents(): got %v but wanted %v", onames, tc.expObjNames)
 			}
 		})
 	}

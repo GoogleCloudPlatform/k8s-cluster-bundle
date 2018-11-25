@@ -7,6 +7,7 @@ go_library(
         "component_types.go",
         "doc.go",
         "helpers.go",
+        "identifiers.go",
         "zz_generated.deepcopy.go",
         "zz_generated.register.go",
     ],

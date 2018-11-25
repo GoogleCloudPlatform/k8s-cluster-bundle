@@ -52,7 +52,16 @@ type ComponentReference struct {
 // File represents some sort of file that's specified external to the bundle,
 // which could be on either a local or remote file system.
 type File struct {
-	// URL to find this file.
+	// URL to find this file; the url string must be parsable via Go's net/url
+	// library. It is generally recommended that a URI scheme be provided in the
+	// URL, but it is not required. If a scheme is not provided, it is assumed
+	// that the scheme is a file-scheme.
+	//
+	// For example, these are all valid:
+	// - foo/bar/biff (a relative path)
+	// - /foo/bar/biff (an absolute path)
+	// - file:///foo/bar/biff (an absolute path with an explicit 'file' scheme)
+	// - https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/blob/master/examples/bundle-example.yaml
 	URL string `json:"url,omitempty"`
 
 	// Optional Sha256 hash of the binary to ensure we are pulling the correct

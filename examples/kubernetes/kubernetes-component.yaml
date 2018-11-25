@@ -18,6 +18,6 @@ spec:
   componentName: kubernetes-control-plane
   version: 11.0.0
   objectFiles:
-  - url: file://kube-apiserver.yaml
-  - url: file://kube-scheduler.yaml
-  - url: file://kube-controller-manager.yaml
+  - url: file:///kubernetes/kube-apiserver.yaml
+  - url: file:///kubernetes/kube-scheduler.yaml
+  - url: file:///kubernetes/kube-controller-manager.yaml
