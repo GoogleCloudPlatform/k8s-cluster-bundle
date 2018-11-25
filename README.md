@@ -37,7 +37,7 @@ kind: ComponentPackage
 spec:
   # A human readable name for the component. The combination of name + version
   # should be unique in a cluster.
-  canonicalName: etcd-component
+  componentName: etcd-component
 
   # Version of the component, representing changes to the manifest (like a flag
   # change) or the to container image[s].
@@ -56,7 +56,7 @@ the component. After inlining, the component might look like:
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentPackage
 spec:
-  canonicalName: etcd-component
+  componentName: etcd-component
   version: 30.0.2
   objects:
   - apiVersion: v1
@@ -94,7 +94,7 @@ validate, and deploy components as a single unit.
 
 ```yaml
 apiVersion: 'bundle.gke.io/v1alpha1'
-kind: Component Set
+kind: ComponentSet
 spec:
   version: '2.3.4'
 

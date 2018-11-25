@@ -32,7 +32,7 @@ components:
   metadata:
     name: test-pkg
   spec:
-    canonicalName: test-comp
+    componentName: test-comp
     version: 0.1.0
 `
 
