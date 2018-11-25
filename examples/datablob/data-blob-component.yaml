@@ -20,4 +20,4 @@ spec:
   rawTextFiles:
   - name: data-blob
     files:
-    - url: file://datablob/some-data.txt
+    - url: file:///datablob/some-data.txt
