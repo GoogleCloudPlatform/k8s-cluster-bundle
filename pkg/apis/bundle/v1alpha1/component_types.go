@@ -46,7 +46,7 @@ type ComponentReference struct {
 	ComponentName string `json:componentName,omitempty"`
 
 	// Version is the version string for a component.
-	Version string `json:componentName,omitempty"`
+	Version string `json:version,omitempty"`
 }
 
 // File represents some sort of file that's specified external to the bundle,
