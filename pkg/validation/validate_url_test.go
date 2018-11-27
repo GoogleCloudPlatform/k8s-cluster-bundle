@@ -57,7 +57,7 @@ func TestValidateURL(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := ValidateURL(tc.in)
+			err := validateURL(tc.in)
 			if err == nil {
 				if tc.errSubstr != "" && !strings.Contains(err.Error(), tc.errSubstr) {
 					t.Errorf("got nil error, but expected one with %q", tc.errSubstr)

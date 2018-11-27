@@ -19,8 +19,8 @@ import (
 	"net/url"
 )
 
-// ValidateURL validates urls in object files follwing Go's net/url parsing rules.
-func ValidateURL(u string) error {
+// validateURL validates urls in object files follwing Go's net/url parsing rules.
+func validateURL(u string) error {
 	if u == "" {
 		return fmt.Errorf("url field was empty")
 	}

@@ -162,7 +162,7 @@ func (b *ComponentValidator) validateObjects() []error {
 				errs = append(errs, fmt.Errorf("objects must always have a metadata.url. was empty object %d in component %q", i, compName))
 				continue
 			}
-			if err := ValidateURL(url); err != nil {
+			if err := validateURL(url); err != nil {
 				errs = append(errs, fmt.Errorf("invalid url %q for object %d: %v", url, i, err))
 			}
 		}
