@@ -23,21 +23,15 @@ func TestValidateURL(t *testing.T) {
 	testCases := []struct {
 		desc      string
 		in        string
-		scheme    string
-		path      string
 		errSubstr string
 	}{
 		{
 			desc:   "success: normal file url",
 			in:     "file:///foo/bar",
-			scheme: "file",
-			path:   "/foo/bar",
 		},
 		{
 			desc:   "success: normal file url with localhost",
 			in:     "file://localhost/foo/bar",
-			scheme: "file",
-			path:   "/foo/bar",
 		},
 		{
 			desc:      "fail: empty URL",
@@ -52,13 +46,12 @@ func TestValidateURL(t *testing.T) {
 		{
 			desc: "success: no scheme",
 			in:   "foo/bar/biff",
-			path: "foo/bar/biff",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			err := validateURL(tc.in)
-			if err == nil {
+			if err != nil {
 				if tc.errSubstr != "" && !strings.Contains(err.Error(), tc.errSubstr) {
 					t.Errorf("got nil error, but expected one with %q", tc.errSubstr)
 					return
