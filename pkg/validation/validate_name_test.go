@@ -59,22 +59,15 @@ func TestValidateName(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := ValidateName(tc.name)
-			if err == nil {
-				if tc.errSubStr != "" && !strings.Contains(err.Error(), tc.errSubStr) {
-					t.Errorf("got nil error, but expected one with %q", tc.errSubStr)
-					return
-				}
-				return // no error, not a problem
-			} else {
-				if tc.errSubStr == "" {
-					t.Errorf("got error %q, but didn't expect one", err.Error())
-					return
-				} else if !strings.Contains(err.Error(), tc.errSubStr) {
-					t.Errorf("got error %q, but expected it to contain %q", err.Error(), tc.errSubStr)
-					return
-				}
-				return // error matches
+			err := validateName(tc.name)
+			if err == nil && tc.errSubStr != "" {
+				t.Fatalf("got nil error, but expected one with %q", tc.errSubStr)
+			}
+			if err != nil && tc.errSubStr == "" {
+				t.Fatalf("got error %q, but didn't expect one", err.Error())
+			}
+			if err != nil && !strings.Contains(err.Error(), tc.errSubStr) {
+				t.Fatalf("got error %q, but expected it to contain %q", err.Error(), tc.errSubStr)
 			}
 		})
 	}

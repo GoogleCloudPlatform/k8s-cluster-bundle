@@ -23,10 +23,10 @@ var firstCharRegexp = regexp.MustCompile(`^[a-z0-9]`)
 var nameRegexp = regexp.MustCompile(`^[a-z0-9_.-]+$`)
 var lastCharRegexp = regexp.MustCompile(`[a-z0-9]$`)
 
-// ValidateName validates names to ensure they follow the Kubernetes
+// validateName validates names to ensure they follow the Kubernetes
 // conventions for how names are constructed. For more about names,
 // see: k8s.io/docs/concepts/overview/working-with-objects/names/
-func ValidateName(n string) error {
+func validateName(n string) error {
 	if n == "" {
 		return fmt.Errorf("name field was empty")
 	}

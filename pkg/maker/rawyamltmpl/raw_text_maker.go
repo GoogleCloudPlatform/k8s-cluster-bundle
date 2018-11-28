@@ -35,6 +35,9 @@ import (
 // in config maps.
 type Maker struct{}
 
+// MakeComponent makes a component, implementing the make-component interface.
+// The raw text maker's MakeComponent method only uses inlined raw text as
+// input to the object-creation process.
 func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker, of *filter.Options) (*bundle.ComponentPackage, error) {
 	comp = comp.DeepCopy()
 	ref := comp.ComponentReference()

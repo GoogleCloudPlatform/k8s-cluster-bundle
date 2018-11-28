@@ -211,17 +211,15 @@ func TestParseURL(t *testing.T) {
 			parsed, err := file.ParsedURL()
 			if err != nil {
 				if tc.expErrSubstr == "" {
-					t.Errorf("Unexpceted error: %v", err)
-					return
+					t.Fatalf("Unexpceted error: %v", err)
 				}
 				if !strings.Contains(err.Error(), tc.expErrSubstr) {
-					t.Errorf("error %v did not contain expected substring %q", err, tc.expErrSubstr)
+					t.Fatalf("error %v did not contain expected substring %q", err, tc.expErrSubstr)
 				}
-				return
+				return // expected error
 			}
-			if err != nil && tc.expErrSubstr != "" {
-				t.Errorf("got nil error, but expected error with substring %q", tc.expErrSubstr)
-				return
+			if tc.expErrSubstr != "" {
+				t.Fatalf("got nil error, but expected error with substring %q", tc.expErrSubstr)
 			}
 			if parsed.Scheme != tc.scheme {
 				t.Errorf("got scheme %q, but wanted scheme %q", parsed.Scheme, tc.scheme)

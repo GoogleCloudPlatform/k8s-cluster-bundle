@@ -18,6 +18,9 @@ package files
 type URLScheme string
 
 const (
+	// EmptyScheme represents an unspecified URLScheme.
 	EmptyScheme URLScheme = ""
-	FileScheme  URLScheme = "file"
+
+	// FileScheme represents a 'File' scheme for a URL.
+	FileScheme URLScheme = "file"
 )
