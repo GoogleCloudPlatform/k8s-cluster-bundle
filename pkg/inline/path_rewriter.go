@@ -31,7 +31,12 @@ type PathRewriter interface {
 // RelativePathRewriter rewrites paths when the paths are relative paths.
 type RelativePathRewriter struct{}
 
+// RewriteObjectPath rewrites object paths if the path is relative.
 func (rw *RelativePathRewriter) RewriteObjectPath(comp, obj *url.URL) string {
+	if comp.Scheme != "file" && comp.Scheme != "" {
+		// Only file schemes are supported.
+		return obj.String()
+	}
 	if filepath.IsAbs(obj.Path) {
 		// The rewriter only needs to rewrite relative paths.
 		// This is a path of the form file:///, and so is not a relative path.

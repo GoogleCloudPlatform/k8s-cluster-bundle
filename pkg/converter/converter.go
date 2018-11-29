@@ -19,7 +19,12 @@ package converter
 type ContentType string
 
 var (
-	UnknownContent ContentType = ""
-	YAML           ContentType = "yaml"
-	JSON           ContentType = "json"
+	// UnknownContent indicates content of unknown type.
+	UnknownContent ContentType
+
+	// YAML indicates YAML content.
+	YAML ContentType = "yaml"
+
+	// JSON indicates JSON content.
+	JSON ContentType = "json"
 )

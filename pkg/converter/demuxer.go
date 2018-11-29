@@ -22,10 +22,9 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+// FromObject creates a converting demuxer from an object.
 func FromObject(obj interface{}) *Demuxer {
-	return &Demuxer{
-		obj,
-	}
+	return &Demuxer{obj}
 }
 
 // Demuxer converts from an object to some serialized format for the object.

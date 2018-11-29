@@ -84,7 +84,7 @@ func (f *FakeReaderWriter) ReadFile(_ context.Context, path string) ([]byte, err
 	return nil, fmt.Errorf("error reading bundle file: path not found %q", path)
 }
 
-// ReadFilePB reads a File proto object by deferring to the internal map.
+// ReadFileObj reads a File proto object by deferring to the internal map.
 func (f *FakeReaderWriter) ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error) {
 	return f.ReadFile(ctx, file.URL)
 }

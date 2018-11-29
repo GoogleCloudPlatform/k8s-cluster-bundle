@@ -52,7 +52,7 @@ func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
 	}
 }
 
-// ComponentPackage returns the component package that matches a reference,
+// Component returns the component package that matches a reference,
 // returning nil if no match is found.
 func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.ComponentPackage {
 	return f.keyCompLookup[ref]
@@ -63,7 +63,7 @@ func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.ComponentPac
 	return f.nameCompLookup[name]
 }
 
-// ComponentPackage returns the single component package that matches a
+// UniqueComponentFromName returns the single component package that matches a
 // string-name. If no component is found, nil is returned. If there are two
 // components that match the name, the method returns an error.
 func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.ComponentPackage, error) {

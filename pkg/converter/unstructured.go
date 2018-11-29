@@ -30,6 +30,7 @@ type UnstructuredConverter struct {
 	o *unstructured.Unstructured
 }
 
+// ExtractObjectMeta creates an ObjectMeta object from an Unstructured object.
 func (c *UnstructuredConverter) ExtractObjectMeta() *metav1.ObjectMeta {
 	metadata := &metav1.ObjectMeta{}
 	metadata.Name = c.o.GetName()

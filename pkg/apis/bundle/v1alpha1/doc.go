@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package v1alpha1 represents the v1alpha1 version of the Cluster Bundle API.
 // +k8s:deepcopy-gen=package,register
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=bundle.gke.io
-// Package v1alpha1 represents the v1alpha1 version of the Cluster Bundle API.
 package v1alpha1

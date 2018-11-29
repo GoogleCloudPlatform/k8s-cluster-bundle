@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ExitWithHelp exits and prints the help message.
 func ExitWithHelp(cmd *cobra.Command, err string) {
 	log.Error(err)
 	cmd.Help()

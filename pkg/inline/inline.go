@@ -31,13 +31,16 @@ import (
 // Inliner inlines data files by reading them from the local or a remote
 // filesystem.
 type Inliner struct {
-	// Reader reads from the local filesystem.
-	Readers   map[files.URLScheme]files.FileObjReader
+	// Readers reads from the local filesystem.
+	Readers map[files.URLScheme]files.FileObjReader
+
+	// Rewriters are used for path-rewriting, in the case of relative paths.
 	Rewriters map[files.URLScheme]PathRewriter
 }
 
-// NewInliner creates a new inliner. If the data is stored on disk, the cwd
-// should be the relative path to the directory containing the data file on disk.
+// NewLocalInliner creates a new inliner that only knows how to read local
+// files from disk. If the data is stored on disk, the cwd should be the path
+// to the directory containing the data file on disk.
 func NewLocalInliner(cwd string) *Inliner {
 	return NewInlinerWithScheme(
 		files.FileScheme,
