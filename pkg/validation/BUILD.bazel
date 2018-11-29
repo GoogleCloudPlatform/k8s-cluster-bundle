@@ -7,6 +7,7 @@ go_library(
         "errors.go",
         "validate_component.go",
         "validate_name.go",
+        "validate_url.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation",
     visibility = ["//visibility:public"],
@@ -21,6 +22,7 @@ go_test(
     srcs = [
         "validate_component_test.go",
         "validate_name_test.go",
+        "validate_url_test.go",
     ],
     embed = [":go_default_library"],
     deps = ["//pkg/converter:go_default_library"],
