@@ -199,7 +199,7 @@ func TestFilterObjects(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			newData := Filter().Objects(flatten(data.Components), tc.opt)
+			newData := NewFilter().Objects(flatten(data.Components), tc.opt)
 			onames := getObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("Filter.Objects(): got %v but wanted %v", onames, tc.expObjNames)
@@ -370,7 +370,7 @@ func TestFilterComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			newData := Filter().Components(data.Components, tc.opt)
+			newData := NewFilter().Components(data.Components, tc.opt)
 			onames := getCompObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("FilterComponents(): got %v but wanted %v", onames, tc.expObjNames)
