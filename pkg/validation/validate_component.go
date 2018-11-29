@@ -15,9 +15,10 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
@@ -37,6 +38,8 @@ var (
 
 	// Matches version string X.Y.Z, where X, Y and Z are non-negative integers
 	// without leading zeros.
+	// TODO(kashomon): Use the K8S version validation for this.
+	// (k8s.io/apimachinery/pkg/util/version) after K8S v1.11
 	versionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s\.%s$`, number, number, number))
 )
 
@@ -47,43 +50,63 @@ func NewComponentValidator(c []*bundle.ComponentPackage, set *bundle.ComponentSe
 }
 
 // Validate validates components and components sets, providing as many errors as it can.
-func (v *ComponentValidator) Validate() []error {
-	var errs []error
+func (v *ComponentValidator) Validate() field.ErrorList {
+	errs := field.ErrorList{}
 	errs = append(errs, v.validateComponentsSet()...)
 	errs = append(errs, v.validateComponentPackages()...)
 	errs = append(errs, v.validateObjects()...)
 	return errs
 }
 
-func (v *ComponentValidator) validateComponentPackages() []error {
-	var errs []error
+func cPath(ref bundle.ComponentReference) *field.Path {
+	return field.NewPath(fmt.Sprintf("Component{%s, %s}", ref.ComponentName, ref.Version))
+}
+
+func (v *ComponentValidator) validateComponentPackages() field.ErrorList {
+	cpathIdx := func(idx int) *field.Path {
+		return field.NewPath("Component").Index(idx)
+	}
+
+	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
-	for _, ca := range v.components {
+	for i, ca := range v.components {
 		n := ca.Spec.ComponentName
-		if err := validateName(n); err != nil {
-			errs = append(errs, fmt.Errorf("the component name %q was invalid config %v", n, ca))
+		if n == "" {
+			errs = append(errs, field.Required(cpathIdx(i).Child("Spec", "ComponentName"), "componentName is required"))
+		}
+		ver := ca.Spec.Version
+		if ver == "" {
+			errs = append(errs, field.Required(cpathIdx(i).Child("Spec", "Version"), "version is required"))
+		}
+		if n == "" || ver == "" {
+			// Other validation relies on components having a unique name+version pair.
+			continue
+		}
+
+		ref := ca.ComponentReference()
+		p := cPath(ref)
+
+		if nameErrs := validateName(p.Child("Spec", "ComponentName"), n); len(errs) > 0 {
+			errs = append(errs, nameErrs...)
 		}
 
 		api := ca.APIVersion
 		if !apiVersionPattern.MatchString(api) {
-			errs = append(errs, fmt.Errorf("components APIVersion must have an apiVersion of the form \"bundle.gke.io/<version>\". was %q for config named %q", api, n))
+			errs = append(errs, field.Invalid(p.Child("APIVersion").Index(i), api, "must have the form \"bundle.gke.io/<version>\""))
 		}
 
 		expType := "ComponentPackage"
 		if k := ca.Kind; k != expType {
-			errs = append(errs, fmt.Errorf("component kind must be %q. was %q for config named %q", expType, k, n))
+			errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentPackage"))
 		}
 
-		ver := ca.Spec.Version
-		if ver == "" {
-			errs = append(errs, errors.New("component spec version missing"))
-		} else if !versionPattern.MatchString(ver) {
-			errs = append(errs, fmt.Errorf("component spec version is invalid. was %q for component %q but must be of the form X.Y.Z", ver, n))
+		if !versionPattern.MatchString(ver) {
+			errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
 		}
 
 		key := bundle.ComponentReference{ComponentName: n, Version: ver}
 		if _, ok := objCollect[key]; ok {
-			errs = append(errs, fmt.Errorf("duplicate component key %v", key))
+			errs = append(errs, field.Duplicate(p, fmt.Sprintf("component key %v", key)))
 			continue
 		}
 		objCollect[key] = true
@@ -91,31 +114,44 @@ func (v *ComponentValidator) validateComponentPackages() []error {
 	return errs
 }
 
-func (v *ComponentValidator) validateComponentsSet() []error {
-	var errs []error
+func (v *ComponentValidator) validateComponentsSet() field.ErrorList {
+	p := field.NewPath("ComponentSet")
+
+	errs := field.ErrorList{}
 	if v.componentSet == nil {
-		return nil
+		return errs
 	}
+
 	n := v.componentSet.Spec.SetName
-	if err := validateName(n); err != nil {
-		errs = append(errs, fmt.Errorf("the component set name %q was invalid config %v", n, v.componentSet))
+	if n == "" {
+		errs = append(errs, field.Required(p.Child("Spec", "SetName"), "setName is required"))
+	}
+	ver := v.componentSet.Spec.Version
+	if ver == "" {
+		errs = append(errs, field.Required(p.Child("Spec", "Version"), "version is required"))
+	}
+
+	if n == "" || ver == "" {
+		// Other validation relies on components having a unique name+version pair.
+		return errs
+	}
+
+	if nameErrs := validateName(p.Child("Spec", "SetName"), n); len(nameErrs) > 0 {
+		errs = append(errs, nameErrs...)
 	}
 
 	api := v.componentSet.APIVersion
 	if !apiVersionPattern.MatchString(api) {
-		errs = append(errs, fmt.Errorf("component set APIVersion must have an apiVersion of the form \"bundle.gke.io/<version>\". was %q", api))
+		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, "must have an apiVersion of the form \"bundle.gke.io/<version>\""))
 	}
 
 	expType := "ComponentSet"
 	if k := v.componentSet.Kind; k != expType {
-		errs = append(errs, fmt.Errorf("component set kind must be %q. was %q", expType, k))
+		errs = append(errs, field.Invalid(p.Child("Kind"), k, "must be ComponentSet"))
 	}
 
-	ver := v.componentSet.Spec.Version
-	if ver == "" {
-		errs = append(errs, errors.New("component set spec version missing"))
-	} else if !versionPattern.MatchString(ver) {
-		errs = append(errs, fmt.Errorf("component set spec version is invalid. was %q but must be of the form X.Y.Z", ver))
+	if !versionPattern.MatchString(ver) {
+		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
 	}
 
 	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
@@ -126,44 +162,45 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 	// It is possible for there to be components that the component set does not
 	// know about, but all components in the component set must be in the
 	// components list
-	for _, ref := range v.componentSet.Spec.Components {
+	for i, ref := range v.componentSet.Spec.Components {
 		if _, ok := compMap[ref]; !ok {
-			errs = append(errs, fmt.Errorf("could not find component reference %v for any of the components", ref))
+			errs = append(errs, field.Duplicate(p.Child("Spec", "Components").Index(i), fmt.Sprintf("component ref %v", ref)))
 		}
 	}
 	return errs
 }
 
-func (v *ComponentValidator) validateObjects() []error {
-	var errs []error
+func (b *ComponentValidator) validateObjects() field.ErrorList {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
-	for _, ca := range v.components {
-		compName := ca.Spec.ComponentName
+
+	errs := field.ErrorList{}
+	for _, ca := range b.components {
+		ref := ca.ComponentReference()
 		for i, obj := range ca.Spec.Objects {
 			n := obj.GetName()
 			if n == "" {
-				errs = append(errs, fmt.Errorf("objects must always have a metadata.name. was empty object %d in component %q", i, compName))
+				errs = append(errs, field.Required(cPath(ref).Child("Spec", "Objects").Index(i), "metadata.name is required for objects"))
 				continue
 			}
-			if err := validateName(n); err != nil {
-				errs = append(errs, fmt.Errorf("invalid name %q for object %d: %v", n, i, err))
+			p := cPath(ref).Child("Spec", fmt.Sprintf("Objects[%s]", n))
+
+			if nameErrs := validateName(p, n); len(nameErrs) > 0 {
+				errs = append(errs, nameErrs...)
 			}
 
-			ref := core.ObjectRefFromUnstructured(obj)
-			if _, ok := compObjects[ref]; ok {
-				errs = append(errs, fmt.Errorf("duplicate object found with object reference %v for component %q", ref, compName))
+			oref := core.ObjectRefFromUnstructured(obj)
+			if _, ok := compObjects[oref]; ok {
+				errs = append(errs, field.Duplicate(p, fmt.Sprintf("object reference: %s", oref)))
 			}
-			compObjects[ref] = true
+			compObjects[oref] = true
 		}
+
 		for i, objfile := range ca.Spec.ObjectFiles {
 			url := objfile.URL
-			if url == "" {
-				errs = append(errs, fmt.Errorf("objects must always have a metadata.url. was empty object %d in component %q", i, compName))
-				continue
-			}
-			if err := validateURL(url); err != nil {
-				errs = append(errs, fmt.Errorf("invalid url %q for object %d: %v", url, i, err))
+			fp := cPath(ref).Child("Spec", fmt.Sprintf("ObjectFiles[%d]", i))
+			if urlErr := validateURL(fp, url); urlErr != nil {
+				errs = append(errs, urlErr)
 			}
 		}
 	}

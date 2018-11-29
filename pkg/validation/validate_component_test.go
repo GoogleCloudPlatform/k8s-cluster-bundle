@@ -80,11 +80,12 @@ func TestValidateComponents(t *testing.T) {
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: Zor
 spec:
+  setName: zip
   version: 1.0.2
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set kind",
+			errSubstring: "must be ComponentSet",
 		},
 
 		{
@@ -93,11 +94,12 @@ spec:
 apiVersion: 'zork.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   version: 1.0.2
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set APIVersion",
+			errSubstring: "bundle.gke.io/<version>",
 		},
 		{
 			desc: "component set fail: invalid X.Y.Z version string",
@@ -105,11 +107,12 @@ spec:
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   version: foo
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set spec version is invalid",
+			errSubstring: "must be of the form X.Y.Z",
 		},
 		{
 			desc: "fail: missing X.Y.Z version string",
@@ -117,12 +120,26 @@ spec:
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set spec version missing",
+			errSubstring: "version is required",
+		},
+		{
+			desc: "fail: missing set name",
+			set: `
+apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ComponentSet
+spec:
+  version: 1.0.2
+  components:
+  - name: foo-comp-1.0.2`,
+			components:   defaultComponentData,
+			errSubstring: "setName is required",
 		},
 
+		// Tests for Components
 		{
 			desc: "fail component: no kind",
 			set:  defaultComponentSet,
@@ -134,7 +151,7 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "component kind",
+			errSubstring: "must be ComponentPackage",
 		},
 		{
 			desc: "fail component: duplicate component key",
@@ -155,7 +172,7 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "duplicate component key",
+			errSubstring: "component key",
 		},
 
 		{
@@ -170,7 +187,7 @@ components:
   spec:
     componentName: foo-comp
     version: 2.010.1`,
-			errSubstring: "component spec version is invalid",
+			errSubstring: "must be of the form X.Y.Z",
 		},
 		{
 			desc: "fail: component missing X.Y.Z version string ",
@@ -183,7 +200,7 @@ components:
     name: foo-comp-1.0.2
   spec:
     componentName: foo-comp`,
-			errSubstring: "component spec version missing",
+			errSubstring: "version is required",
 		},
 
 		{
@@ -225,7 +242,7 @@ components:
       kind: Pod
       metadata:
         name: foo-pod`,
-			errSubstring: "duplicate object found",
+			errSubstring: "object reference",
 		},
 		{
 			desc: "object fail: no metadata.name",
@@ -242,7 +259,7 @@ components:
     objects:
     - apiVersion: v1
       kind: Pod`,
-			errSubstring: "must always have a metadata.name",
+			errSubstring: "metadata.name is required for objects",
 		},
 	}
 
@@ -258,7 +275,7 @@ components:
 			}
 			val := NewComponentValidator(comp.Components, set)
 
-			if err = checkErrCases(tc.desc, JoinErrors(val.Validate()), tc.errSubstring); err != nil {
+			if err = checkErrCases(tc.desc, val.Validate().ToAggregate(), tc.errSubstring); err != nil {
 				t.Errorf(err.Error())
 			}
 		})

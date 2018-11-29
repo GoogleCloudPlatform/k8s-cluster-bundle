@@ -18,12 +18,14 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
-	log "github.com/golang/glog"
-	"github.com/spf13/cobra"
 )
 
 // options contain options flags for the bundle validation command.
@@ -44,7 +46,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 type bundleValidator interface {
-	Validate() []error
+	Validate() field.ErrorList
 }
 
 // createValidatorFn creates BundleValidator that works with the given current
@@ -63,7 +65,7 @@ func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, 
 
 	val := createValidatorFn(b)
 	if errs := val.Validate(); len(errs) > 0 {
-		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", validation.JoinErrors(errs))
+		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
 	}
 	log.Info("No errors found")
 	return nil

@@ -17,31 +17,33 @@ package validation
 import (
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func TestValidateURL(t *testing.T) {
 	testCases := []struct {
-		desc      string
-		in        string
-		errSubstr string
+		desc         string
+		in           string
+		expErrSubstr string
 	}{
 		{
-			desc:   "success: normal file url",
-			in:     "file:///foo/bar",
+			desc: "success: normal file url",
+			in:   "file:///foo/bar",
 		},
 		{
-			desc:   "success: normal file url with localhost",
-			in:     "file://localhost/foo/bar",
+			desc: "success: normal file url with localhost",
+			in:   "file://localhost/foo/bar",
 		},
 		{
-			desc:      "fail: empty URL",
-			in:        "",
-			errSubstr: "url field was empty",
+			desc:         "fail: empty URL",
+			in:           "",
+			expErrSubstr: "url field was empty",
 		},
 		{
-			desc:      "fail: bad parsing",
-			in:        "file@://foo",
-			errSubstr: "error parsing url",
+			desc:         "fail: bad parsing",
+			in:           "file@://foo",
+			expErrSubstr: "error parsing url",
 		},
 		{
 			desc: "success: no scheme",
@@ -50,13 +52,18 @@ func TestValidateURL(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := validateURL(tc.in)
+			err := validateURL(field.NewPath("testpath"), tc.in)
 			if err != nil {
-				if tc.errSubstr != "" && !strings.Contains(err.Error(), tc.errSubstr) {
-					t.Errorf("got nil error, but expected one with %q", tc.errSubstr)
-					return
+				if tc.expErrSubstr == "" {
+					t.Fatalf("Unexpected error: %v", err)
 				}
-				return // no error, not a problem
+				if !strings.Contains(err.Error(), tc.expErrSubstr) {
+					t.Fatalf("error %v did not contain expected substring %q", err, tc.expErrSubstr)
+				}
+				return // expected error
+			}
+			if tc.expErrSubstr != "" {
+				t.Fatalf("got nil error, but expected error with substring %q", tc.expErrSubstr)
 			}
 		})
 	}

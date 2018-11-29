@@ -16,9 +16,10 @@ package validate
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
@@ -26,10 +27,10 @@ import (
 )
 
 type fakeBundleValidator struct {
-	errs []error
+	errs field.ErrorList
 }
 
-func (f *fakeBundleValidator) Validate() []error {
+func (f *fakeBundleValidator) Validate() field.ErrorList {
 	return f.errs
 }
 
@@ -39,7 +40,7 @@ func TestRunValidate(t *testing.T) {
 	var testcases = []struct {
 		testName          string
 		bundle            string
-		errors            []error
+		errors            field.ErrorList
 		expectErrContains string
 	}{
 		{
@@ -49,7 +50,7 @@ func TestRunValidate(t *testing.T) {
 		{
 			testName:          "bundle validation errors",
 			bundle:            validFile,
-			errors:            []error{errors.New("yarr")},
+			errors:            field.ErrorList{field.Invalid(field.NewPath("f"), "z", "yar")},
 			expectErrContains: "one or more errors",
 		},
 	}

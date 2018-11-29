@@ -15,33 +15,18 @@
 package validation
 
 import (
-	"fmt"
-	"regexp"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
-
-var firstCharRegexp = regexp.MustCompile(`^[a-z0-9]`)
-var nameRegexp = regexp.MustCompile(`^[a-z0-9_.-]+$`)
-var lastCharRegexp = regexp.MustCompile(`[a-z0-9]$`)
 
 // validateName validates names to ensure they follow the Kubernetes
 // conventions for how names are constructed. For more about names,
 // see: k8s.io/docs/concepts/overview/working-with-objects/names/
-func validateName(n string) error {
-	if n == "" {
-		return fmt.Errorf("name field was empty")
+func validateName(path *field.Path, value string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	errs := validation.IsQualifiedName(value)
+	for _, e := range errs {
+		allErrs = append(allErrs, field.Invalid(path, value, e))
 	}
-	if len(n) >= 254 {
-		return fmt.Errorf("name %q was longer than 253 characters", n)
-	}
-	if !firstCharRegexp.MatchString(n) {
-		return fmt.Errorf("name %q did not have a first character with the pattern %q", n, firstCharRegexp.String())
-	}
-	if !lastCharRegexp.MatchString(n) {
-		return fmt.Errorf("name %q did not must a last character with the pattern %q", n, lastCharRegexp.String())
-	}
-	if !nameRegexp.MatchString(n) {
-		return fmt.Errorf("name %q did not match allowed characters %q", n, nameRegexp.String())
-	}
-
-	return nil
+	return allErrs
 }

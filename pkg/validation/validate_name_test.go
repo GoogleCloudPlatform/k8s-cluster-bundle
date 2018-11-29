@@ -17,6 +17,8 @@ package validation
 import (
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func longNameMaker(n int) string {
@@ -39,27 +41,27 @@ func TestValidateName(t *testing.T) {
 		}, {
 			desc:      "bad first char",
 			name:      "*oo",
-			errSubStr: "first character",
+			errSubStr: "must consist of",
 		}, {
 			desc:      "bad last char",
 			name:      "foo*",
-			errSubStr: "last character",
+			errSubStr: "must consist of",
 		}, {
 			desc:      "bad middle char",
 			name:      "f*oo",
-			errSubStr: "allowed characters",
+			errSubStr: "must consist of",
 		}, {
 			desc:      "empty name",
-			errSubStr: "was empty",
+			errSubStr: "must consist of",
 		}, {
 			desc:      "too long name",
 			name:      longNameMaker(254),
-			errSubStr: "was longer",
+			errSubStr: "must be no more than 63 characters",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := validateName(tc.name)
+			err := validateName(field.NewPath("testpath"), tc.name).ToAggregate()
 			if err == nil && tc.errSubStr != "" {
 				t.Fatalf("got nil error, but expected one with %q", tc.errSubStr)
 			}
