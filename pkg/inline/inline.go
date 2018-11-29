@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package inline turns
 package inline
 
 import (
@@ -59,7 +60,7 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader,
 	}
 }
 
-// Inline converts dereferences file-references in for bundle files and turns
+// InlineBundleFiles converts dereferences file-references in for bundle files and turns
 // them into components. Thus, the returned data is a copy with the
 // file-references removed.
 func (n *Inliner) InlineBundleFiles(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {

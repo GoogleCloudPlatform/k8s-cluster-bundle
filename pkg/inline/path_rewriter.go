@@ -22,10 +22,13 @@ import (
 // TODO(kashomon): Do we really need this? Maybe we can just say that relative
 // paths are not supported and ignore the entire problem of path rewriting.
 
+// PathRewriter can rewrite URL paths.
 type PathRewriter interface {
+	// Rewrite URL paths for objects.
 	RewriteObjectPath(componentURL, objectURL *url.URL) string
 }
 
+// RelativePathRewriter rewrites paths when the paths are relative paths.
 type RelativePathRewriter struct{}
 
 func (rw *RelativePathRewriter) RewriteObjectPath(comp, obj *url.URL) string {
@@ -37,4 +40,5 @@ func (rw *RelativePathRewriter) RewriteObjectPath(comp, obj *url.URL) string {
 	return "file://" + filepath.Join(filepath.Dir(comp.Path), obj.Path)
 }
 
+// DefaultPathRewriter provides a RelativePathRewriter instance.
 var DefaultPathRewriter = &RelativePathRewriter{}

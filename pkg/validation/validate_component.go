@@ -60,7 +60,7 @@ func (v *ComponentValidator) validateComponentPackages() []error {
 	objCollect := make(map[bundle.ComponentReference]bool)
 	for _, ca := range v.components {
 		n := ca.Spec.ComponentName
-		if err := ValidateName(n); err != nil {
+		if err := validateName(n); err != nil {
 			errs = append(errs, fmt.Errorf("the component name %q was invalid config %v", n, ca))
 		}
 
@@ -97,7 +97,7 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 		return nil
 	}
 	n := v.componentSet.Spec.SetName
-	if err := ValidateName(n); err != nil {
+	if err := validateName(n); err != nil {
 		errs = append(errs, fmt.Errorf("the component set name %q was invalid config %v", n, v.componentSet))
 	}
 
@@ -146,7 +146,7 @@ func (b *ComponentValidator) validateObjects() []error {
 				errs = append(errs, fmt.Errorf("objects must always have a metadata.name. was empty object %d in component %q", i, compName))
 				continue
 			}
-			if err := ValidateName(n); err != nil {
+			if err := validateName(n); err != nil {
 				errs = append(errs, fmt.Errorf("invalid name %q for object %d: %v", n, i, err))
 			}
 

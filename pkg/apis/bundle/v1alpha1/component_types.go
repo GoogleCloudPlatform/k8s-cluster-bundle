@@ -43,10 +43,10 @@ type ComponentSetSpec struct {
 // ComponentReference provides a reference
 type ComponentReference struct {
 	// ComponentName is the readable name of a component.
-	ComponentName string `json:componentName,omitempty"`
+	ComponentName string `json:"componentName,omitempty"`
 
 	// Version is the version string for a component.
-	Version string `json:version,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // File represents some sort of file that's specified external to the bundle,
@@ -124,6 +124,7 @@ type FileGroup struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// ComponentSetList contains a list of ComponentSets.
 type ComponentSetList struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -132,6 +133,7 @@ type ComponentSetList struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// ComponentPackageList contains a list of ComponentPackages.
 type ComponentPackageList struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

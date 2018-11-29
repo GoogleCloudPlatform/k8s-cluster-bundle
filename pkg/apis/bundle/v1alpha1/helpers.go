@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// CreateMetadataName creates a name string to be used for ObjectMeta.Name. It
+// CreateName creates a name string to be used for ObjectMeta.Name. It
 // is used to create standarized names for ComponentPackages and ComponentSets.
 // It assumes that the inName and version fields already conform to naming
 // requirements as discussed in:
@@ -41,6 +41,8 @@ func (c ComponentReference) GetLocalObjectRef() corev1.LocalObjectReference {
 	return corev1.LocalObjectReference{Name: CreateName(c.ComponentName, c.Version)}
 }
 
+// GetAllLocalObjectRefs creates LocalObjectReferences for all the component
+// references in a ComponentSet.
 func (c *ComponentSet) GetAllLocalObjectRefs() []corev1.LocalObjectReference {
 	var out []corev1.LocalObjectReference
 	for _, cp := range c.Spec.Components {

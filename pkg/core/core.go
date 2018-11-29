@@ -20,6 +20,7 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
+// EmptyComponentRef is an empty ComponentReference.
 var EmptyComponentRef = bundle.ComponentReference{}
 
 // ClusterObjectKey is a key representing a specific cluster object.

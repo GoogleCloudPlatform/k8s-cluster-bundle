@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package make provides functionality for adding options to components
+// Package maker provides functionality for adding options to components
 package maker
 
 import (
