@@ -47,7 +47,7 @@ func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker
 	}
 
 	// Filter to only get the raw text config maps.
-	objs := filter.Filter().Objects(comp.Spec.Objects, &filter.Options{
+	objs := filter.NewFilter().Objects(comp.Spec.Objects, &filter.Options{
 		Annotations: map[string]string{
 			string(bundle.InlineTypeIdentifier): string(bundle.RawStringInline),
 		},
@@ -73,7 +73,7 @@ func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker
 			newObj = append(newObj, fobj)
 		}
 	}
-	outObj := filter.Filter().Objects(newObj, of)
+	outObj := filter.NewFilter().Objects(newObj, of)
 	comp.Spec.Objects = outObj
 	return comp, nil
 }

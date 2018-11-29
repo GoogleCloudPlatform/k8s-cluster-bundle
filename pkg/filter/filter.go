@@ -22,16 +22,16 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 )
 
-// Filterer filters the components and objects to produce a new set of components.
-type Filterer struct {
+// Filter filters the components and objects to produce a new set of components.
+type Filter struct {
 	// ChangeInPlace controls whether to change the objects in place or to make
-	// copies. By default, the Filterer returns deep copies of objects.
+	// copies. By default, the Filter returns deep copies of objects.
 	ChangeInPlace bool
 }
 
-// Filter creates a new Filterer.
-func Filter() *Filterer {
-	return &Filterer{}
+// Filter creates a new Filter.
+func NewFilter() *Filter {
+	return &Filter{}
 }
 
 // Options for filtering bundles. By default, if any of the options match, then
@@ -65,7 +65,7 @@ type Options struct {
 // components. By default components are removed, unless KeepOnly is set, and
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
-func (f *Filterer) Components(data []*bundle.ComponentPackage, o *Options) []*bundle.ComponentPackage {
+func (f *Filter) Components(data []*bundle.ComponentPackage, o *Options) []*bundle.ComponentPackage {
 	if !f.ChangeInPlace {
 		var newData []*bundle.ComponentPackage
 		for _, cp := range data {
@@ -103,7 +103,7 @@ func (f *Filterer) Components(data []*bundle.ComponentPackage, o *Options) []*bu
 // the objects, returning a new cluster bundle with just filtered
 // objects. By default objectsare removed, unless KeepOnly is set, and
 // then the opposite is true.
-func (f *Filterer) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
+func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
 	if !f.ChangeInPlace {
 		var newData []*unstructured.Unstructured
 		for _, oj := range data {

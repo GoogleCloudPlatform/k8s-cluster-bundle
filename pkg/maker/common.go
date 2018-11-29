@@ -37,7 +37,7 @@ func MakeCommon(comp *bundle.ComponentPackage, p ParamMaker, of *filter.Options,
 	}
 
 	// Filter the objects before handling them.
-	objs := filter.Filter().Objects(comp.Spec.Objects, of)
+	objs := filter.NewFilter().Objects(comp.Spec.Objects, of)
 
 	// Construct the objects.
 	var newObj []*unstructured.Unstructured
