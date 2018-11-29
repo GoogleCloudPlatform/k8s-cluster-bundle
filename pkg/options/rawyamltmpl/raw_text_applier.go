@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rawtexttmpl is a special-case component maker for constructing
-// objects with the assumption that objects have been inlined via RawText into
-// ConfigMaps.
+// Package rawtexttmpl is a special-case option applier for adding options to
+// objects with the assumption that objects have been inlined as go-templates
+// via RawTextFiles ComponentPackageSpec field into ConfigMaps.
+//
+// Once parameters are applied via the go template, the objects are parsed as
+// unstructured objects and added to the component's object list. The original
+// ConfigMap is not included in the final component.
 package rawtexttmpl
 
 import (
@@ -28,23 +32,30 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/maker"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 )
 
-// Maker makes components via go-templating, for objects stored as raw strings
-// in config maps.
-type Maker struct{}
+// applier applies options via go-templating for objects stored as raw strings
+// in config maps. This applier only applies to `RawTextFiles` that have been
+// inlined as part of the component inlining process.
+type applier struct{}
 
-// MakeComponent makes a component, implementing the make-component interface.
-// The raw text maker's MakeComponent method only uses inlined raw text as
-// input to the object-creation process.
-func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker, of *filter.Options) (*bundle.ComponentPackage, error) {
+// NewApplier creates a new optionts applier instance.
+func NewApplier() options.Applier {
+	return &applier{}
+}
+
+// ApplyOptions applies options to the raw-text that's been inlined. To be
+// precise, this method looks for ConfigMaps objects with the inline-annotation.
+//
+// Each key-value pair in the config map is treated as a separate go template
+// that represents a single object. Once parameters are applied via the go
+// template, the objects are parsed as unstructured objects and added to the
+// component's object list. The original ConfigMap is not included in the final
+// component.
+func (m *applier) ApplyOptions(comp *bundle.ComponentPackage, opts options.JSONOptions) (*bundle.ComponentPackage, error) {
 	comp = comp.DeepCopy()
 	ref := comp.ComponentReference()
-
-	if len(comp.Spec.Objects) == 0 {
-		return nil, fmt.Errorf("no objects found for component %v", ref)
-	}
 
 	// Filter to only get the raw text config maps.
 	objs := filter.NewFilter().Objects(comp.Spec.Objects, &filter.Options{
@@ -55,7 +66,17 @@ func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker
 		KeepOnly: true,
 	})
 
-	// Construct the objects.
+	// Filter to get the non raw-text objects.
+	otherObjs := filter.NewFilter().Objects(comp.Spec.Objects, &filter.Options{
+		Annotations: map[string]string{
+			string(bundle.InlineTypeIdentifier): string(bundle.RawStringInline),
+		},
+		Kinds: []string{"ConfigMap"},
+	})
+
+	// Construct the objects. We can't use the common applier because each
+	// configmap can have multiple go templates, each of which represent a k8s
+	// object that needs parameters
 	var newObj []*unstructured.Unstructured
 	for _, obj := range objs {
 		cfgName := obj.GetName()
@@ -66,34 +87,26 @@ func (m *Maker) MakeComponent(comp *bundle.ComponentPackage, pm maker.ParamMaker
 		}
 
 		for k, data := range cfgMap.Data {
-			fobj, err := makeObject(cfgName, k, data, pm)
+			fobj, err := applyOptions(cfgName, k, data, opts)
 			if err != nil {
 				return nil, fmt.Errorf("error rendering object with name %q in component %q: %v", obj.GetName(), ref.ComponentName, err)
 			}
 			newObj = append(newObj, fobj)
 		}
 	}
-	outObj := filter.NewFilter().Objects(newObj, of)
-	comp.Spec.Objects = outObj
+
+	comp.Spec.Objects = append(otherObjs, newObj...)
 	return comp, nil
 }
 
-var _ maker.ComponentMaker = &Maker{}
-
-// detemplatize the objects and return the finished unstructured object.
-func makeObject(cfgName, key, data string, pm maker.ParamMaker) (*unstructured.Unstructured, error) {
+func applyOptions(cfgName, key, data string, opts options.JSONOptions) (*unstructured.Unstructured, error) {
 	tmpl, err := template.New(cfgName + "-" + key + "-tmpl").Parse(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template for config map %q, data key %q: %v", cfgName, key, err)
 	}
 
-	tmplParams, err := pm()
-	if err != nil {
-		return nil, fmt.Errorf("error making params for config map %q, data key %q: %v", cfgName, key, err)
-	}
-
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, tmplParams)
+	err = tmpl.Execute(&buf, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error executing template for config map %q, data key %q: %v", cfgName, key, err)
 	}

@@ -19,8 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/maker"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 )
 
 var component = `
@@ -39,42 +38,58 @@ spec:
         image: '{{.ContainerImage}}'
 `
 
-func TestSimpleMaker(t *testing.T) {
+func TestSimpleApplier(t *testing.T) {
 	comp, err := converter.FromYAMLString(component).ToComponentPackage()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
 	}
 
-	pm := func() (maker.JSONMap, error) {
-		return map[string]interface{}{
-			"DNSPolicy":      "FooBarPolicy",
-			"ContainerImage": "MyContainerImage",
-		}, nil
+	usedParams := map[string]interface{}{
+		"DNSPolicy":      "FooBarPolicy",
+		"ContainerImage": "MyContainerImage",
+	}
+	notUsedParams := map[string]interface{}{
+		"Dapper": "Catamaran",
+		"Foo":    "Blarg",
 	}
 
-	params, _ := pm()
+	opts := func() options.JSONOptions {
+		allMap := map[string]interface{}{}
+		for k, v := range usedParams {
+			allMap[k] = v
+		}
+		for k, v := range notUsedParams {
+			allMap[k] = v
+		}
+		return allMap
+	}()
 
-	m := &Maker{}
-	made, err := m.MakeComponent(comp, pm, nil)
+	newComp, err := NewApplier().ApplyOptions(comp, opts)
 	if err != nil {
-		t.Fatalf("Error converting making component: %v", err)
+		t.Fatalf("Error applying options: %v", err)
 	}
-	if made == nil {
-		t.Fatalf("made-component must not be nil")
+	if newComp == nil {
+		t.Fatalf("new-component must not be nil")
 	}
-	if len(made.Spec.Objects) == 0 {
-		t.Fatalf("no objects found in made component")
+	if len(newComp.Spec.Objects) == 0 {
+		t.Fatalf("no objects found in new component")
 	}
 
-	strval, err := (&converter.ObjectExporter{made.Spec.Objects}).ExportAsYAML()
+	strval, err := (&converter.ObjectExporter{newComp.Spec.Objects}).ExportAsYAML()
 	if err != nil {
 		t.Fatalf("Error converting objects to yaml: %v", err)
 	}
 
-	for _, val := range params {
+	for _, val := range usedParams {
 		vstr := val.(string)
 		if !strings.Contains(strval, vstr) {
 			t.Errorf("expected object yaml:\n%s\nto contain %q", strval, vstr)
+		}
+	}
+	for _, val := range notUsedParams {
+		vstr := val.(string)
+		if strings.Contains(strval, vstr) {
+			t.Errorf("expected object yaml:\n%s\nto NOT contain %q", strval, vstr)
 		}
 	}
 }
@@ -106,7 +121,7 @@ spec:
       - name: verydapper
         image: gcr.io/floof/dapper`
 
-func TestSimpleMaker_MultiItems(t *testing.T) {
+func TestSimpleApplier_MultiItems(t *testing.T) {
 	comp, err := converter.FromYAMLString(multiComponent).ToComponentPackage()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
@@ -122,7 +137,7 @@ func TestSimpleMaker_MultiItems(t *testing.T) {
 		"Foo":    "Blarg",
 	}
 
-	pm := func() (maker.JSONMap, error) {
+	opts := func() options.JSONOptions {
 		allMap := map[string]interface{}{}
 		for k, v := range usedParams {
 			allMap[k] = v
@@ -130,85 +145,21 @@ func TestSimpleMaker_MultiItems(t *testing.T) {
 		for k, v := range notUsedParams {
 			allMap[k] = v
 		}
-		return allMap, nil
-	}
+		return allMap
+	}()
 
-	m := &Maker{}
-	made, err := m.MakeComponent(comp, pm, nil)
+	newComp, err := NewApplier().ApplyOptions(comp, opts)
 	if err != nil {
-		t.Fatalf("Error converting making component: %v", err)
+		t.Fatalf("Error converting applying options: %v", err)
 	}
-	if made == nil {
-		t.Fatalf("made-component must not be nil")
+	if newComp == nil {
+		t.Fatalf("new-component must not be nil")
 	}
-	if len(made.Spec.Objects) == 0 {
-		t.Fatalf("no objects found in made component")
-	}
-
-	strval, err := (&converter.ObjectExporter{made.Spec.Objects}).ExportAsYAML()
-	if err != nil {
-		t.Fatalf("Error converting objects to yaml: %v", err)
+	if len(newComp.Spec.Objects) == 0 {
+		t.Fatalf("no objects found in new component")
 	}
 
-	for _, val := range usedParams {
-		vstr := val.(string)
-		if !strings.Contains(strval, vstr) {
-			t.Errorf("expected object yaml:\n%s\nto contain %q", strval, vstr)
-		}
-	}
-	for _, val := range notUsedParams {
-		vstr := val.(string)
-		if strings.Contains(strval, vstr) {
-			t.Errorf("expected object yaml:\n%s\nto NOT contain %q", strval, vstr)
-		}
-	}
-}
-
-func TestSimpleMaker_Filter(t *testing.T) {
-	comp, err := converter.FromYAMLString(multiComponent).ToComponentPackage()
-	if err != nil {
-		t.Fatalf("Error converting component to yaml: %v", err)
-	}
-
-	usedParams := map[string]interface{}{
-		"DNSPolicy":      "FooBarPolicy",
-		"ContainerImage": "MyContainerImage",
-	}
-	notUsedParams := map[string]interface{}{
-		"DapperImage": "Zorp",
-		"Dapper":      "Catamaran",
-		"Foo":         "Blarg",
-	}
-
-	pm := func() (maker.JSONMap, error) {
-		allMap := map[string]interface{}{}
-		for k, v := range usedParams {
-			allMap[k] = v
-		}
-		for k, v := range notUsedParams {
-			allMap[k] = v
-		}
-		return allMap, nil
-	}
-
-	m := &Maker{}
-	made, err := m.MakeComponent(comp, pm, &filter.Options{
-		Annotations: map[string]string{
-			"floof": "indeed",
-		},
-		KeepOnly: true,
-	})
-	if err != nil {
-		t.Fatalf("Error converting making component: %v", err)
-	}
-	if made == nil {
-		t.Fatalf("made-component must not be nil")
-	}
-	if len(made.Spec.Objects) == 0 {
-		t.Fatalf("no objects found in made component")
-	}
-
-	strval, err := (&converter.ObjectExporter{made.Spec.Objects}).ExportAsYAML()
+	strval, err := (&converter.ObjectExporter{newComp.Spec.Objects}).ExportAsYAML()
 	if err != nil {
 		t.Fatalf("Error converting objects to yaml: %v", err)
 	}

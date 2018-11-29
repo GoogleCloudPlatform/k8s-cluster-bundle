@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/maker"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 )
 
 var dataComponent = `
@@ -62,7 +62,7 @@ spec:
             image: '{{.AnotherContainerImage}}'
 `
 
-func TestRawStringMaker_MultiItems(t *testing.T) {
+func TestRawStringApplier_MultiItems(t *testing.T) {
 	comp, err := converter.FromYAMLString(dataComponent).ToComponentPackage()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
@@ -74,10 +74,10 @@ func TestRawStringMaker_MultiItems(t *testing.T) {
 	}
 	notUsedParams := map[string]interface{}{
 		"AnotherDNSPolicy":      "BlooBlarPolicy",
-		"AnotherContainerImage": "AnotherContainerImage",
+		"AnotherContainerImage": "AnotherContainerImageVal",
 	}
 
-	pm := func() (maker.JSONMap, error) {
+	opts := func() options.JSONOptions {
 		allMap := map[string]interface{}{}
 		for k, v := range usedParams {
 			allMap[k] = v
@@ -85,22 +85,21 @@ func TestRawStringMaker_MultiItems(t *testing.T) {
 		for k, v := range notUsedParams {
 			allMap[k] = v
 		}
-		return allMap, nil
-	}
+		return allMap
+	}()
 
-	m := &Maker{}
-	made, err := m.MakeComponent(comp, pm, nil)
+	newComp, err := NewApplier().ApplyOptions(comp, opts)
 	if err != nil {
-		t.Fatalf("Error converting making component: %v", err)
+		t.Fatalf("Error applying options: %v", err)
 	}
-	if made == nil {
-		t.Fatalf("made-component must not be nil")
+	if newComp == nil {
+		t.Fatalf("new-component must not be nil")
 	}
-	if len(made.Spec.Objects) == 0 {
-		t.Fatalf("no objects found in made component")
+	if len(newComp.Spec.Objects) == 0 {
+		t.Fatalf("no objects found in new component")
 	}
 
-	strval, err := (&converter.ObjectExporter{made.Spec.Objects}).ExportAsYAML()
+	strval, err := (&converter.ObjectExporter{newComp.Spec.Objects}).ExportAsYAML()
 	if err != nil {
 		t.Fatalf("Error converting objects to yaml: %v", err)
 	}
