@@ -91,7 +91,7 @@ func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWri
 	return data, nil
 }
 
-// WriteStructuredContents writes some structured contents. The contents must
+// WriteStructuredContents writes some structured contents from some object `obj`. The contents must
 // be serializable to both JSON and YAML.
 func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.FileReaderWriter, g *GlobalOptions) error {
 	bytes, err := converter.FromObject(obj).ToContentType(g.OutputFormat)
@@ -101,9 +101,9 @@ func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.File
 	return WriteContents(ctx, g.OutputFile, bytes, rw)
 }
 
-// WriteContents writes some bytes to disk or stdout. if outPath is empty,
-// write to stdout instdea.
-func WriteContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
+// writeContents writes some bytes to disk or stdout. if outPath is empty,
+// write to stdout instead.
+func writeContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
 	if outPath == "" {
 		_, err := os.Stdout.Write(bytes)
 		if err != nil {

@@ -31,7 +31,12 @@ type PathRewriter interface {
 // RelativePathRewriter rewrites paths when the paths are relative paths.
 type RelativePathRewriter struct{}
 
-// RewriteObjectPath rewrites object paths if the path is relative.
+// RewriteObjectPath rewrites object paths if the path is relative, from the
+// original object path, to an object path that's based on a parent component
+// path.
+//
+// For example, if the component path is foo/bar/biff.yaml and the object path
+// is zed/fred.yaml, the object will be rewritten as foo/bar/zed/fred.yaml
 func (rw *RelativePathRewriter) RewriteObjectPath(comp, obj *url.URL) string {
 	if comp.Scheme != "file" && comp.Scheme != "" {
 		// Only file schemes are supported.
