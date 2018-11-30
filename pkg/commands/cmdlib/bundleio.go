@@ -98,7 +98,7 @@ func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.File
 	if err != nil {
 		return fmt.Errorf("error writing contents: %v", err)
 	}
-	return WriteContents(ctx, g.OutputFile, bytes, rw)
+	return writeContents(ctx, g.OutputFile, bytes, rw)
 }
 
 // writeContents writes some bytes to disk or stdout. if outPath is empty,
