@@ -35,21 +35,18 @@ func (f *fakeBundleValidator) Validate() field.ErrorList {
 }
 
 func TestRunValidate(t *testing.T) {
-	validFile := "/bundle.yaml"
+	dummyFile := "/bundle.yaml"
 
 	var testcases = []struct {
 		testName          string
-		bundle            string
 		errors            field.ErrorList
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			bundle:   validFile,
 		},
 		{
 			testName:          "bundle validation errors",
-			bundle:            validFile,
 			errors:            field.ErrorList{field.Invalid(field.NewPath("f"), "z", "yar")},
 			expectErrContains: "one or more errors",
 		},
@@ -62,7 +59,7 @@ func TestRunValidate(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:  validFile,
+				BundleFile:  dummyFile,
 				InputFormat: "yaml",
 			}
 
