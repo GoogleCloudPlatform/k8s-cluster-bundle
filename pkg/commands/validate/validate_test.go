@@ -53,7 +53,7 @@ func TestRunValidate(t *testing.T) {
 	}
 
 	rw := testutil.NewFakeReaderWriterFromPairs(
-		&testutil.FilePair{validFile, testutil.FakeComponentData})
+		&testutil.FilePair{dummyFile, testutil.FakeComponentData})
 	opts := &options{}
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
