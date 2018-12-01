@@ -52,7 +52,7 @@ func NewComponentValidator(c []*bundle.ComponentPackage, set *bundle.ComponentSe
 // Validate validates components and components sets, providing as many errors as it can.
 func (v *ComponentValidator) Validate() field.ErrorList {
 	errs := field.ErrorList{}
-	errs = append(errs, v.validateComponentsSet()...)
+	errs = append(errs, v.validateComponentSet()...)
 	errs = append(errs, v.validateComponentPackages()...)
 	errs = append(errs, v.validateObjects()...)
 	return errs
@@ -63,23 +63,21 @@ func cPath(ref bundle.ComponentReference) *field.Path {
 }
 
 func (v *ComponentValidator) validateComponentPackages() field.ErrorList {
-	cpathIdx := func(idx int) *field.Path {
-		return field.NewPath("Component").Index(idx)
-	}
-
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
 	for i, ca := range v.components {
+		pi := field.NewPath("Component").Index(i)
+
 		n := ca.Spec.ComponentName
 		if n == "" {
-			errs = append(errs, field.Required(cpathIdx(i).Child("Spec", "ComponentName"), "componentName is required"))
+			errs = append(errs, field.Required(pi.Child("Spec", "ComponentName"), ""))
 		}
 		ver := ca.Spec.Version
 		if ver == "" {
-			errs = append(errs, field.Required(cpathIdx(i).Child("Spec", "Version"), "version is required"))
+			errs = append(errs, field.Required(pi.Child("Spec", "Version"), ""))
 		}
 		if n == "" || ver == "" {
-			// Other validation relies on components having a unique name+version pair.
+			// Subsequent validation relies on components having a unique name+version pair.
 			continue
 		}
 
@@ -114,7 +112,7 @@ func (v *ComponentValidator) validateComponentPackages() field.ErrorList {
 	return errs
 }
 
-func (v *ComponentValidator) validateComponentsSet() field.ErrorList {
+func (v *ComponentValidator) validateComponentSet() field.ErrorList {
 	p := field.NewPath("ComponentSet")
 
 	errs := field.ErrorList{}
@@ -180,7 +178,8 @@ func (b *ComponentValidator) validateObjects() field.ErrorList {
 		for i, obj := range ca.Spec.Objects {
 			n := obj.GetName()
 			if n == "" {
-				errs = append(errs, field.Required(cPath(ref).Child("Spec", "Objects").Index(i), "metadata.name is required for objects"))
+				errs = append(errs, field.Required(cPath(ref).Child("Spec", "Objects").Index(i).Child("Metadata", "Name"),
+					""))
 				continue
 			}
 			p := cPath(ref).Child("Spec", fmt.Sprintf("Objects[%s]", n))

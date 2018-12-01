@@ -124,7 +124,7 @@ spec:
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "version is required",
+			errSubstring: "Required value",
 		},
 		{
 			desc: "fail: missing set name",
@@ -136,7 +136,7 @@ spec:
   components:
   - name: foo-comp-1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "setName is required",
+			errSubstring: "Required value",
 		},
 
 		// Tests for Components
@@ -200,7 +200,7 @@ components:
     name: foo-comp-1.0.2
   spec:
     componentName: foo-comp`,
-			errSubstring: "version is required",
+			errSubstring: "Required value",
 		},
 
 		{
@@ -259,7 +259,7 @@ components:
     objects:
     - apiVersion: v1
       kind: Pod`,
-			errSubstring: "metadata.name is required for objects",
+			errSubstring: "Required value",
 		},
 	}
 
