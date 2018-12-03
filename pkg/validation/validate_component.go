@@ -134,11 +134,11 @@ func (v *ComponentValidator) validateComponentsSet() []error {
 	return errs
 }
 
-func (b *ComponentValidator) validateObjects() []error {
+func (v *ComponentValidator) validateObjects() []error {
 	var errs []error
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
-	for _, ca := range b.components {
+	for _, ca := range v.components {
 		compName := ca.Spec.ComponentName
 		for i, obj := range ca.Spec.Objects {
 			n := obj.GetName()

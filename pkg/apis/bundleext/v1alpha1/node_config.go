@@ -19,35 +19,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Configuration for node images. This is a resource that provides information
-// about which images are available for node creation and how to initialize the
-// node images.
+// NodeConfig contains configuration for node images. This is a resource that
+// provides information about which images are available for node creation and
+// how to initialize the node images.
 type NodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Note: only one of InitFile or ExternalInitFile should be specified.
 
-	// The file specified inline as a UTF-8 encoded byte string.
+	// InitFile is specified inline as a UTF-8 encoded byte string.
 	InitFile []byte `json:"initFile,omitempty"`
 
-	// An externally specified init file.
+	// ExternalInitFile is an externally specified init file.
 	ExternalInitFile bundle.File `json:"externalInitFile,omitempty"`
 
-	// Envirnoment variables to set before startup to configure the init script.
+	// EnvVars are variables to set before startup to configure the init script.
 	EnvVars []EnvVar `json:"envVars,omitempty"`
 
-	// The OS image to use for VM creation.
+	// OsImage is the the OS image to use for VM creation.
 	OsImage bundle.File `json:"osImage,omitempty"`
 }
 
-// An environment variable specified for node startup.
+// EnvVar is an environment variable.
 type EnvVar struct {
 	// Name of this environment variable. E.g., FOO_VAR. The name of the
 	// environment variable should be unique within a node bootstrap
 	// configuration.
 	Name string `json:"name,omitempty"`
 
-	// The value to set for this environment variable.
+	// Value of this environment variable.
 	Value string `json:"value,omitempty"`
 }

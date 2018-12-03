@@ -32,6 +32,7 @@ type ClusterObjectKey struct {
 	Object ObjectRef
 }
 
+// EmptyClusterObjectKey is an empty ClusterObjectKey.
 var EmptyClusterObjectKey = ClusterObjectKey{}
 
 // TODO(kashomon): Replace ObjectRef with corev1.TypedLocalObjectReference when
@@ -49,6 +50,7 @@ type ObjectRef struct {
 	Name string
 }
 
+// ObjectRefFromUnstructured creates an ObjectRef from Unstructured.
 func ObjectRefFromUnstructured(o *unstructured.Unstructured) ObjectRef {
 	return ObjectRef{
 		APIVersion: o.GetAPIVersion(),

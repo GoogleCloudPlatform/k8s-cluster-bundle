@@ -37,6 +37,7 @@ type FileWriter interface {
 // apps to the local filesystem.
 type LocalFileSystemWriter struct{}
 
+// WriteFile writes a file to disk.
 func (*LocalFileSystemWriter) WriteFile(_ context.Context, path string, bytes []byte, permissions os.FileMode) error {
 	return ioutil.WriteFile(path, bytes, permissions)
 }
@@ -53,6 +54,7 @@ type FileReader interface {
 // files from the local filesystem.
 type LocalFileSystemReader struct{}
 
+// ReadFile reads a file from disk.
 func (r *LocalFileSystemReader) ReadFile(_ context.Context, path string) ([]byte, error) {
 	return ioutil.ReadFile(path)
 }
@@ -66,7 +68,8 @@ type FileReaderWriter interface {
 	FileWriter
 }
 
-// RealFileReaderWriter combines both local file system file reading and writing
+// LocalFileSystemReaderWriter combines both local file system file reading and
+// writing.
 type LocalFileSystemReaderWriter struct {
 	LocalFileSystemReader
 	LocalFileSystemWriter

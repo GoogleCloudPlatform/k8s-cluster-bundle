@@ -40,6 +40,7 @@ type GlobalOptions struct {
 // executions only).
 var GlobalOptionsValues = &GlobalOptions{}
 
+// Copy creates an options copy.
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
 		BundleFile:       g.BundleFile,

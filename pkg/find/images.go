@@ -52,7 +52,7 @@ func (c *ContainerImage) String() string {
 	return fmt.Sprintf("{Key:%v, Image:%q}", c.Key, c.Image)
 }
 
-// ContainerImages returns all the images from the cluster components in a set
+// AllContainerImages returns all the images from the cluster components in a list
 // of components.
 func (b *ImageFinder) AllContainerImages() []*ContainerImage {
 	var images []*ContainerImage
@@ -186,7 +186,7 @@ type AllImages struct {
 	ContainerImages []*ContainerImage
 }
 
-// FindAllImages finds both container and node images.
+// AllImages finds all container images.
 func (b *ImageFinder) AllImages() *AllImages {
 	return &AllImages{
 		ContainerImages: b.AllContainerImages(),
@@ -209,7 +209,7 @@ func (a *AllImages) Flattened() *AllImagesFlattened {
 	}
 }
 
-// ImagesFlattened contains images found, but flattened into lists of
+// AllImagesFlattened contains images found, but flattened into lists of
 // strings.
 type AllImagesFlattened struct {
 	ContainerImages []string `json:"containerImages"`
