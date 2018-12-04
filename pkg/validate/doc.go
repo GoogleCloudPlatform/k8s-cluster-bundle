@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package validation provides validation for Bundles
-package validation
+// Package validate provides validation for types in the cluster bundle
+// repository.
+package validate

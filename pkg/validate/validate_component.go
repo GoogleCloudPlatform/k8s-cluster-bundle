@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package validate
 
 import (
 	"fmt"
@@ -23,12 +23,6 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
-
-// ComponentValidator validates a set of components
-type ComponentValidator struct {
-	components   []*bundle.ComponentPackage
-	componentSet *bundle.ComponentSet
-}
 
 var (
 	apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
@@ -43,14 +37,8 @@ var (
 	versionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s\.%s$`, number, number, number))
 )
 
-// NewComponentValidator creates a new component Validator. The set of
-// component packages is required, but if the component set is nil.
-func NewComponentValidator(c []*bundle.ComponentPackage, set *bundle.ComponentSet) *ComponentValidator {
-	return &ComponentValidator{c, set}
-}
-
 // Validate validates components and components sets, providing as many errors as it can.
-func (v *ComponentValidator) Validate() field.ErrorList {
+func All(c []*bundle.ComponentPackage, s *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 	errs = append(errs, v.validateComponentSet()...)
 	errs = append(errs, v.validateComponentPackages()...)
@@ -62,52 +50,58 @@ func cPath(ref bundle.ComponentReference) *field.Path {
 	return field.NewPath(fmt.Sprintf("Component{%s, %s}", ref.ComponentName, ref.Version))
 }
 
-func (v *ComponentValidator) validateComponentPackages() field.ErrorList {
+// Component validates a single component.
+func (v *Validator) Component(c *bundle.ComponentPackage) field.ErrorList {
+	errs := field.ErrorList{}
+	pi := field.NewPath(".")
+
+	n := c.Spec.ComponentName
+	if n == "" {
+		errs = append(errs, field.Required(pi.Child("Spec", "ComponentName"), ""))
+	}
+	ver := c.Spec.Version
+	if ver == "" {
+		errs = append(errs, field.Required(pi.Child("Spec", "Version"), ""))
+	}
+	if n == "" || ver == "" {
+		// Subsequent validation relies on components having a unique name+version pair.
+		continue
+	}
+
+	p := cPath(c.ComponentReference())
+
+	if nameErrs := validateName(p.Child("Spec", "ComponentName"), n); len(errs) > 0 {
+		errs = append(errs, nameErrs...)
+	}
+
+	api := c.APIVersion
+	if !apiVersionPattern.MatchString(api) {
+		errs = append(errs, field.Invalid(p.Child("APIVersion").Index(i), api, "must have the form \"bundle.gke.io/<version>\""))
+	}
+
+	expType := "ComponentPackage"
+	if k := c.Kind; k != expType {
+		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentPackage"))
+	}
+
+	if !versionPattern.MatchString(ver) {
+		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
+	}
+	return errs
+}
+
+func (v *ComponentValidator) AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
-	for i, ca := range v.components {
-		pi := field.NewPath("Component").Index(i)
+	for _, c := range components {
+		errs := append(errs, c)
 
-		n := ca.Spec.ComponentName
-		if n == "" {
-			errs = append(errs, field.Required(pi.Child("Spec", "ComponentName"), ""))
-		}
-		ver := ca.Spec.Version
-		if ver == "" {
-			errs = append(errs, field.Required(pi.Child("Spec", "Version"), ""))
-		}
-		if n == "" || ver == "" {
-			// Subsequent validation relies on components having a unique name+version pair.
+		ref := c.ComponentReference()
+		if _, ok := objCollect[ref]; ok {
+			errs = append(errs, field.Duplicate(p, fmt.Sprintf("component reference %v", ref)))
 			continue
 		}
-
-		ref := ca.ComponentReference()
-		p := cPath(ref)
-
-		if nameErrs := validateName(p.Child("Spec", "ComponentName"), n); len(errs) > 0 {
-			errs = append(errs, nameErrs...)
-		}
-
-		api := ca.APIVersion
-		if !apiVersionPattern.MatchString(api) {
-			errs = append(errs, field.Invalid(p.Child("APIVersion").Index(i), api, "must have the form \"bundle.gke.io/<version>\""))
-		}
-
-		expType := "ComponentPackage"
-		if k := ca.Kind; k != expType {
-			errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentPackage"))
-		}
-
-		if !versionPattern.MatchString(ver) {
-			errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
-		}
-
-		key := bundle.ComponentReference{ComponentName: n, Version: ver}
-		if _, ok := objCollect[key]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("component key %v", key)))
-			continue
-		}
-		objCollect[key] = true
+		objCollect[ref] = true
 	}
 	return errs
 }
