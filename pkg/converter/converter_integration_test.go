@@ -21,7 +21,7 @@ import (
 )
 
 func TestRealisticDataParse(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/bundle-example.yaml")
+	b, err := testutil.ReadData("../../", "examples/cluster/bundle-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -37,7 +37,7 @@ func TestRealisticDataParse(t *testing.T) {
 }
 
 func TestRealisticDataParse_ComponentSet(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/component-set.yaml")
+	b, err := testutil.ReadData("../../", "examples/cluster/component-set.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}

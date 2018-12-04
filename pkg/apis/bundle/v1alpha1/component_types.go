@@ -61,7 +61,7 @@ type File struct {
 	// - foo/bar/biff (a relative path)
 	// - /foo/bar/biff (an absolute path)
 	// - file:///foo/bar/biff (an absolute path with an explicit 'file' scheme)
-	// - https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/blob/master/examples/bundle-example.yaml
+	// - http://example.com/foo.yaml
 	URL string `json:"url,omitempty"`
 
 	// Optional Sha256 hash of the binary to ensure we are pulling the correct

@@ -25,7 +25,7 @@ import (
 
 func TestRealisticDataParseAndInline(t *testing.T) {
 	ctx := context.Background()
-	b, err := testutil.ReadData("../../", "examples/bundle-example.yaml")
+	b, err := testutil.ReadData("../../", "examples/cluster/bundle-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -39,7 +39,7 @@ func TestRealisticDataParseAndInline(t *testing.T) {
 		t.Fatalf("found zero files, but expected some")
 	}
 
-	pathPrefix := testutil.TestPathPrefix("../../", "examples/bundle-example.yaml")
+	pathPrefix := testutil.TestPathPrefix("../../", "examples/cluster/bundle-example.yaml")
 	inliner := NewLocalInliner(pathPrefix)
 
 	newData, err := inliner.InlineBundleFiles(ctx, dataFiles)
