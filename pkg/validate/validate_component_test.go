@@ -154,7 +154,7 @@ components:
 			errSubstring: "must be ComponentPackage",
 		},
 		{
-			desc: "fail component: duplicate component key",
+			desc: "fail component: duplicate component reference",
 			set:  defaultComponentSet,
 			components: `
 components:
@@ -172,7 +172,7 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "component key",
+			errSubstring: "component reference",
 		},
 
 		{
@@ -273,9 +273,7 @@ components:
 			if err != nil {
 				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
 			}
-			val := NewComponentValidator(comp.Components, set)
-
-			if err = checkErrCases(tc.desc, val.Validate().ToAggregate(), tc.errSubstring); err != nil {
+			if err = checkErrCases(tc.desc, NewValidator().All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
 				t.Errorf(err.Error())
 			}
 		})
