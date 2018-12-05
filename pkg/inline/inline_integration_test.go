@@ -20,7 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validation"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
 )
 
 func TestRealisticDataParseAndInline(t *testing.T) {
@@ -58,8 +58,7 @@ func TestRealisticDataParseAndInline(t *testing.T) {
 	}
 
 	// Ensure it validates
-	val := validation.NewComponentValidator(moreInlined.Components, nil)
-	if errs := val.Validate(); len(errs) > 0 {
+	if errs := validate.NewValidator().AllComponents(moreInlined.Components); len(errs) > 0 {
 		for _, e := range errs {
 			t.Errorf("Errors in validaton: %q", e.Error())
 		}

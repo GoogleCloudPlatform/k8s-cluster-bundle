@@ -30,7 +30,7 @@ type fakeBundleValidator struct {
 	errs field.ErrorList
 }
 
-func (f *fakeBundleValidator) Validate() field.ErrorList {
+func (f *fakeBundleValidator) AllComponents(_ []*bundle.ComponentPackage) field.ErrorList {
 	return f.errs
 }
 
@@ -64,7 +64,7 @@ func TestRunValidate(t *testing.T) {
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
-			createValidatorFn = func(b *bundle.Bundle) bundleValidator {
+			createValidatorFn = func() bundleValidator {
 				return &fakeBundleValidator{errs: tc.errors}
 			}
 
