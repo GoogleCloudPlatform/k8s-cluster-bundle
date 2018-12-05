@@ -45,15 +45,10 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	}
 }
 
-type bundleValidator interface {
-	AllComponents(cp []*bundle.ComponentPackage) field.ErrorList
-}
+type componentValidator func([]*bundle.ComponentPackage) field.ErrorList
 
-// createValidatorFn creates BundleValidator that works with the given current
-// working directory and allows for dependency injection.
-var createValidatorFn = func() bundleValidator {
-	return validate.NewValidator()
-}
+// componentValidationFn validates components.
+var componentValidationFn componentValidator = validate.AllComponents
 
 func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
@@ -61,8 +56,7 @@ func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, 
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	val := createValidatorFn()
-	if errs := val.AllComponents(b.Components); len(errs) > 0 {
+	if errs := componentValidationFn(b.Components); len(errs) > 0 {
 		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
 	}
 	log.Info("No errors found")

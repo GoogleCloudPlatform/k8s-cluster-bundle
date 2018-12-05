@@ -24,14 +24,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
-// Validator is an object that provides validation methods for bundle-types.
-type Validator struct{}
-
-// NewValidater creates a new Validator.
-func NewValidator() *Validator {
-	return &Validator{}
-}
-
 var (
 	apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
 
@@ -46,12 +38,12 @@ var (
 )
 
 // All validates components and components sets, providing as many errors as it can.
-func (v *Validator) All(cp []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func All(cp []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
-	errs = append(errs, v.ComponentSet(cs)...)
-	errs = append(errs, v.AllComponents(cp)...)
-	errs = append(errs, v.ComponentsAndComponentSet(cp, cs)...)
-	errs = append(errs, v.AllComponentObjects(cp)...)
+	errs = append(errs, ComponentSet(cs)...)
+	errs = append(errs, AllComponents(cp)...)
+	errs = append(errs, ComponentsAndComponentSet(cp, cs)...)
+	errs = append(errs, AllComponentObjects(cp)...)
 	return errs
 }
 
@@ -60,11 +52,11 @@ func cPath(ref bundle.ComponentReference) *field.Path {
 }
 
 // AllComponents validates a list of components.
-func (v *Validator) AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
 	for _, c := range components {
-		errs = append(errs, v.Component(c)...)
+		errs = append(errs, Component(c)...)
 
 		ref := c.ComponentReference()
 		p := cPath(ref)
@@ -78,7 +70,7 @@ func (v *Validator) AllComponents(components []*bundle.ComponentPackage) field.E
 }
 
 // Component validates a single component.
-func (v *Validator) Component(c *bundle.ComponentPackage) field.ErrorList {
+func Component(c *bundle.ComponentPackage) field.ErrorList {
 	errs := field.ErrorList{}
 	pi := field.NewPath("Component")
 
@@ -118,7 +110,7 @@ func (v *Validator) Component(c *bundle.ComponentPackage) field.ErrorList {
 }
 
 // ComponentSet validates a component.
-func (v *Validator) ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
+func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	p := field.NewPath("ComponentSet")
 
 	errs := field.ErrorList{}
@@ -162,7 +154,7 @@ func (v *Validator) ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 }
 
 // ComponentsAndComponentSet validates components in the context of a component set.
-func (v *Validator) ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 
 	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
@@ -184,16 +176,16 @@ func (v *Validator) ComponentsAndComponentSet(components []*bundle.ComponentPack
 }
 
 // AllComponentObjects validates all objects in all componenst
-func (v *Validator) AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList {
 	errs := field.ErrorList{}
 	for _, ca := range components {
-		errs = append(errs, v.ComponentObjects(ca)...)
+		errs = append(errs, ComponentObjects(ca)...)
 	}
 	return errs
 }
 
 // ComponentObjects validates objects in a componenst.
-func (b *Validator) ComponentObjects(cp *bundle.ComponentPackage) field.ErrorList {
+func ComponentObjects(cp *bundle.ComponentPackage) field.ErrorList {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 

@@ -278,7 +278,7 @@ components:
 			if err != nil {
 				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
 			}
-			if err = checkErrCases(NewValidator().All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
+			if err = checkErrCases(All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
 				t.Errorf(err.Error())
 			}
 		})
@@ -353,7 +353,7 @@ components:
 			if err != nil {
 				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
 			}
-			if errs := NewValidator().All(comp.Components, set); len(errs) != tc.numErrors {
+			if errs := All(comp.Components, set); len(errs) != tc.numErrors {
 				t.Errorf("got %d errors. expected exactly %d. errors were: %v", len(errs), tc.numErrors, errs)
 			}
 		})

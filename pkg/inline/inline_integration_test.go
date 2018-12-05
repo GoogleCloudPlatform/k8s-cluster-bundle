@@ -58,7 +58,7 @@ func TestRealisticDataParseAndInline(t *testing.T) {
 	}
 
 	// Ensure it validates
-	if errs := validate.NewValidator().AllComponents(moreInlined.Components); len(errs) > 0 {
+	if errs := validate.AllComponents(moreInlined.Components); len(errs) > 0 {
 		for _, e := range errs {
 			t.Errorf("Errors in validaton: %q", e.Error())
 		}

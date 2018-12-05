@@ -64,9 +64,9 @@ func TestRunValidate(t *testing.T) {
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
-			createValidatorFn = func() bundleValidator {
-				return &fakeBundleValidator{errs: tc.errors}
-			}
+			fbVal := fakeBundleValidator{errs: tc.errors}
+
+			componentValidationFn = fbVal.AllComponents
 
 			err := runValidate(ctx, opts, rw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {
