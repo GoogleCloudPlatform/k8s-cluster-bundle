@@ -109,13 +109,12 @@ func (b *Bundle) MakeAndSetAllNames() {
 // ParsedURL parses the URL in a file object. If no scheme is present, the
 // scheme is assumed to be a filepath on the local filesystem.
 func (f File) ParsedURL() (*url.URL, error) {
-	u := f.URL
-	if u == "" {
+	if f.URL == "" {
 		return nil, fmt.Errorf("file %v was specified but no URL was provided", f)
 	}
-	parsedURL, err := url.Parse(u)
+	parsedURL, err := url.Parse(f.URL)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing url %q: %v", u, err)
+		return nil, fmt.Errorf("error parsing url %q: %v", f.URL, err)
 	}
 	return parsedURL, nil
 }

@@ -12,37 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package maker
+package options
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 )
 
-// ObjHandler is a function that can 'make' objects.
-type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReference, pm ParamMaker) (*unstructured.Unstructured, error)
+// ObjHandler is a function that can apply options to a Kubernetes object.
+type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts JSONOptions) (*unstructured.Unstructured, error)
 
-// MakeCommon provides common functionality for making components, deferring
-// only the object handling logic.
-func MakeCommon(comp *bundle.ComponentPackage, p ParamMaker, of *filter.Options, fn ObjHandler) (*bundle.ComponentPackage, error) {
+// ApplyCommon provides common functionality for applying options, deferring
+// the specific object handling logic.
+func ApplyCommon(comp *bundle.ComponentPackage, opts JSONOptions, objFn ObjHandler) (*bundle.ComponentPackage, error) {
 	comp = comp.DeepCopy()
 	ref := comp.ComponentReference()
 
-	if len(comp.Spec.Objects) == 0 {
-		return nil, fmt.Errorf("no objects found for component %v", ref)
-	}
-
-	// Filter the objects before handling them.
-	objs := filter.NewFilter().Objects(comp.Spec.Objects, of)
-
 	// Construct the objects.
 	var newObj []*unstructured.Unstructured
-	for _, obj := range objs {
-		nob, err := fn(obj, ref, p)
+	for _, obj := range comp.Spec.Objects {
+		nob, err := objFn(obj, ref, opts)
 		if err != nil {
 			return nil, err
 		}
