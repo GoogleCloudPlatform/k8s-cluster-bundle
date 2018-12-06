@@ -16,9 +16,10 @@ package validate
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
@@ -26,49 +27,46 @@ import (
 )
 
 type fakeBundleValidator struct {
-	errs []error
+	errs field.ErrorList
 }
 
-func (f *fakeBundleValidator) Validate() []error {
+func (f *fakeBundleValidator) AllComponents(_ []*bundle.ComponentPackage) field.ErrorList {
 	return f.errs
 }
 
 func TestRunValidate(t *testing.T) {
-	validFile := "/bundle.yaml"
+	dummyFile := "/bundle.yaml"
 
 	var testcases = []struct {
 		testName          string
-		bundle            string
-		errors            []error
+		errors            field.ErrorList
 		expectErrContains string
 	}{
 		{
 			testName: "success case",
-			bundle:   validFile,
 		},
 		{
 			testName:          "bundle validation errors",
-			bundle:            validFile,
-			errors:            []error{errors.New("yarr")},
+			errors:            field.ErrorList{field.Invalid(field.NewPath("f"), "z", "yar")},
 			expectErrContains: "one or more errors",
 		},
 	}
 
 	rw := testutil.NewFakeReaderWriterFromPairs(
-		&testutil.FilePair{validFile, testutil.FakeComponentData})
+		&testutil.FilePair{dummyFile, testutil.FakeComponentData})
 	opts := &options{}
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:  validFile,
+				BundleFile:  dummyFile,
 				InputFormat: "yaml",
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator
-			createValidatorFn = func(b *bundle.Bundle) bundleValidator {
-				return &fakeBundleValidator{errs: tc.errors}
-			}
+			fbVal := fakeBundleValidator{errs: tc.errors}
+
+			componentValidationFn = fbVal.AllComponents
 
 			err := runValidate(ctx, opts, rw, globalOpts)
 			if (tc.expectErrContains != "" && err == nil) || (tc.expectErrContains == "" && err != nil) {

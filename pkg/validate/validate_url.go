@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package validate
 
 import (
 	"fmt"
 	"net/url"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // validateURL validates urls in object files follwing Go's net/url parsing rules.
-func validateURL(u string) error {
+func validateURL(path *field.Path, u string) *field.Error {
 	if u == "" {
-		return fmt.Errorf("url field was empty")
+		return field.Required(path, "url field was empty")
 	}
 	_, err := url.Parse(u)
 	if err != nil {
-		return fmt.Errorf("error parsing url %q: %v", u, err)
+		return field.Invalid(path, u, fmt.Sprintf("error parsing url: %v", err))
 	}
 	return nil
 }

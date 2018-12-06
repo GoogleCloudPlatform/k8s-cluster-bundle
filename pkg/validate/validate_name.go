@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package validate
 
 import (
-	"fmt"
-	"strings"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-// JoinErrors joins a collection of errors together for convenience, returning
-// nil if there were no errors in the slice.
-func JoinErrors(errs []error) error {
-	if len(errs) == 0 {
-		return nil
+// validateName validates names to ensure they follow the Kubernetes
+// conventions for how names are constructed. For more about names,
+// see: k8s.io/docs/concepts/overview/working-with-objects/names/
+func validateName(path *field.Path, value string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	errs := validation.IsQualifiedName(value)
+	for _, e := range errs {
+		allErrs = append(allErrs, field.Invalid(path, value, e))
 	}
-	if len(errs) == 1 {
-		return errs[0]
-	}
-
-	out := make([]string, len(errs))
-	for i, err := range errs {
-		out[i] = err.Error()
-	}
-	return fmt.Errorf("found several errors:\n  %s", strings.Join(out, "\n  "))
+	return allErrs
 }

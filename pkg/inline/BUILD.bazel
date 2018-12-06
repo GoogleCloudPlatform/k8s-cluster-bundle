@@ -35,6 +35,6 @@ go_test(
         "//pkg/files:go_default_library",
         "//pkg/find:go_default_library",
         "//pkg/testutil:go_default_library",
-        "//pkg/validation:go_default_library",
+        "//pkg/validate:go_default_library",
     ],
 )

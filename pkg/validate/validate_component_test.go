@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package validate
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ components:
     version: 2.0.3
 `
 
-func TestValidateComponents(t *testing.T) {
+func TestValidateAll(t *testing.T) {
 	testCases := []struct {
 		desc         string
 		set          string
@@ -80,11 +80,13 @@ func TestValidateComponents(t *testing.T) {
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: Zor
 spec:
+  setName: zip
   version: 1.0.2
   components:
-  - name: foo-comp-1.0.2`,
+  - componentName: foo-comp
+    version: 1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set kind",
+			errSubstring: "must be ComponentSet",
 		},
 
 		{
@@ -93,11 +95,13 @@ spec:
 apiVersion: 'zork.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   version: 1.0.2
   components:
-  - name: foo-comp-1.0.2`,
+  - componentName: foo-comp
+    version: 1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set APIVersion",
+			errSubstring: "bundle.gke.io/<version>",
 		},
 		{
 			desc: "component set fail: invalid X.Y.Z version string",
@@ -105,11 +109,13 @@ spec:
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   version: foo
   components:
-  - name: foo-comp-1.0.2`,
+  - componentName: foo-comp
+    version: 1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set spec version is invalid",
+			errSubstring: "must be of the form X.Y.Z",
 		},
 		{
 			desc: "fail: missing X.Y.Z version string",
@@ -117,12 +123,28 @@ spec:
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
+  setName: zip
   components:
-  - name: foo-comp-1.0.2`,
+  - componentName: foo-comp
+    version: 1.0.2`,
 			components:   defaultComponentData,
-			errSubstring: "component set spec version missing",
+			errSubstring: "Required value",
+		},
+		{
+			desc: "fail: missing set name",
+			set: `
+apiVersion: 'bundle.gke.io/v1alpha1'
+kind: ComponentSet
+spec:
+  version: 1.0.2
+  components:
+  - componentName: foo-comp
+    version: 1.0.2`,
+			components:   defaultComponentData,
+			errSubstring: "Required value",
 		},
 
+		// Tests for Components
 		{
 			desc: "fail component: no kind",
 			set:  defaultComponentSet,
@@ -134,10 +156,10 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "component kind",
+			errSubstring: "must be ComponentPackage",
 		},
 		{
-			desc: "fail component: duplicate component key",
+			desc: "fail component: duplicate component reference",
 			set:  defaultComponentSet,
 			components: `
 components:
@@ -155,7 +177,7 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "duplicate component key",
+			errSubstring: "component reference",
 		},
 
 		{
@@ -170,7 +192,7 @@ components:
   spec:
     componentName: foo-comp
     version: 2.010.1`,
-			errSubstring: "component spec version is invalid",
+			errSubstring: "must be of the form X.Y.Z",
 		},
 		{
 			desc: "fail: component missing X.Y.Z version string ",
@@ -183,7 +205,7 @@ components:
     name: foo-comp-1.0.2
   spec:
     componentName: foo-comp`,
-			errSubstring: "component spec version missing",
+			errSubstring: "Required value",
 		},
 
 		{
@@ -225,7 +247,7 @@ components:
       kind: Pod
       metadata:
         name: foo-pod`,
-			errSubstring: "duplicate object found",
+			errSubstring: "object reference",
 		},
 		{
 			desc: "object fail: no metadata.name",
@@ -242,7 +264,7 @@ components:
     objects:
     - apiVersion: v1
       kind: Pod`,
-			errSubstring: "must always have a metadata.name",
+			errSubstring: "Required value",
 		},
 	}
 
@@ -256,24 +278,84 @@ components:
 			if err != nil {
 				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
 			}
-			val := NewComponentValidator(comp.Components, set)
-
-			if err = checkErrCases(tc.desc, JoinErrors(val.Validate()), tc.errSubstring); err != nil {
+			if err = checkErrCases(All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
 				t.Errorf(err.Error())
 			}
 		})
 	}
 }
 
-func checkErrCases(desc string, err error, expErrSubstring string) error {
+func checkErrCases(err error, expErrSubstring string) error {
 	if err == nil && expErrSubstring == "" {
 		return nil // success!
 	} else if err == nil && expErrSubstring != "" {
-		return fmt.Errorf("Test %q: Got nil error, but expected one containing %q", desc, expErrSubstring)
+		return fmt.Errorf("got nil error, but expected one containing %q", expErrSubstring)
 	} else if err != nil && expErrSubstring == "" {
-		return fmt.Errorf("Test %q: Got error: %q. but did not expect one", desc, err.Error())
+		return fmt.Errorf("got error: %q. but did not expect one", err.Error())
 	} else if err != nil && expErrSubstring != "" && !strings.Contains(err.Error(), expErrSubstring) {
-		return fmt.Errorf("Test %q: Got error: %q. expected it to contain substring %q", desc, err.Error(), expErrSubstring)
+		return fmt.Errorf("got error: %q. expected it to contain substring %q", err.Error(), expErrSubstring)
 	}
 	return nil
+}
+
+func TestValidateAll_MultipleErrors(t *testing.T) {
+	testCases := []struct {
+		desc       string
+		set        string
+		components string
+		numErrors  int
+	}{
+		{
+			desc:       "success: no errors",
+			set:        defaultComponentSet,
+			components: defaultComponentData,
+		},
+		{
+			desc: "set errors: apiversion, kind, component-mismatch",
+			set: `
+spec:
+  setName: zip
+  version: 1.0.2
+  components:
+  - componentName: zap-comp
+    version: 1.0.2`,
+			components: defaultComponentData,
+			numErrors:  3,
+		},
+		{
+			desc: "set and component errors",
+			set: `
+spec:
+  setName: zip
+  version: 1.0.2
+  components:
+  - componentName: zap-comp
+    version: 1.0.2`,
+			components: `
+components:
+- spec:
+    componentName: foo-comp
+    version: 1.0.2
+    objects:
+    - apiVersion: v1
+      kind: Pod`,
+			numErrors: 6,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			set, err := converter.FromYAMLString(tc.set).ToComponentSet()
+			if err != nil {
+				t.Fatalf("error converting component set: %v", err)
+			}
+			comp, err := converter.FromYAMLString(tc.components).ToBundle()
+			if err != nil {
+				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
+			}
+			if errs := All(comp.Components, set); len(errs) != tc.numErrors {
+				t.Errorf("got %d errors. expected exactly %d. errors were: %v", len(errs), tc.numErrors, errs)
+			}
+		})
+	}
 }

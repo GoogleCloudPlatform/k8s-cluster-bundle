@@ -211,7 +211,7 @@ func TestParseURL(t *testing.T) {
 			parsed, err := file.ParsedURL()
 			if err != nil {
 				if tc.expErrSubstr == "" {
-					t.Fatalf("Unexpceted error: %v", err)
+					t.Fatalf("Unexpected error: %v", err)
 				}
 				if !strings.Contains(err.Error(), tc.expErrSubstr) {
 					t.Fatalf("error %v did not contain expected substring %q", err, tc.expErrSubstr)
