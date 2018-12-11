@@ -17,7 +17,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# The release-1.10 version appears to work the best.
+# The release-1.10 version of the tooling appears to work the best, although
+# there are some mismatches since the kube-apimachinery version is set to 1.9.
 K8S_VERSION="release-1.10"
 
 command -v deepcopy-gen >/dev/null 2>&1 || {
@@ -27,19 +28,13 @@ command -v deepcopy-gen >/dev/null 2>&1 || {
 }
 
 command -v register-gen >/dev/null 2>&1 || {
-  pt1="Error: register-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
+  pt1="Error: register-gen is required, but was not found. Download release-1.12 of k8s.io/code-generator.\n"
   pt2="Then, install with 'go install k8s.io/code-generator/cmd/register-gen'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
 
 command -v client-gen >/dev/null 2>&1 || {
   pt1="Error: client-gen tool is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
-  pt2="Then, install with 'go install k8s.io/code-generator/cmd/openapi-gen'"
-  printf >&2 "${pt1}${pt2}"; exit 1;
-}
-
-command -v lister-gen >/dev/null 2>&1 || {
-  pt1="Error: lister-gen tool is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
   pt2="Then, install with 'go install k8s.io/code-generator/cmd/openapi-gen'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
@@ -71,27 +66,33 @@ client-gen --clientset-name=versioned \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
-# TODO(kashomon): Should we add this?
-# lister-gen \
-  # -h hack/boilerplate.go.txt \
-  # --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
-  # --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/listers
-
-# TODO(kashomon): Because we're using 1.9 still, it means that there are some
-# breakages that need to be manually cleaned up when this is run, if client-gen
-# is run at head. For example, 'Must' from utilruntime must be removed.
+# TODO(#115): Because we're using apimachinery at 1.9 and tools at 1.10, it
+# means that there are some breakages that need to be fixed up.
+clientsetpattern="*clientset_generated.go"
 files=$(find ./pkg/clientset -type f -name *.go)
 for f in $files
 do
   echo "Fixing ${f}"
   # Not using sed -i because darwin / bash have different behaviors for -i =(
 
-  # Replace googlecloudplatform with GoogleCloudPlatform
+  # TODO(#115): Replace googlecloudplatform with GoogleCloudPlatform. This is
+  # fixed with controller-tools >= release-1.11.
   sed $'s/googlecloudplatform/GoogleCloudPlatform/' $f > $f.t
   mv $f.t $f
 
+  # TODO(#115): These issues are caused because we controller tools at 1.10 and
+  # apimachinery/client-go at 1.9.
+  if [[ $f == $clientsetpattern ]]; then
+    # Watch is not supported in testing.ObjectTracker in 1.9
+    sed '/fakePtr.AddWatchReactor/,+9d' $f > $f.t
+    mv $f.t $f
+
+    # remove the import
+    sed '/"k8s\.io\/apimachinery\/pkg\/watch"/d' $f > $f.t
+    mv $f.t $f
+  fi
 done
 
 # Relies on ../PROJECT file
 # creates CRDS in ../config/crds/
-crd generate --skip-map-validation
+crd generate

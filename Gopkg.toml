@@ -37,15 +37,15 @@
   version = "0.0.3"
 
 [[constraint]]
-  branch = "release-1.10"
+  branch = "release-1.9"
   name = "k8s.io/api"
 
 [[constraint]]
-  branch = "release-1.10"
+  branch = "release-1.9"
   name = "k8s.io/apimachinery"
 
 [[constraint]]
-  branch = "release-7.0" # Roughly equal to K8S 1.10
+  branch = "release-6.0" # Roughly equal to K8S 1.9
   name = "k8s.io/client-go"
 
 [prune]
