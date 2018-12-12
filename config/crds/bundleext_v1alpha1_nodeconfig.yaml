@@ -15,35 +15,63 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         envVars:
           items:
             properties:
               name:
+                description: Name of this environment variable. E.g., FOO_VAR. The
+                  name of the environment variable should be unique within a node
+                  bootstrap configuration.
                 type: string
               value:
+                description: Value of this environment variable.
                 type: string
             type: object
           type: array
         externalInitFile:
           properties:
             hash:
+              description: Optional Sha256 hash of the binary to ensure we are pulling
+                the correct binary/file.
               type: string
             url:
+              description: 'URL to find this file; the url string must be parsable
+                via Go''s net/url library. It is generally recommended that a URI
+                scheme be provided in the URL, but it is not required. If a scheme
+                is not provided, it is assumed that the scheme is a file-scheme.  For
+                example, these are all valid: - foo/bar/biff (a relative path) - /foo/bar/biff
+                (an absolute path) - file:///foo/bar/biff (an absolute path with an
+                explicit ''file'' scheme) - http://example.com/foo.yaml'
               type: string
           type: object
         initFile:
           format: byte
           type: string
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         osImage:
           properties:
             hash:
+              description: Optional Sha256 hash of the binary to ensure we are pulling
+                the correct binary/file.
               type: string
             url:
+              description: 'URL to find this file; the url string must be parsable
+                via Go''s net/url library. It is generally recommended that a URI
+                scheme be provided in the URL, but it is not required. If a scheme
+                is not provided, it is assumed that the scheme is a file-scheme.  For
+                example, these are all valid: - foo/bar/biff (a relative path) - /foo/bar/biff
+                (an absolute path) - file:///foo/bar/biff (an absolute path with an
+                explicit ''file'' scheme) - http://example.com/foo.yaml'
               type: string
           type: object
   version: v1alpha1
