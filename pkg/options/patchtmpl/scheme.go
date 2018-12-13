@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package scheme
+package patchtmpl
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	crdext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
@@ -36,6 +37,7 @@ func init() {
 
 	must(corev1.AddToScheme(k.KubeScheme))
 	must(extv1beta1.AddToScheme(k.KubeScheme))
+	must(crdext.AddToScheme(k.KubeScheme))
 
 	// Don't register the extension scheme right now -- it's a very heavy dep and
 	// isn't really being used at the moment.

@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "patch.go",
+        "scheme.go",
+    ],
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/patchtmpl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/apis/bundleext/v1alpha1:go_default_library",
+        "//pkg/converter:go_default_library",
+        "//pkg/filter:go_default_library",
+        "//pkg/options:go_default_library",
+        "//vendor/github.com/evanphx/json-patch:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/api/extensions/v1beta1:go_default_library",
+        "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/serializer:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/strategicpatch:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["patch_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/converter:go_default_library",
+        "//pkg/filter:go_default_library",
+        "//pkg/testutil:go_default_library",
+    ],
+)

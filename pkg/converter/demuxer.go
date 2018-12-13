@@ -39,7 +39,7 @@ func (m *Demuxer) demux(format ContentType) ([]byte, error) {
 	case JSON:
 		return json.Marshal(m.obj)
 	default:
-		return nil, fmt.Errorf("Unknown content type: %q", format)
+		return nil, fmt.Errorf("unknown content type: %q", format)
 	}
 }
 

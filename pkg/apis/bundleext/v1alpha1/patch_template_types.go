@@ -12,7 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package scheme containts library functions for creating/managing Kubernetes schemes.
-package scheme
+package v1alpha1
 
-import ()
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// PatchTemplate contains configuration for patching objects.
+type PatchTemplate struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Template is a template that creates a patch for a K8S object. In other
+	// words, a templated YAML blob that's meant to be applied via
+	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
+	Template string
+}
