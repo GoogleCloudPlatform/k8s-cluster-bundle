@@ -14,25 +14,37 @@
 
 package cmdlib
 
+type InputBundleType string
+
+const (
+	BundleType    InputBundleType = "bundle"
+	ComponentType InputBundleType = "component"
+)
+
 // GlobalOptions are options that apply to all commands
 type GlobalOptions struct {
-	// A path to a bundle file.
-	BundleFile string
+	// InputFile is a path to an input file. If a file is not specified, it's
+	// assumed the input is provided via STDIN.
+	InputFile string
 
-	// Format for the input. By default, assumes YAML.
+	// InputFormat is the text format for the input. By default, assumes YAML
+	// but also can be JSON.
 	InputFormat string
 
-	// Path for an output file.
+	// OutputFile is the path for the output file. If OutputFile is not
+	// specified, the output is returned on STDOUT.
 	OutputFile string
 
-	// The format for any output. By default, assumes YAML.
+	// OutputFormat is the the format for any output. By default, assumes YAML.
 	OutputFormat string
 
-	// Whether to inline the components in the bundle before doing any processing
+	// InlineComponents indicates whether to inline the components in the bundle
+	// before doing any processing. Only applies when the BundleFile option is
+	// specified.
 	InlineComponents bool
 
-	// Whether to inline tho objects before doing any processing (typically
-	// requires InlineComponents to be useful)
+	// InlineObjects indicates whether to inline tho objects before doing any
+	// processing (typically requires InlineComponents to be useful).
 	InlineObjects bool
 }
 
@@ -43,7 +55,7 @@ var GlobalOptionsValues = &GlobalOptions{}
 // Copy creates an options copy.
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
-		BundleFile:       g.BundleFile,
+		InputFile:        g.InputFile,
 		InputFormat:      g.InputFormat,
 		OutputFile:       g.OutputFile,
 		OutputFormat:     g.OutputFormat,

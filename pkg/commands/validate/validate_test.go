@@ -59,8 +59,7 @@ func TestRunValidate(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ctx := context.Background()
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:  dummyFile,
-				InputFormat: "yaml",
+				InputFile: dummyFile,
 			}
 
 			// Override the createValidatorFn to return a fake bundleValidator

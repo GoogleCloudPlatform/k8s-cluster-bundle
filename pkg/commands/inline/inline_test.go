@@ -65,10 +65,8 @@ func TestRunInline(t *testing.T) {
 				pairs = append(pairs, &testutil.FilePair{tc.out, testutil.FakeComponentData})
 			}
 			globalOpts := &cmdlib.GlobalOptions{
-				BundleFile:   tc.in,
-				OutputFile:   tc.out,
-				InputFormat:  "yaml",
-				OutputFormat: "yaml",
+				InputFile:  tc.in,
+				OutputFile: tc.out,
 			}
 
 			frw := testutil.NewFakeReaderWriterFromPairs(pairs...)

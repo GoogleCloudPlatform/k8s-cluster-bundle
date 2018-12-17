@@ -18,11 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/golang/glog"
+	"github.com/spf13/cobra"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
-	log "github.com/golang/glog"
-	"github.com/spf13/cobra"
 )
 
 type options struct {
@@ -39,12 +40,14 @@ func findAction(ctx context.Context, cmd *cobra.Command, _ []string) {
 }
 
 func runFindImages(ctx context.Context, _ *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
+	brw := cmdlib.NewBundleReaderWriter(rw)
+
+	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	found := find.NewImageFinder(b.Components).AllImages().Flattened()
+	found := find.NewImageFinder(bw.AllComponents()).AllImages().Flattened()
 
-	return cmdlib.WriteStructuredContents(ctx, found, rw, gopt)
+	return brw.WriteStructuredContents(ctx, found, gopt)
 }

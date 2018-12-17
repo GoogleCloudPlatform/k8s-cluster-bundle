@@ -51,12 +51,14 @@ type componentValidator func([]*bundle.ComponentPackage) field.ErrorList
 var componentValidationFn componentValidator = validate.AllComponents
 
 func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
+	brw := cmdlib.NewBundleReaderWriter(rw)
+
+	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	if errs := componentValidationFn(b.Components); len(errs) > 0 {
+	if errs := componentValidationFn(bw.AllComponents()); len(errs) > 0 {
 		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
 	}
 	log.Info("No errors found")
