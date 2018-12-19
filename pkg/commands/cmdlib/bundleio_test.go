@@ -34,13 +34,13 @@ type fakeStdioRW struct {
 	wrErr   error
 }
 
-func (f *fakeStdioRW) readBytes() ([]byte, error) {
+func (f *fakeStdioRW) ReadAll() ([]byte, error) {
 	return f.rdBytes, f.rdErr
 }
 
-func (f *fakeStdioRW) writeBytes(b []byte) error {
+func (f *fakeStdioRW) Write(b []byte) (int, error) {
 	f.wrBytes = b
-	return f.wrErr
+	return len(f.wrBytes), f.wrErr
 }
 
 type fakeFileRW struct {
@@ -240,6 +240,12 @@ func TestReadBundleData(t *testing.T) {
 			inlineCompObjOut: inlinedComponent,
 			expDataSubstr:    "some-pod",
 		},
+		{
+			desc:          "Succces: default content type to yaml",
+			opts:          &GlobalOptions{},
+			readStdin:     successBundle,
+			expDataSubstr: "test-pkg",
+		},
 
 		// Some error cases
 		{
@@ -254,12 +260,6 @@ spec:
   componentName: test-comp
   version: 0.1.0`,
 			expErrSubstr: "unrecognized bundle-kind",
-		},
-		{
-			desc:         "Error: content format",
-			opts:         &GlobalOptions{},
-			readStdin:    successBundle,
-			expErrSubstr: "could not infer the input content format",
 		},
 		{
 			desc: "Error: inlining",
@@ -377,18 +377,25 @@ func TestWriteBundleData(t *testing.T) {
 			component:      inlinedComponent,
 			expStdioSubstr: "some-pod",
 		},
+		{
+			desc:           "success: content format defaults to yaml",
+			component:      inlinedComponent,
+			opts:           &GlobalOptions{},
+			expStdioSubstr: "some-pod",
+		},
 
 		// Errors
 		{
-			desc:         "error: content format",
+			desc:         "error: both nil",
 			opts:         &GlobalOptions{},
-			component:    inlinedComponent,
-			expErrSubstr: "could not infer the output content format",
+			expErrSubstr: "both the bundle and the component fields were nil",
 		},
 		{
-			desc:         "error: content format",
+			desc:         "error: both nil",
 			opts:         &GlobalOptions{},
-			expErrSubstr: "both bundle and component were nil",
+			bundle:       successBundle,
+			component:    inlinedComponent,
+			expErrSubstr: "both the bundle and the component fields were non-nil",
 		},
 	}
 
@@ -414,7 +421,8 @@ func TestWriteBundleData(t *testing.T) {
 					t.Fatalf("Error converting bundle to YAML: %v", err)
 				}
 				bwrap.Bundle = b
-			} else if tc.component != "" {
+			}
+			if tc.component != "" {
 				c, err := converter.FromYAMLString(tc.component).ToComponentPackage()
 				if err != nil {
 					t.Fatalf("Error converting bundle to YAML: %v", err)

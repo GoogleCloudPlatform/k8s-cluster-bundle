@@ -15,9 +15,10 @@
 package cmdlib
 
 import (
-	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -29,7 +30,8 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 )
 
-// BundleWrapper represents a collection of possibly specified bundle types.
+// BundleWrapper represents a collection of possibly specified bundle types. It
+// is meant to be internal -- only used / usable by the commands.
 type BundleWrapper struct {
 	Bundle    *bundle.Bundle
 	Component *bundle.ComponentPackage
@@ -56,33 +58,19 @@ func realInlinerMaker(rw files.FileReaderWriter, inputFile string) fileInliner {
 	)
 }
 
-// stdioReaderWriter is a source from stdin and sink to stdout.
 type stdioReaderWriter interface {
-	readBytes() ([]byte, error)
-	writeBytes([]byte) error
+	ReadAll() ([]byte, error)
+	io.Writer
 }
 
 type realStdioReaderWriter struct{}
 
-func (r *realStdioReaderWriter) readBytes() ([]byte, error) {
-	var bytes []byte
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		bytes = append(bytes, scanner.Bytes()...)
-		bytes = append(bytes, '\n')
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	return bytes, nil
+func (r *realStdioReaderWriter) ReadAll() ([]byte, error) {
+	return ioutil.ReadAll(os.Stdin)
 }
 
-func (r *realStdioReaderWriter) writeBytes(b []byte) error {
-	_, err := os.Stdout.Write(b)
-	if err != nil {
-		return fmt.Errorf("error writing content %q to stdout", string(b))
-	}
-	return nil
+func (r *realStdioReaderWriter) Write(b []byte) (int, error) {
+	return os.Stdout.Write(b)
 }
 
 type fileInliner interface {
@@ -120,19 +108,19 @@ func (brw *BundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOpti
 		if err != nil {
 			return nil, err
 		}
-		fileFmt := formatFromFile(g.InputFile)
-		if fileFmt != "" {
-			inFmt = fileFmt
-		}
 	} else {
 		log.Info("No component data file, reading from stdin")
-		if bytes, err = brw.stdio.readBytes(); err != nil {
+		if bytes, err = brw.stdio.ReadAll(); err != nil {
 			return nil, err
 		}
 	}
 
+	fileFmt := formatFromFile(g.InputFile)
+	if fileFmt != "" && inFmt != "" {
+		inFmt = fileFmt
+	}
 	if inFmt == "" {
-		return nil, fmt.Errorf("could not infer the input content format (json, yaml) from the arguments or the input file extension")
+		inFmt = "yaml"
 	}
 
 	bw := &BundleWrapper{}
@@ -193,12 +181,16 @@ func (brw *BundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper
 
 // WriteBundleData writes either the component or bundle object from the BundleWrapper.
 func (brw *BundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) error {
+	if bw.Bundle != nil && bw.Component != nil {
+		return fmt.Errorf("both the bundle and the component fields were non-nil in the BundleWrapper")
+	}
+
 	if bw.Bundle != nil {
 		return brw.WriteStructuredContents(ctx, bw.Bundle, g)
 	} else if bw.Component != nil {
 		return brw.WriteStructuredContents(ctx, bw.Component, g)
 	} else {
-		return fmt.Errorf("both bundle and component were nil")
+		return fmt.Errorf("both the bundle and the component fields were nil")
 	}
 }
 
@@ -207,11 +199,11 @@ func (brw *BundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWr
 func (brw *BundleReaderWriter) WriteStructuredContents(ctx context.Context, obj interface{}, g *GlobalOptions) error {
 	outFmt := g.OutputFormat
 	fileFmt := formatFromFile(g.OutputFile)
-	if fileFmt != "" {
+	if fileFmt != "" && outFmt != "" {
 		outFmt = fileFmt
 	}
 	if outFmt == "" {
-		return fmt.Errorf("could not infer the output content format (json, yaml) from the arguments or the output file extension")
+		outFmt = "yaml"
 	}
 
 	bytes, err := converter.FromObject(obj).ToContentType(outFmt)
@@ -225,7 +217,8 @@ func (brw *BundleReaderWriter) WriteStructuredContents(ctx context.Context, obj 
 // write to stdout instead.
 func (brw *BundleReaderWriter) writeContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
 	if outPath == "" {
-		return brw.stdio.writeBytes(bytes)
+		_, err := brw.stdio.Write(bytes)
+		return err
 	}
 
 	log.Infof("Writing file to %q", outPath)

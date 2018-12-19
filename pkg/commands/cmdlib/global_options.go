@@ -43,7 +43,7 @@ type GlobalOptions struct {
 	// specified.
 	InlineComponents bool
 
-	// InlineObjects indicates whether to inline tho objects before doing any
+	// InlineObjects indicates whether to inline the objects before doing any
 	// processing (typically requires InlineComponents to be useful).
 	InlineObjects bool
 }
