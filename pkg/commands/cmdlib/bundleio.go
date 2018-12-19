@@ -15,9 +15,10 @@
 package cmdlib
 
 import (
-	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -29,88 +30,207 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 )
 
-// ReadBundle reads component data file contents from a file or stdin.
-func ReadBundle(ctx context.Context, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
+// BundleWrapper represents a collection of possibly specified bundle types. It
+// is meant to be internal -- only used / usable by the commands.
+type BundleWrapper struct {
+	Bundle    *bundle.Bundle
+	Component *bundle.ComponentPackage
+}
+
+// AllComponents returns all the components in the BundleWrapper, with the
+// assumption that only one of Bundle or Component is filled out.
+func (bw *BundleWrapper) AllComponents() []*bundle.ComponentPackage {
+	if bw.Bundle != nil {
+		return bw.Bundle.Components
+	} else if bw.Component != nil {
+		return []*bundle.ComponentPackage{bw.Component}
+	}
+	return []*bundle.ComponentPackage{}
+}
+
+type makeInliner func(rw files.FileReaderWriter, inputFile string) fileInliner
+
+func realInlinerMaker(rw files.FileReaderWriter, inputFile string) fileInliner {
+	return inline.NewInlinerWithScheme(
+		files.FileScheme,
+		&files.LocalFileObjReader{filepath.Dir(inputFile), rw},
+		inline.DefaultPathRewriter,
+	)
+}
+
+// StdioReaderWriter can read from STDIN and write to STDOUT.
+type StdioReaderWriter interface {
+	ReadAll() ([]byte, error)
+	io.Writer
+}
+
+type RealStdioReaderWriter struct{}
+
+func (r *RealStdioReaderWriter) ReadAll() ([]byte, error) {
+	return ioutil.ReadAll(os.Stdin)
+}
+
+func (r *RealStdioReaderWriter) Write(b []byte) (int, error) {
+	return os.Stdout.Write(b)
+}
+
+type fileInliner interface {
+	InlineBundleFiles(context.Context, *bundle.Bundle) (*bundle.Bundle, error)
+	InlineComponentsInBundle(context.Context, *bundle.Bundle) (*bundle.Bundle, error)
+	InlineComponent(context.Context, *bundle.ComponentPackage) (*bundle.ComponentPackage, error)
+}
+
+type BundleReaderWriter interface {
+	ReadBundleData(context.Context, *GlobalOptions) (*BundleWrapper, error)
+	WriteBundleData(context.Context, *BundleWrapper, *GlobalOptions) error
+	WriteStructuredContents(context.Context, interface{}, *GlobalOptions) error
+}
+
+// BundleReaderWriter is an object that can read and write bundle information,
+// in the context of CLI flags.
+type realBundleReaderWriter struct {
+	rw            files.FileReaderWriter
+	stdio         StdioReaderWriter
+	makeInlinerFn makeInliner
+}
+
+// NewBundleReaderWriter creates a new BundleReaderWriter.
+func NewBundleReaderWriter(rw files.FileReaderWriter, stdio StdioReaderWriter) BundleReaderWriter {
+	return &realBundleReaderWriter{
+		rw:            rw,
+		stdio:         stdio,
+		makeInlinerFn: realInlinerMaker,
+	}
+}
+
+// ReadBundleData reads either data file contents from a file or stdin.
+func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOptions) (*BundleWrapper, error) {
 	var bytes []byte
 	var err error
-	if g.BundleFile != "" {
-		log.Infof("Reading bundle file %v", g.BundleFile)
-		bytes, err = rw.ReadFile(ctx, g.BundleFile)
+	inFmt := g.InputFormat
+
+	if g.InputFile != "" {
+		log.Infof("Reading input file %v", g.InputFile)
+		bytes, err = brw.rw.ReadFile(ctx, g.InputFile)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		log.Info("No component data file, reading from stdin")
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			bytes = append(bytes, scanner.Bytes()...)
-			bytes = append(bytes, '\n')
-		}
-		if err := scanner.Err(); err != nil {
+		if bytes, err = brw.stdio.ReadAll(); err != nil {
 			return nil, err
 		}
 	}
 
-	b, err := convertBundle(ctx, bytes, g)
+	fileFmt := formatFromFile(g.InputFile)
+	if fileFmt != "" && inFmt != "" {
+		inFmt = fileFmt
+	}
+	if inFmt == "" {
+		inFmt = "yaml"
+	}
+
+	bw := &BundleWrapper{}
+	uns, err := converter.FromContentType(inFmt, bytes).ToUnstructured()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error converting bundle content to unstructured: %v", err)
+	}
+
+	kind := uns.GetKind()
+	if kind == "Bundle" {
+		b, err := converter.FromContentType(inFmt, bytes).ToBundle()
+		if err != nil {
+			return nil, err
+		}
+		bw.Bundle = b
+	} else if kind == "ComponentPackage" {
+		c, err := converter.FromContentType(inFmt, bytes).ToComponentPackage()
+		if err != nil {
+			return nil, err
+		}
+		bw.Component = c
+	} else {
+		return nil, fmt.Errorf("unrecognized bundle-kind %s for content %s", kind, string(bytes))
 	}
 
 	// For now, we can only inline component data files because we need the path
 	// context.
-	if (g.InlineComponents || g.InlineObjects) && g.BundleFile != "" {
-		return inlineData(ctx, b, rw, g)
+	if (g.InlineComponents || g.InlineObjects) && g.InputFile != "" {
+		return brw.inlineData(ctx, bw, g)
 	}
-	return b, nil
-}
-
-func convertBundle(ctx context.Context, bt []byte, g *GlobalOptions) (*bundle.Bundle, error) {
-	return converter.FromContentType(g.InputFormat, bt).ToBundle()
+	return bw, nil
 }
 
 // inlineData inlines a cluster bundle before processing
-func inlineData(ctx context.Context, data *bundle.Bundle, rw files.FileReaderWriter, g *GlobalOptions) (*bundle.Bundle, error) {
-	inliner := inline.NewInlinerWithScheme(
-		files.FileScheme,
-		&files.LocalFileObjReader{filepath.Dir(g.BundleFile), rw},
-		inline.DefaultPathRewriter,
-	)
+func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) (*BundleWrapper, error) {
 	var err error
-	if g.InlineComponents {
-		data, err = inliner.InlineBundleFiles(ctx, data)
+	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
+	if g.InlineComponents && bw.Bundle != nil {
+		bw.Bundle, err = inliner.InlineBundleFiles(ctx, bw.Bundle)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining component data files: %v", err)
 		}
 	}
-	if g.InlineObjects {
-		data, err = inliner.InlineComponentsInBundle(ctx, data)
+	if g.InlineObjects && bw.Bundle != nil {
+		bw.Bundle, err = inliner.InlineComponentsInBundle(ctx, bw.Bundle)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining objects: %v", err)
 		}
 	}
-	return data, nil
+	if g.InlineObjects && bw.Component != nil {
+		bw.Component, err = inliner.InlineComponent(ctx, bw.Component)
+		if err != nil {
+			return nil, fmt.Errorf("error inlining objects: %v", err)
+		}
+	}
+	return bw, nil
 }
 
-// WriteStructuredContents writes some structured contents from some object `obj`. The contents must
-// be serializable to both JSON and YAML.
-func WriteStructuredContents(ctx context.Context, obj interface{}, rw files.FileReaderWriter, g *GlobalOptions) error {
-	bytes, err := converter.FromObject(obj).ToContentType(g.OutputFormat)
+// WriteBundleData writes either the component or bundle object from the BundleWrapper.
+func (brw *realBundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) error {
+	if bw.Bundle != nil && bw.Component != nil {
+		return fmt.Errorf("both the bundle and the component fields were non-nil in the BundleWrapper")
+	}
+
+	if bw.Bundle != nil {
+		return brw.WriteStructuredContents(ctx, bw.Bundle, g)
+	} else if bw.Component != nil {
+		return brw.WriteStructuredContents(ctx, bw.Component, g)
+	} else {
+		return fmt.Errorf("both the bundle and the component fields were nil")
+	}
+}
+
+// WriteStructuredContents writes some structured contents from some object
+// `obj`. The contents must be serializable to both JSON and YAML.
+func (brw *realBundleReaderWriter) WriteStructuredContents(ctx context.Context, obj interface{}, g *GlobalOptions) error {
+	outFmt := g.OutputFormat
+	if outFmt == "" {
+		outFmt = "yaml"
+	}
+
+	bytes, err := converter.FromObject(obj).ToContentType(outFmt)
 	if err != nil {
 		return fmt.Errorf("error writing contents: %v", err)
 	}
-	return writeContents(ctx, g.OutputFile, bytes, rw)
+	return brw.writeContents(ctx, bytes, brw.rw)
 }
 
-// writeContents writes some bytes to disk or stdout. if outPath is empty,
-// write to stdout instead.
-func writeContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
-	if outPath == "" {
-		_, err := os.Stdout.Write(bytes)
-		if err != nil {
-			return fmt.Errorf("error writing content %q to stdout", string(bytes))
-		}
-		return nil
+// writeContents writes some bytes to stdout. if outPath is empty, write to
+func (brw *realBundleReaderWriter) writeContents(ctx context.Context, bytes []byte, rw files.FileReaderWriter) error {
+	_, err := brw.stdio.Write(bytes)
+	return err
+}
+
+// formatFromFile gets the content format from a file-extension and returns
+// empty string if the extension couldn't be mapped
+func formatFromFile(path string) string {
+	ext := filepath.Ext(path)
+	switch ext {
+	case ".yaml", ".yml":
+		return "yaml"
+	case ".json":
+		return "json"
 	}
-	log.Infof("Writing file to %q", outPath)
-	return rw.WriteFile(ctx, outPath, bytes, DefaultFilePermissions)
+	return ""
 }

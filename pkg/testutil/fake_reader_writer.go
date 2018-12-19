@@ -26,6 +26,7 @@ import (
 // FakeComponentData is simple fake component data string that should always
 // parse.
 var FakeComponentData = `
+kind: Bundle
 components:
 - apiVersion: bundle.gke.io/v1alpha1
   kind: ComponentPackage

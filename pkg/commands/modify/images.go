@@ -38,17 +38,19 @@ type options struct {
 var opts = &options{}
 
 func modifyImagesAction(ctx context.Context, cmd *cobra.Command, _ []string) {
-	rw := &files.LocalFileSystemReaderWriter{}
 	gopts := cmdlib.GlobalOptionsValues.Copy()
-	if err := runModifyImages(ctx, opts, rw, gopts); err != nil {
+	brw := cmdlib.NewBundleReaderWriter(
+		&files.LocalFileSystemReaderWriter{},
+		&cmdlib.RealStdioReaderWriter{})
+	if err := runModifyImages(ctx, opts, brw, gopts); err != nil {
 		log.Exitf("error in runModifyImages: %v", err)
 	}
 }
 
-func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
+func runModifyImages(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading contents: %v", err)
 	}
 
 	var rules []*transformer.ImageSubRule
@@ -64,7 +66,15 @@ func runModifyImages(ctx context.Context, opts *options, rw files.FileReaderWrit
 		})
 	}
 
-	repl := transformer.NewImageTransformer(b.Components).TransformImagesStringSub(rules)
+	repl := transformer.NewImageTransformer(bw.AllComponents()).TransformImagesStringSub(rules)
+	if bw.Bundle != nil {
+		bw.Bundle.Components = repl
+	} else if bw.Component != nil {
+		if len(repl) != 1 {
+			return fmt.Errorf("got %d components, but expected exactly one after component-image transform.", len(repl))
+		}
+		bw.Component = repl[0]
+	}
 
-	return cmdlib.WriteStructuredContents(ctx, repl, rw, gopt)
+	return brw.WriteBundleData(ctx, bw, gopt)
 }

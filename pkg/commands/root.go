@@ -30,32 +30,29 @@ import (
 // AddCommands adds all subcommands to the root command.
 func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "bundler",
-		Short: "bundler is tool for inspecting, validation, and modifying components packages and component sets.",
+		Use:   "bundlectl",
+		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
 
-	// TODO(kashomon): Should the GlobalOptionsValues be de-globalized? It's
-	// certainly possible.
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.BundleFile, "bundle-file", "f", "", "The path to a bundle file")
+		&cmdlib.GlobalOptionsValues.InputFile, "input-file", "f", "", "The path to an input file")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "yaml", "The input file format. One of either 'json' or 'yaml'")
+		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "", "The input file format. One of either 'json' or 'yaml'. "+
+			"If an input-file is specified, it is inferred from the file extension. If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.OutputFile, "output-file", "o", "", "The path for any output file")
-
-	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "yaml", "The output file format. One of either 'json' or 'yaml'")
+		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
+			"If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.InlineComponents, "inline-components", "l", true, "Whether to inline the component data files before processing")
 
 	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.InlineObjects, "inline-objects", "", true, "Whether to inline tho components' object files")
+		&cmdlib.GlobalOptionsValues.InlineObjects, "inline-objects", "", true, "Whether to inline the components' object files")
 
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)

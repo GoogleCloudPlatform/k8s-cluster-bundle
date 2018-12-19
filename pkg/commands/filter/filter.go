@@ -22,7 +22,6 @@ import (
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 
-	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
@@ -59,16 +58,18 @@ var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &files.LocalFileSystemReaderWriter{}
-	if err := run(ctx, opts, rw, gopt); err != nil {
+	brw := cmdlib.NewBundleReaderWriter(
+		&files.LocalFileSystemReaderWriter{},
+		&cmdlib.RealStdioReaderWriter{})
+	if err := run(ctx, opts, brw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	b, err := cmdlib.ReadBundle(ctx, rw, gopt)
+func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
-		return fmt.Errorf("error reading bundle contents: %v", err)
+		return fmt.Errorf("error reading contents: %v", err)
 	}
 
 	fopts := &filter.Options{}
@@ -105,14 +106,18 @@ func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdli
 	}
 	fopts.KeepOnly = o.keepOnly
 
-	var out []*bundle.ComponentPackage
-	if o.filterType == "components" {
-		out = filter.NewFilter().Components(b.Components, fopts)
+	if o.filterType == "components" && bw.Bundle != nil {
+		bw.Bundle.Components = filter.NewFilter().Components(bw.Bundle.Components, fopts)
+	} else if o.filterType == "objects" && bw.Bundle != nil {
+		for i, c := range bw.Bundle.Components {
+			bw.Bundle.Components[i].Spec.Objects =
+				filter.NewFilter().Objects(c.Spec.Objects, fopts)
+		}
+	} else if o.filterType == "objects" && bw.Component != nil {
+		bw.Component.Spec.Objects = filter.NewFilter().Objects(bw.Component.Spec.Objects, fopts)
 	} else {
-		return fmt.Errorf("only filtering components is currently supported")
+		return fmt.Errorf("unknown filter type: %s", o.filterType)
 	}
 
-	outData := b.DeepCopy()
-	outData.Components = out
-	return cmdlib.WriteStructuredContents(ctx, outData, rw, gopt)
+	return brw.WriteBundleData(ctx, bw, gopt)
 }
