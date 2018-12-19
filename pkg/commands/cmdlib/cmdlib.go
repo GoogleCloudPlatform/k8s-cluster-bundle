@@ -29,10 +29,6 @@ func ExitWithHelp(cmd *cobra.Command, err string) {
 	os.Exit(1)
 }
 
-// DefaultFilePermissions is the permission used for the bundle output
-// file (rw-r--r--).
-const DefaultFilePermissions = os.FileMode(0644)
-
 // ContextActionFunc is a common type for providing a context to a Cobra function.
 type ContextActionFunc func(ctx context.Context, cmd *cobra.Command, args []string)
 

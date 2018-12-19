@@ -39,8 +39,10 @@ var opts = &options{}
 // Action is the cobra command action for bundle validation.
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &files.LocalFileSystemReaderWriter{}
-	if err := runValidate(ctx, opts, rw, gopt); err != nil {
+	brw := cmdlib.NewBundleReaderWriter(
+		&files.LocalFileSystemReaderWriter{},
+		&cmdlib.RealStdioReaderWriter{})
+	if err := runValidate(ctx, opts, brw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -50,9 +52,7 @@ type componentValidator func([]*bundle.ComponentPackage) field.ErrorList
 // componentValidationFn validates components.
 var componentValidationFn componentValidator = validate.AllComponents
 
-func runValidate(ctx context.Context, opts *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	brw := cmdlib.NewBundleReaderWriter(rw)
-
+func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading contents: %v", err)

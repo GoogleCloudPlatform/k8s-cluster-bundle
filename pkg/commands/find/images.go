@@ -32,16 +32,16 @@ type options struct {
 var opts = &options{}
 
 func findAction(ctx context.Context, cmd *cobra.Command, _ []string) {
-	rw := &files.LocalFileSystemReaderWriter{}
-	gopts := cmdlib.GlobalOptionsValues.Copy()
-	if err := runFindImages(ctx, opts, rw, gopts); err != nil {
+	gopt := cmdlib.GlobalOptionsValues.Copy()
+	brw := cmdlib.NewBundleReaderWriter(
+		&files.LocalFileSystemReaderWriter{},
+		&cmdlib.RealStdioReaderWriter{})
+	if err := runFindImages(ctx, opts, brw, gopt); err != nil {
 		log.Exitf("error in runFindImages: %v", err)
 	}
 }
 
-func runFindImages(ctx context.Context, _ *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	brw := cmdlib.NewBundleReaderWriter(rw)
-
+func runFindImages(ctx context.Context, _ *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading contents: %v", err)

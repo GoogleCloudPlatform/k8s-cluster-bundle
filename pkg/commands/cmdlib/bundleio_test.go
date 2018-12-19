@@ -278,7 +278,7 @@ spec:
 		t.Run(tc.desc, func(t *testing.T) {
 			ctx := context.Background()
 
-			brw := &BundleReaderWriter{
+			brw := &realBundleReaderWriter{
 				rw: &fakeFileRW{
 					rdBytes: []byte(tc.readFile),
 				},
@@ -333,33 +333,14 @@ func TestWriteBundleData(t *testing.T) {
 		component string
 
 		expStdioSubstr string
-		expFileSubstr  string
 
 		expErrSubstr string
 	}{
 		{
-			desc: "Test success file write: bundle",
-			opts: &GlobalOptions{
-				OutputFile: "foo/bar/biff.yaml",
-			},
-			bundle:        successBundle,
-			expFileSubstr: "test-pkg",
-		},
-		{
-			desc: "Test success stdout write: bundle",
-			opts: &GlobalOptions{
-				OutputFormat: "yaml",
-			},
+			desc:           "Test success stdout write: bundle",
+			opts:           &GlobalOptions{},
 			bundle:         successBundle,
 			expStdioSubstr: "test-pkg",
-		},
-		{
-			desc: "Test success file write: component",
-			opts: &GlobalOptions{
-				OutputFile: "foo/bar/biff.yaml",
-			},
-			component:     inlinedComponent,
-			expFileSubstr: "some-pod",
 		},
 		{
 			desc: "Test success stdout write: component",
@@ -406,7 +387,7 @@ func TestWriteBundleData(t *testing.T) {
 			fileRW := &fakeFileRW{}
 			stdioRW := &fakeStdioRW{}
 
-			brw := &BundleReaderWriter{
+			brw := &realBundleReaderWriter{
 				rw:    fileRW,
 				stdio: stdioRW,
 				makeInlinerFn: func(rw files.FileReaderWriter, inputFile string) fileInliner {
@@ -444,19 +425,9 @@ func TestWriteBundleData(t *testing.T) {
 			}
 
 			writtenStdio := string(stdioRW.wrBytes)
-			writtenFile := string(fileRW.wrBytes)
 
 			if tc.expStdioSubstr != "" && !strings.Contains(writtenStdio, tc.expStdioSubstr) {
 				t.Errorf("got stdout content %s, but expected it to contain %q", writtenStdio, tc.expStdioSubstr)
-			}
-			if tc.expStdioSubstr != "" && writtenFile != "" {
-				t.Errorf("got file content %s, but to get just stdout content", writtenFile)
-			}
-			if tc.expFileSubstr != "" && !strings.Contains(writtenFile, tc.expFileSubstr) {
-				t.Errorf("got file content %s, but expected it to contain %q", writtenFile, tc.expFileSubstr)
-			}
-			if tc.expFileSubstr != "" && writtenStdio != "" {
-				t.Errorf("got stdio content %s, but expected it to just contain file content", writtenStdio)
 			}
 		})
 	}

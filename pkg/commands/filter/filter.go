@@ -58,15 +58,15 @@ var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &files.LocalFileSystemReaderWriter{}
-	if err := run(ctx, opts, rw, gopt); err != nil {
+	brw := cmdlib.NewBundleReaderWriter(
+		&files.LocalFileSystemReaderWriter{},
+		&cmdlib.RealStdioReaderWriter{})
+	if err := run(ctx, opts, brw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func run(ctx context.Context, o *options, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
-	brw := cmdlib.NewBundleReaderWriter(rw)
-
+func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading contents: %v", err)

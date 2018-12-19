@@ -58,18 +58,19 @@ func realInlinerMaker(rw files.FileReaderWriter, inputFile string) fileInliner {
 	)
 }
 
-type stdioReaderWriter interface {
+// StdioReaderWriter can read from STDIN and write to STDOUT.
+type StdioReaderWriter interface {
 	ReadAll() ([]byte, error)
 	io.Writer
 }
 
-type realStdioReaderWriter struct{}
+type RealStdioReaderWriter struct{}
 
-func (r *realStdioReaderWriter) ReadAll() ([]byte, error) {
+func (r *RealStdioReaderWriter) ReadAll() ([]byte, error) {
 	return ioutil.ReadAll(os.Stdin)
 }
 
-func (r *realStdioReaderWriter) Write(b []byte) (int, error) {
+func (r *RealStdioReaderWriter) Write(b []byte) (int, error) {
 	return os.Stdout.Write(b)
 }
 
@@ -79,25 +80,31 @@ type fileInliner interface {
 	InlineComponent(context.Context, *bundle.ComponentPackage) (*bundle.ComponentPackage, error)
 }
 
+type BundleReaderWriter interface {
+	ReadBundleData(context.Context, *GlobalOptions) (*BundleWrapper, error)
+	WriteBundleData(context.Context, *BundleWrapper, *GlobalOptions) error
+	WriteStructuredContents(context.Context, interface{}, *GlobalOptions) error
+}
+
 // BundleReaderWriter is an object that can read and write bundle information,
 // in the context of CLI flags.
-type BundleReaderWriter struct {
+type realBundleReaderWriter struct {
 	rw            files.FileReaderWriter
-	stdio         stdioReaderWriter
+	stdio         StdioReaderWriter
 	makeInlinerFn makeInliner
 }
 
 // NewBundleReaderWriter creates a new BundleReaderWriter.
-func NewBundleReaderWriter(rw files.FileReaderWriter) *BundleReaderWriter {
-	return &BundleReaderWriter{
+func NewBundleReaderWriter(rw files.FileReaderWriter, stdio StdioReaderWriter) BundleReaderWriter {
+	return &realBundleReaderWriter{
 		rw:            rw,
-		stdio:         &realStdioReaderWriter{},
+		stdio:         stdio,
 		makeInlinerFn: realInlinerMaker,
 	}
 }
 
 // ReadBundleData reads either data file contents from a file or stdin.
-func (brw *BundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOptions) (*BundleWrapper, error) {
+func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOptions) (*BundleWrapper, error) {
 	var bytes []byte
 	var err error
 	inFmt := g.InputFormat
@@ -155,7 +162,7 @@ func (brw *BundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOpti
 }
 
 // inlineData inlines a cluster bundle before processing
-func (brw *BundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) (*BundleWrapper, error) {
+func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) (*BundleWrapper, error) {
 	var err error
 	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
 	if g.InlineComponents && bw.Bundle != nil {
@@ -180,7 +187,7 @@ func (brw *BundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper
 }
 
 // WriteBundleData writes either the component or bundle object from the BundleWrapper.
-func (brw *BundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) error {
+func (brw *realBundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) error {
 	if bw.Bundle != nil && bw.Component != nil {
 		return fmt.Errorf("both the bundle and the component fields were non-nil in the BundleWrapper")
 	}
@@ -196,12 +203,8 @@ func (brw *BundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWr
 
 // WriteStructuredContents writes some structured contents from some object
 // `obj`. The contents must be serializable to both JSON and YAML.
-func (brw *BundleReaderWriter) WriteStructuredContents(ctx context.Context, obj interface{}, g *GlobalOptions) error {
+func (brw *realBundleReaderWriter) WriteStructuredContents(ctx context.Context, obj interface{}, g *GlobalOptions) error {
 	outFmt := g.OutputFormat
-	fileFmt := formatFromFile(g.OutputFile)
-	if fileFmt != "" && outFmt != "" {
-		outFmt = fileFmt
-	}
 	if outFmt == "" {
 		outFmt = "yaml"
 	}
@@ -210,19 +213,13 @@ func (brw *BundleReaderWriter) WriteStructuredContents(ctx context.Context, obj 
 	if err != nil {
 		return fmt.Errorf("error writing contents: %v", err)
 	}
-	return brw.writeContents(ctx, g.OutputFile, bytes, brw.rw)
+	return brw.writeContents(ctx, bytes, brw.rw)
 }
 
-// writeContents writes some bytes to disk or stdout. if outPath is empty,
-// write to stdout instead.
-func (brw *BundleReaderWriter) writeContents(ctx context.Context, outPath string, bytes []byte, rw files.FileReaderWriter) error {
-	if outPath == "" {
-		_, err := brw.stdio.Write(bytes)
-		return err
-	}
-
-	log.Infof("Writing file to %q", outPath)
-	return rw.WriteFile(ctx, outPath, bytes, DefaultFilePermissions)
+// writeContents writes some bytes to stdout. if outPath is empty, write to
+func (brw *realBundleReaderWriter) writeContents(ctx context.Context, bytes []byte, rw files.FileReaderWriter) error {
+	_, err := brw.stdio.Write(bytes)
+	return err
 }
 
 // formatFromFile gets the content format from a file-extension and returns

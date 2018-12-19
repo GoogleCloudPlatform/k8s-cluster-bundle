@@ -31,10 +31,6 @@ type GlobalOptions struct {
 	// but also can be JSON.
 	InputFormat string
 
-	// OutputFile is the path for the output file. If OutputFile is not
-	// specified, the output is returned on STDOUT.
-	OutputFile string
-
 	// OutputFormat is the the format for any output. By default, assumes YAML.
 	OutputFormat string
 
@@ -57,7 +53,6 @@ func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
 		InputFile:        g.InputFile,
 		InputFormat:      g.InputFormat,
-		OutputFile:       g.OutputFile,
 		OutputFormat:     g.OutputFormat,
 		InlineComponents: g.InlineComponents,
 		InlineObjects:    g.InlineObjects,

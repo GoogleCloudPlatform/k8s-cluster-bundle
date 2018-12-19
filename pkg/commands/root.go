@@ -31,7 +31,7 @@ import (
 func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "bundlectl",
-		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets.",
+		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
@@ -45,11 +45,8 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 			"If an input-file is specified, it is inferred from the file extension. If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.OutputFile, "output-file", "o", "", "The path for any output file")
-
-	rootCmd.PersistentFlags().StringVarP(
 		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
-			"If an output-file is specified, it is inferred from the file extension. If not specified, it defaults to yaml.")
+			"If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.InlineComponents, "inline-components", "l", true, "Whether to inline the component data files before processing")
