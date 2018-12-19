@@ -31,7 +31,8 @@ type ComponentSetSpec struct {
 	// changes should indicate breaking changes, minor-versions should indicate
 	// backwards compatible features, and patch changes should indicate backwords
 	// compatible. If there are any changes to the bundle, then the version
-	// string must be incremented.
+	// string must be incremented. As such, the version should not be tied to the
+	// version of the container images.
 	Version string `json:"version,omitempty"`
 
 	// Components are references to component objects that make up the component
@@ -84,6 +85,17 @@ type ComponentPackageSpec struct {
 	// patch changes should indicate backwards compatible. If there are any
 	// changes to the component, then the version string must be incremented.
 	Version string `json:"version,omitempty"`
+
+	// AppVersion is an optional SemVer versions string that should have the form
+	// X.Y or X.Y.Z (Major.Minor.Patch), which indicates the version of the
+	// application provided by the component. The AppVersion will frequently be
+	// the version of the container image and need not be updated when the
+	// Version field is updated.
+	//
+	// For example, for an etcd component, the version field might be something
+	// like 10.9.8, but the app version might be something like 3.3.10,
+	// representing the version of Etcd.
+	AppVersion string `json:"appVersion,omitempty"`
 
 	// Structured Kubenetes objects that run as part of this app, whether on the
 	// master, on the nodes, or in some other fashio.  These Kubernetes objects
