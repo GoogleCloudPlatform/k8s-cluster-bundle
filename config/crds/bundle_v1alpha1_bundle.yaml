@@ -15,142 +15,38 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
-        componentFiles:
-          items:
-            properties:
-              hash:
-                description: Optional Sha256 hash of the binary to ensure we are pulling
-                  the correct binary/file.
-                type: string
-              url:
-                description: 'URL to find this file; the url string must be parsable
-                  via Go''s net/url library. It is generally recommended that a URI
-                  scheme be provided in the URL, but it is not required. If a scheme
-                  is not provided, it is assumed that the scheme is a file-scheme.  For
-                  example, these are all valid: - foo/bar/biff (a relative path) -
-                  /foo/bar/biff (an absolute path) - file:///foo/bar/biff (an absolute
-                  path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
-                type: string
-            type: object
-          type: array
         components:
           items:
             properties:
               apiVersion:
-                description: 'APIVersion defines the versioned schema of this representation
-                  of an object. Servers should convert recognized schemas to the latest
-                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
                 type: string
               kind:
-                description: 'Kind is a string value representing the REST resource
-                  this object represents. Servers may infer this from the endpoint
-                  the client submits requests to. Cannot be updated. In CamelCase.
-                  More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
                 type: string
               metadata:
                 type: object
               spec:
                 properties:
-                  componentName:
-                    description: ComponentName is the canonical name of this component.
-                      For example, 'etcd' or 'kube-proxy'. It must have the same naming
-                      properties as the Metadata.Name to allow for constructing the
-                      name. See more at k8s.io/docs/concepts/overview/working-with-objects/names/
+                  appVersion:
                     type: string
-                  objectFiles:
-                    items:
-                      properties:
-                        hash:
-                          description: Optional Sha256 hash of the binary to ensure
-                            we are pulling the correct binary/file.
-                          type: string
-                        url:
-                          description: 'URL to find this file; the url string must
-                            be parsable via Go''s net/url library. It is generally
-                            recommended that a URI scheme be provided in the URL,
-                            but it is not required. If a scheme is not provided, it
-                            is assumed that the scheme is a file-scheme.  For example,
-                            these are all valid: - foo/bar/biff (a relative path)
-                            - /foo/bar/biff (an absolute path) - file:///foo/bar/biff
-                            (an absolute path with an explicit ''file'' scheme) -
-                            http://example.com/foo.yaml'
-                          type: string
-                      type: object
-                    type: array
+                  componentName:
+                    type: string
                   objects:
                     items:
-                      description: Structured Kubenetes objects that run as part of
-                        this app, whether on the master, on the nodes, or in some
-                        other fashio.  These Kubernetes objects are inlined and must
-                        be YAML/JSON compatible. Each must have `apiVersion`, `kind`,
-                        and `metadata`.  This is essentially equivalent to the Kubernetes
-                        `Unstructured` type.
-                      type: object
-                    type: array
-                  rawTextFiles:
-                    items:
-                      properties:
-                        files:
-                          items:
-                            properties:
-                              hash:
-                                description: Optional Sha256 hash of the binary to
-                                  ensure we are pulling the correct binary/file.
-                                type: string
-                              url:
-                                description: 'URL to find this file; the url string
-                                  must be parsable via Go''s net/url library. It is
-                                  generally recommended that a URI scheme be provided
-                                  in the URL, but it is not required. If a scheme
-                                  is not provided, it is assumed that the scheme is
-                                  a file-scheme.  For example, these are all valid:
-                                  - foo/bar/biff (a relative path) - /foo/bar/biff
-                                  (an absolute path) - file:///foo/bar/biff (an absolute
-                                  path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Name of the filegroup. For raw text files,
-                            this becomes the name of the.
-                          type: string
                       type: object
                     type: array
                   version:
-                    description: Version is the required version for this component.
-                      The version should be a SemVer 2 string (see https://semver.org/)
-                      of the form X.Y.Z (Major.Minor.Patch).  A major-version changes
-                      should indicate breaking changes, minor-versions should indicate
-                      backwards compatible features, and patch changes should indicate
-                      backwards compatible. If there are any changes to the component,
-                      then the version string must be incremented.
                     type: string
                 type: object
             type: object
           type: array
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         setName:
-          description: SetName is the human-readable string for this set of components.
-            It must only contain lower case alphanumerics, periods, and dashes. See
-            more details at k8s.io/docs/concepts/overview/working-with-objects/names/
           type: string
         version:
-          description: Version is the required version string for this component set
-            and should have the form X.Y.Z (Major.Minor.Patch). Generally speaking,
-            major-version changes should indicate breaking changes, minor-versions
-            should indicate backwards compatible features, and patch changes should
-            indicate backwords compatible. If there are any changes to the bundle,
-            then the version string must be incremented.
           type: string
   version: v1alpha1
 status:

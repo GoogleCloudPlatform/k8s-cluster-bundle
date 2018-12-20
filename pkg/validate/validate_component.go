@@ -48,7 +48,7 @@ var (
 )
 
 // All validates components and components sets, providing as many errors as it can.
-func All(cp []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func All(cp []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 	errs = append(errs, ComponentSet(cs)...)
 	errs = append(errs, AllComponents(cp)...)
@@ -57,12 +57,17 @@ func All(cp []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList
 	return errs
 }
 
+// AllBuilders validates all builders
+func AllBuilders(cp []*bundle.ComponentBuilder, cs *bundle.BundleBuilder) field.ErrorList {
+	return nil
+}
+
 func cPath(ref bundle.ComponentReference) *field.Path {
 	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
 }
 
 // AllComponents validates a list of components.
-func AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponents(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
 	for _, c := range components {
@@ -80,7 +85,7 @@ func AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
 }
 
 // Component validates a single component.
-func Component(c *bundle.ComponentPackage) field.ErrorList {
+func Component(c *bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	pi := field.NewPath("Component")
 
@@ -105,12 +110,12 @@ func Component(c *bundle.ComponentPackage) field.ErrorList {
 
 	api := c.APIVersion
 	if !apiVersionPattern.MatchString(api) {
-		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, "must have the form \"bundle.gke.io/<version>\""))
+		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, fmt.Sprintf("must have the form %s", apiVersionPattern.String())))
 	}
 
-	expType := "ComponentPackage"
+	expType := "Component"
 	if k := c.Kind; k != expType {
-		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentPackage"))
+		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be Component"))
 	}
 
 	if !versionPattern.MatchString(ver) {
@@ -151,7 +156,7 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 
 	api := cs.APIVersion
 	if !apiVersionPattern.MatchString(api) {
-		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, "must have an apiVersion of the form \"bundle.gke.io/<version>\""))
+		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, fmt.Sprintf("must have an apiVersion of the form %q", apiVersionPattern.String())))
 	}
 
 	expType := "ComponentSet"
@@ -167,10 +172,10 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 }
 
 // ComponentsAndComponentSet validates components in the context of a component set.
-func ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func ComponentsAndComponentSet(components []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 
-	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
+	compMap := make(map[bundle.ComponentReference]*bundle.Component)
 	for _, c := range components {
 		compMap[c.ComponentReference()] = c
 	}
@@ -189,7 +194,7 @@ func ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle
 }
 
 // AllComponentObjects validates all objects in all componenst
-func AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponentObjects(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	for _, ca := range components {
 		errs = append(errs, ComponentObjects(ca)...)
@@ -197,8 +202,8 @@ func AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList 
 	return errs
 }
 
-// ComponentObjects validates objects in a componenst.
-func ComponentObjects(cp *bundle.ComponentPackage) field.ErrorList {
+// ComponentObjects validates objects in a component.
+func ComponentObjects(cp *bundle.Component) field.ErrorList {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 
@@ -225,12 +230,66 @@ func ComponentObjects(cp *bundle.ComponentPackage) field.ErrorList {
 		}
 		compObjects[oref] = true
 	}
+	return errs
+}
 
-	for i, objfile := range cp.Spec.ObjectFiles {
+// ComponentBuilder validates a single component package builder.
+func ComponentBuilder(c *bundle.ComponentBuilder) field.ErrorList {
+	errs := field.ErrorList{}
+	pi := field.NewPath("ComponentBuilder")
+
+	n := c.ComponentName
+	if n == "" {
+		errs = append(errs, field.Required(pi.Child("ComponentName"), "component builders must have ComponentName"))
+	}
+	ver := c.Version
+	if ver == "" {
+		errs = append(errs, field.Required(pi.Child("Version"), "component builders must have a Version"))
+	}
+	if n == "" || ver == "" {
+		// Subsequent validation relies on components having a unique name+version pair.
+		return errs
+	}
+
+	p := cPath(c.ComponentReference())
+
+	if nameErrs := validateName(p.Child("ComponentName"), n); len(errs) > 0 {
+		errs = append(errs, nameErrs...)
+	}
+
+	api := c.APIVersion
+	if !apiVersionPattern.MatchString(api) {
+		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, fmt.Sprintf("must have the form %s", apiVersionPattern.String())))
+	}
+
+	expType := "ComponentBuilder"
+	if k := c.Kind; k != expType {
+		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentBuilder"))
+	}
+
+	if !versionPattern.MatchString(ver) {
+		errs = append(errs, field.Invalid(p.Child("Version"), ver, "must be of the form X.Y.Z"))
+	}
+	if c.AppVersion != "" && !appVersionPattern.MatchString(c.AppVersion) {
+		errs = append(errs, field.Invalid(p.Child("AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
+	}
+
+	for i, objfile := range c.ObjectFiles {
 		url := objfile.URL
-		fp := basep.Child("Spec", "ObjectFiles").Index(i)
+		fp := p.Child("ObjectFiles").Index(i)
 		if urlErr := validateURL(fp, url); urlErr != nil {
 			errs = append(errs, urlErr)
+		}
+	}
+
+	for i, grouping := range c.RawTextFiles {
+		groupingName := grouping.Name
+		for j, objfile := range grouping.Files {
+			url := objfile.URL
+			fp := p.Child("RawTextFiles").Index(i).Child(groupingName).Index(j)
+			if urlErr := validateURL(fp, url); urlErr != nil {
+				errs = append(errs, urlErr)
+			}
 		}
 	}
 	return errs

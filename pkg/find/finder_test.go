@@ -117,7 +117,7 @@ func TestBundleFinder(t *testing.T) {
 
 var validComponent = `
 apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: kube-apiserver
   objects:
@@ -143,7 +143,7 @@ spec:
 `
 
 func TestComponentFinder_PartialLookup(t *testing.T) {
-	c, err := converter.FromYAMLString(validComponent).ToComponentPackage()
+	c, err := converter.FromYAMLString(validComponent).ToComponent()
 	if err != nil {
 		t.Fatalf("error converting componente: %v", err)
 	}

@@ -21,12 +21,12 @@ import (
 )
 
 func TestRealisticDataParse(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/cluster/bundle-example.yaml")
+	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
-	dataFiles, err := FromYAML(b).ToBundle()
+	dataFiles, err := FromYAML(b).ToBundleBuilder()
 	if err != nil {
 		t.Fatalf("Error calling ToBundle(): %v", err)
 	}

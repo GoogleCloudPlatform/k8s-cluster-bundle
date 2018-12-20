@@ -16,15 +16,13 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Bundle encapsulates component data, which can be used for build systems,
-// release automation, libraries, and tooling. It is not intended for building
-// controllers or even applying directly to clusters, and as such, is
-// intentionally designed with and spec/status fields and without a generated
-// client library.
+// Bundle is a thin bundle of component data (no binaries), which can be used
+// for build systems, release automation, libraries, and tooling.
 type Bundle struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -42,12 +40,117 @@ type Bundle struct {
 	// string must be incremented.
 	Version string `json:"version,omitempty"`
 
-	// ComponentFiles reference ComponentPackage files. The component files can
-	// be inlined as directly included components (see `Components` below).
-	ComponentFiles []File `json:"componentFiles,omitempty"`
-
-	// Components are ComponentPackages are files that are inlined. The
+	// Components are Components are files that are inlined. The
 	// components must be unique based on the combination of ComponentName +
 	// Version.
-	Components []*ComponentPackage `json:"components,omitempty"`
+	Components []*Component `json:"components,omitempty"`
+}
+
+// ComponentSetSpec represents a versioned selection of Kubernetes components.
+type ComponentSetSpec struct {
+	// SetName is the human-readable string for this group of components. It
+	// must only contain lower case alphanumerics, periods, and dashes. See more
+	// details at k8s.io/docs/concepts/overview/working-with-objects/names/
+	SetName string `json:"setName,omitempty"`
+
+	// Version is the required version string for this component set and should
+	// have the form X.Y.Z (Major.Minor.Patch). Generally speaking, major-version
+	// changes should indicate breaking changes, minor-versions should indicate
+	// backwards compatible features, and patch changes should indicate backwords
+	// compatible. If there are any changes to the bundle, then the version
+	// string must be incremented. As such, the version should not be tied to the
+	// version of the container images.
+	Version string `json:"version,omitempty"`
+
+	// Components are references to component objects that make up the component
+	// set. To get the Metadata.Name for the component, GetLocalObjectRef()
+	// should be called on the component reference.
+	Components []ComponentReference `json:"components,omitempty"`
+}
+
+// ComponentReference provides a reference
+type ComponentReference struct {
+	// ComponentName is the readable name of a component.
+	ComponentName string `json:"componentName,omitempty"`
+
+	// Version is the version string for a component.
+	Version string `json:"version,omitempty"`
+}
+
+// ComponentSpec represents the spec for the component.
+type ComponentSpec struct {
+	// ComponentName is the canonical name of this component. For example, 'etcd'
+	// or 'kube-proxy'. It must have the same naming properties as the
+	// Metadata.Name to allow for constructing the name.
+	// See more at k8s.io/docs/concepts/overview/working-with-objects/names/
+	ComponentName string `json:"componentName,omitempty"`
+
+	// Version is the required version for this component. The version
+	// should be a SemVer 2 string (see https://semver.org/) of the form X.Y.Z
+	// (Major.Minor.Patch).  A major-version changes should indicate breaking
+	// changes, minor-versions should indicate backwards compatible features, and
+	// patch changes should indicate backwards compatible. If there are any
+	// changes to the component, then the version string must be incremented.
+	Version string `json:"version,omitempty"`
+
+	// AppVersion is an optional SemVer versions string that should have the form
+	// X.Y or X.Y.Z (Major.Minor.Patch), which indicates the version of the
+	// application provided by the component. The AppVersion will frequently be
+	// the version of the container image and need not be updated when the
+	// Version field is updated.
+	//
+	// For example, for an etcd component, the version field might be something
+	// like 10.9.8, but the app version might be something like 3.3.10,
+	// representing the version of Etcd.
+	AppVersion string `json:"appVersion,omitempty"`
+
+	// Structured Kubenetes objects that run as part of this app, whether on the
+	// master, on the nodes, or in some other fashio.  These Kubernetes objects
+	// are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
+	// `kind`, and `metadata`.
+	//
+	// This is essentially equivalent to the Kubernetes `Unstructured` type.
+	Objects []*unstructured.Unstructured `json:"objects,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ComponentSetList contains a list of ComponentSets.
+type ComponentSetList struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Items             []ComponentSet `json:"items,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ComponentList contains a list of Components.
+type ComponentList struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Items             []Component `json:"items,omitempty"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ComponentSet references a precise set of components.
+type ComponentSet struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	// The specification object for the ComponentSet
+	Spec ComponentSetSpec `json:"spec,omitempty"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Component represents Kubernetes objects grouped into
+// components and versioned together. These could be applications or they
+// could be some sort of supporting collection of objects.
+type Component struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	// The specification object for the Component.
+	Spec ComponentSpec `json:"spec,omitempty"`
 }

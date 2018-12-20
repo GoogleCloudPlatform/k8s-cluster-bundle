@@ -3,8 +3,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "builder_types.go",
         "bundle_types.go",
-        "component_types.go",
         "doc.go",
         "helpers.go",
         "identifiers.go",

@@ -14,7 +14,7 @@
 
 // Package simpletemplate contains helpers for applying options with the
 // assumption that cluster objects are simple go templates. That means, that
-// all the Objects present in the ComponentPackage are treated as go-templates.
+// all the Objects present in the Component are treated as go-templates.
 package simpletemplate
 
 import (
@@ -34,7 +34,7 @@ type applier struct{}
 
 // ApplyOptions treats objects in the components as go templates, applying the
 // options, and then returning the completed objects.
-func (m *applier) ApplyOptions(comp *bundle.ComponentPackage, p options.JSONOptions) (*bundle.ComponentPackage, error) {
+func (m *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
 	return options.ApplyCommon(comp, p, applyOptions)
 }
 

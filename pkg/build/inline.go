@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package inline turns
-package inline
+package build
 
 import (
 	"context"
@@ -21,11 +20,11 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Inliner inlines data files by reading them from the local or a remote
@@ -33,77 +32,90 @@ import (
 type Inliner struct {
 	// Readers reads from the local filesystem.
 	Readers map[files.URLScheme]files.FileObjReader
-
-	// Rewriters are used for path-rewriting, in the case of relative paths.
-	Rewriters map[files.URLScheme]PathRewriter
 }
 
 // NewLocalInliner creates a new inliner that only knows how to read local
 // files from disk. If the data is stored on disk, the cwd should be the path
-// to the directory containing the data file on disk.
+// to the directory containing the data file on disk. Relative paths are not
+// supported.
 func NewLocalInliner(cwd string) *Inliner {
 	return NewInlinerWithScheme(
 		files.FileScheme,
 		&files.LocalFileObjReader{filepath.Dir(cwd), &files.LocalFileSystemReader{}},
-		DefaultPathRewriter,
 	)
 }
 
 // NewInlinerWithScheme creates a new inliner given a URL scheme.
-func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader, pathRW PathRewriter) *Inliner {
+func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader) *Inliner {
 	rdrMap := map[files.URLScheme]files.FileObjReader{
 		scheme: objReader,
 	}
-	rwMap := map[files.URLScheme]PathRewriter{
-		scheme: pathRW,
-	}
 	return &Inliner{
-		Readers:   rdrMap,
-		Rewriters: rwMap,
+		Readers: rdrMap,
 	}
 }
 
-// InlineBundleFiles converts dereferences file-references in for bundle files and turns
-// them into components. Thus, the returned data is a copy with the
-// file-references removed.
-func (n *Inliner) InlineBundleFiles(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {
-	var out []*bundle.ComponentPackage
+// BundleFiles converts dereferences file-references in for bundle files.
+func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (*bundle.Bundle, error) {
+	var compbs []*bundle.ComponentBuilder
+	var comps []*bundle.Component
 	for _, f := range data.ComponentFiles {
 		contents, err := n.readFile(ctx, f)
 		if err != nil {
 			return nil, fmt.Errorf("error reading file %q: %v", f.URL, err)
 		}
-		comp, err := converter.FromFileName(f.URL, contents).ToComponentPackage()
+		uns, err := converter.FromFileName(f.URL, contents).ToUnstructured()
 		if err != nil {
-			return nil, fmt.Errorf("error converting file %q to a component package: %v", f.URL, err)
+			return nil, fmt.Errorf("error converting file %q to Unstructured: %v", f.URL, err)
 		}
 
-		// Because the components can themselves have file references that are
-		// relative to the location of the component, we need to transform the
-		// references to be based on the location of the component data file.
-		err = n.rewriteObjectPaths(ctx, f, comp)
-		if err != nil {
-			return nil, fmt.Errorf("error rewriting object paths: %v", err)
+		kind := uns.GetKind()
+		switch kind {
+		case "Component":
+			c, err := converter.FromFileName(f.URL, contents).ToComponent()
+			if err != nil {
+				return nil, fmt.Errorf("error converting file %q to a component: %v", f.URL, err)
+			}
+			comps = append(comps, c)
+		case "ComponentBuilder":
+			c, err := converter.FromFileName(f.URL, contents).ToComponentBuilder()
+			if err != nil {
+				return nil, fmt.Errorf("error converting file %q to a component builder: %v", f.URL, err)
+			}
+			compbs = append(compbs, c)
+		default:
+			return nil, fmt.Errorf("unsupported kind for component: %q; only supported kinds are Component and ComponentBuilder", kind)
 		}
-
-		out = append(out, comp)
 	}
-	newBundle := data.DeepCopy()
-	newBundle.Components = out
-	newBundle.ComponentFiles = nil
+
+	inlComps, err := n.AllComponentFiles(ctx, compbs)
+	if err != nil {
+		return nil, err
+	}
+	comps = append(comps, inlComps...)
+
+	newBundle := &bundle.Bundle{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "bundle.gke.io/v1alpha1",
+			Kind:       "Bundle",
+		},
+		ObjectMeta: *data.ObjectMeta.DeepCopy(),
+		SetName:    data.SetName,
+		Version:    data.Version,
+		Components: comps,
+	}
 	return newBundle, nil
 }
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
 var multiDoc = regexp.MustCompile("---(\n|$)")
 
-// InlineComponent reads file-references for component objects.
+// ComponentFiles reads file-references for component builder objects.
 // The returned components are copies with the file-references removed.
-func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPackage) (*bundle.ComponentPackage, error) {
-	comp = comp.DeepCopy()
-	name := comp.Spec.ComponentName
+func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuilder) (*bundle.Component, error) {
+	name := comp.ComponentName
 	var newObjs []*unstructured.Unstructured
-	for _, cf := range comp.Spec.ObjectFiles {
+	for _, cf := range comp.ObjectFiles {
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
 			return nil, fmt.Errorf("error reading file %v for component %q: %v", cf, name, err)
@@ -142,7 +154,7 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 		}
 	}
 
-	for _, fg := range comp.Spec.RawTextFiles {
+	for _, fg := range comp.RawTextFiles {
 		fgName := fg.Name
 		if fgName == "" {
 			return nil, fmt.Errorf("error reading raw text file group object for component %q; name was empty ", name)
@@ -163,35 +175,34 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 		}
 		newObjs = append(newObjs, uns)
 	}
-	comp.Spec.RawTextFiles = nil
-	comp.Spec.ObjectFiles = nil
-	comp.Spec.Objects = newObjs
 
-	return comp, nil
+	newComp := &bundle.Component{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "bundle.gke.io/v1alpha1",
+			Kind:       "Component",
+		},
+		ObjectMeta: *comp.ObjectMeta.DeepCopy(),
+		Spec: bundle.ComponentSpec{
+			ComponentName: comp.ComponentName,
+			Version:       comp.Version,
+			AppVersion:    comp.AppVersion,
+			Objects:       newObjs,
+		},
+	}
+	return newComp, nil
 }
 
-// InlineAllComponents inlines objects into ComponentPackages.
-func (n *Inliner) InlineAllComponents(ctx context.Context, packs []*bundle.ComponentPackage) ([]*bundle.ComponentPackage, error) {
-	var out []*bundle.ComponentPackage
-	for _, p := range packs {
-		newp, err := n.InlineComponent(ctx, p)
+// AllComponentFiles is a convenience method for inlining multiple component files.
+func (n *Inliner) AllComponentFiles(ctx context.Context, cbs []*bundle.ComponentBuilder) ([]*bundle.Component, error) {
+	var out []*bundle.Component
+	for _, cb := range cbs {
+		newc, err := n.ComponentFiles(ctx, cb)
 		if err != nil {
-			return nil, fmt.Errorf("error in InlineAllComponents: %v", err)
+			return nil, err
 		}
-		out = append(out, newp)
+		out = append(out, newc)
 	}
 	return out, nil
-}
-
-// InlineComponentsInBundle inlines all the components' objects in a Bundle object.
-func (n *Inliner) InlineComponentsInBundle(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {
-	cmp, err := n.InlineAllComponents(ctx, data.Components)
-	if err != nil {
-		return nil, err
-	}
-	newb := data.DeepCopy()
-	newb.Components = cmp
-	return newb, nil
 }
 
 // readFile from either a local or remote location.
@@ -209,53 +220,4 @@ func (n *Inliner) readFile(ctx context.Context, file bundle.File) ([]byte, error
 		return nil, fmt.Errorf("could not find file reader for scheme %q for url %q", parsed.Scheme, file.URL)
 	}
 	return rdr.ReadFileObj(ctx, file)
-}
-
-// rewriteObjPaths rewrites relative-path'd file-references during component
-// inlining.
-func (n *Inliner) rewriteObjectPaths(ctx context.Context, compFile bundle.File, comp *bundle.ComponentPackage) error {
-	compURL, err := compFile.ParsedURL()
-	if err != nil {
-		return err
-	}
-
-	for i, o := range comp.Spec.ObjectFiles {
-		objURL, err := o.ParsedURL()
-		if err != nil {
-			return err
-		}
-		scheme := files.URLScheme(objURL.Scheme)
-		if scheme == files.EmptyScheme {
-			scheme = files.FileScheme
-		}
-		rw, ok := n.Rewriters[scheme]
-		if !ok {
-			// It's not really an error to not rewrite paths; Most URL schemes won't
-			// provide the ability to rewrite paths.
-			continue
-		}
-		comp.Spec.ObjectFiles[i].URL = rw.RewriteObjectPath(compURL, objURL)
-	}
-
-	for i, fg := range comp.Spec.RawTextFiles {
-		for j, o := range fg.Files {
-			objURL, err := o.ParsedURL()
-			if err != nil {
-				return err
-			}
-			scheme := files.URLScheme(objURL.Scheme)
-			if scheme == files.EmptyScheme {
-				scheme = files.FileScheme
-			}
-			rw, ok := n.Rewriters[scheme]
-			if !ok {
-				// It's not really an error to not rewrite paths; Most URL schemes won't
-				// provide the ability to rewrite paths.
-				continue
-			}
-			fg.Files[j].URL = rw.RewriteObjectPath(compURL, objURL)
-		}
-		comp.Spec.RawTextFiles[i] = fg
-	}
-	return nil
 }

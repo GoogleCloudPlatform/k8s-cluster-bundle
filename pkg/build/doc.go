@@ -12,23 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inline
-
-import (
-	"context"
-
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/spf13/cobra"
-)
-
-// AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
-	cmd := &cobra.Command{
-		Use:   "inline",
-		Short: "Inline the bundle files",
-		Long:  `Inline all the files in the given bundle yaml`,
-		Run:   cmdlib.ContextAction(ctx, action),
-	}
-
-	root.AddCommand(cmd)
-}
+// Package build has functionality for building components, bundles, and
+// component sets from the builder types.
+package build

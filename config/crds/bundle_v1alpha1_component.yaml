@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: componentpackages.bundle.gke.io
+  name: components.bundle.gke.io
 spec:
   group: bundle.gke.io
   names:
-    kind: ComponentPackage
-    plural: componentpackages
+    kind: Component
+    plural: components
   scope: Namespaced
   validation:
     openAPIV3Schema:

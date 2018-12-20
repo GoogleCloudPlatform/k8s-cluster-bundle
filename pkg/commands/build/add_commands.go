@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package v1alpha1 represents the v1alpha1 version of extenisons for the
-// Cluster Bundle API. These are APIs that are not core to the Cluster Bundle,
-// but provide value-add functionality.
-//
-// These types here are quite experimental and indicate how we think the
-// ClusterBundle and components might be used to create clusters.
-// +k8s:deepcopy-gen=package,register
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=bundleext.gke.io
-package v1alpha1
+package build
+
+import (
+	"context"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/spf13/cobra"
+)
+
+// AddCommandsTo adds commands to a root cobra command.
+func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "build",
+		Short: "Build a BundleBuilder or ComponentBuilder file",
+		Long:  "Build a BundleBuilder or ComponentBuilder file",
+		Run:   cmdlib.ContextAction(ctx, action),
+	}
+
+	root.AddCommand(cmd)
+}

@@ -23,7 +23,7 @@ import (
 )
 
 var dataComponent = `
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: data-component
   objects:
@@ -63,7 +63,7 @@ spec:
 `
 
 func TestRawStringApplier_MultiItems(t *testing.T) {
-	comp, err := converter.FromYAMLString(dataComponent).ToComponentPackage()
+	comp, err := converter.FromYAMLString(dataComponent).ToComponent()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
 	}

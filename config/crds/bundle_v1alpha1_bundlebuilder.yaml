@@ -4,48 +4,35 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: nodeconfigs.bundleext.gke.io
+  name: bundlebuilders.bundle.gke.io
 spec:
-  group: bundleext.gke.io
+  group: bundle.gke.io
   names:
-    kind: NodeConfig
-    plural: nodeconfigs
+    kind: BundleBuilder
+    plural: bundlebuilders
   scope: Namespaced
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
           type: string
-        envVars:
+        componentFiles:
           items:
             properties:
-              name:
+              digest:
                 type: string
-              value:
+              url:
                 type: string
             type: object
           type: array
-        externalInitFile:
-          properties:
-            digest:
-              type: string
-            url:
-              type: string
-          type: object
-        initFile:
-          format: byte
-          type: string
         kind:
           type: string
         metadata:
           type: object
-        osImage:
-          properties:
-            digest:
-              type: string
-            url:
-              type: string
-          type: object
+        setName:
+          type: string
+        version:
+          type: string
   version: v1alpha1
 status:
   acceptedNames:

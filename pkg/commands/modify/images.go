@@ -67,13 +67,13 @@ func runModifyImages(ctx context.Context, opts *options, brw cmdlib.BundleReader
 	}
 
 	repl := transformer.NewImageTransformer(bw.AllComponents()).TransformImagesStringSub(rules)
-	if bw.Bundle != nil {
-		bw.Bundle.Components = repl
-	} else if bw.Component != nil {
+	if bw.Bundle() != nil {
+		bw.Bundle().Components = repl
+	} else if bw.Component() != nil {
 		if len(repl) != 1 {
 			return fmt.Errorf("got %d components, but expected exactly one after component-image transform.", len(repl))
 		}
-		bw.Component = repl[0]
+		bw = cmdlib.NewWrapper().FromComponent(repl[0])
 	}
 
 	return brw.WriteBundleData(ctx, bw, gopt)

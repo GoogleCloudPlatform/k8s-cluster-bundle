@@ -13,11 +13,10 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
-spec:
-  componentName: data-blob
-  version: 0.1.0
-  rawTextFiles:
-  - name: data-blob
-    files:
-    - url: file:///datablob/some-data.txt
+kind: ComponentBuilder
+componentName: data-blob
+version: 0.1.0
+rawTextFiles:
+- name: data-blob
+  files:
+  - url: file:///datablob/some-data.txt

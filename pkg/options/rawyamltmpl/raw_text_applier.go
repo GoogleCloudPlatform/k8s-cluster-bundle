@@ -14,7 +14,7 @@
 
 // Package rawtexttmpl is a special-case option applier for adding options to
 // objects with the assumption that objects have been inlined as go-templates
-// via RawTextFiles ComponentPackageSpec field into ConfigMaps.
+// via RawTextFiles ComponentSpec field into ConfigMaps.
 //
 // Once parameters are applied via the go template, the objects are parsed as
 // unstructured objects and added to the component's object list. The original
@@ -53,7 +53,7 @@ func NewApplier() options.Applier {
 // template, the objects are parsed as unstructured objects and added to the
 // component's object list. The original ConfigMap is not included in the final
 // component.
-func (m *applier) ApplyOptions(comp *bundle.ComponentPackage, opts options.JSONOptions) (*bundle.ComponentPackage, error) {
+func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions) (*bundle.Component, error) {
 	comp = comp.DeepCopy()
 	ref := comp.ComponentReference()
 

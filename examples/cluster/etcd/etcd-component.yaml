@@ -13,9 +13,8 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
-spec:
-  componentName: etcd-component
-  version: 30.0.2
-  objectFiles:
-  - url: file:///etcd/etcd-server.yaml
+kind: ComponentBuilder
+componentName: etcd-component
+version: 30.0.2
+objectFiles:
+- url: file:///etcd/etcd-server.yaml

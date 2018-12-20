@@ -19,12 +19,14 @@ import (
 )
 
 const componentDataExample = `
+kind: Bundle
 components:
 - spec:
     componentName: kube-apiserver
     version: 1.0.0
-    objectFiles:
-    - url: 'file://path/to/kube_apiserver.yaml'
+    objects:
+    - kind: Zap
+      apiVersion: v1
 `
 
 func TestDataParse(t *testing.T) {

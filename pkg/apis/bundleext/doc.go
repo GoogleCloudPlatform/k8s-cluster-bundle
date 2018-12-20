@@ -13,4 +13,7 @@
 // limitations under the License.
 
 // Package bundleext is the internal version of the bundle extensions API.
+// +k8s:deepcopy-gen=package,register
+// +k8s:defaulter-gen=TypeMeta
+// +groupName=bundleext.gke.io
 package bundleext

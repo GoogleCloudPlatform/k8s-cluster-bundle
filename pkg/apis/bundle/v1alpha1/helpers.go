@@ -22,7 +22,7 @@ import (
 )
 
 // CreateName creates a name string to be used for ObjectMeta.Name. It
-// is used to create standarized names for ComponentPackages and ComponentSets.
+// is used to create standarized names for Component and ComponentSets.
 // It assumes that the inName and version fields already conform to naming
 // requirements as discussed in:
 // k8s.io/docs/concepts/overview/working-with-objects/names/
@@ -58,18 +58,26 @@ func (c *ComponentSet) MakeAndSetName() {
 	return
 }
 
-// MakeAndSetName constructs the name from the ComponentPackage's ComponentName
+// MakeAndSetName constructs the name from the Component's ComponentName
 // and Version and stores the result in metadata.name.
-func (c *ComponentPackage) MakeAndSetName() {
+func (c *Component) MakeAndSetName() {
 	c.ObjectMeta.Name = CreateName(c.Spec.ComponentName, c.Spec.Version)
 	return
 }
 
 // ComponentReference creates a ComponentReference from a component.
-func (c *ComponentPackage) ComponentReference() ComponentReference {
+func (c *Component) ComponentReference() ComponentReference {
 	return ComponentReference{
 		ComponentName: c.Spec.ComponentName,
 		Version:       c.Spec.Version,
+	}
+}
+
+// ComponentReference creates a ComponentReference from a component builder.
+func (c *ComponentBuilder) ComponentReference() ComponentReference {
+	return ComponentReference{
+		ComponentName: c.ComponentName,
+		Version:       c.Version,
 	}
 }
 

@@ -36,5 +36,5 @@ type JSONOptions map[string]interface{}
 type Applier interface {
 	// ApplyOptions applys options to some subset objects from the component. The
 	// returned component should be copy of the original, with (perhaps) modifications made to the original.
-	ApplyOptions(comp *bundle.ComponentPackage, opts JSONOptions) (*bundle.ComponentPackage, error)
+	ApplyOptions(comp *bundle.Component, opts JSONOptions) (*bundle.Component, error)
 }

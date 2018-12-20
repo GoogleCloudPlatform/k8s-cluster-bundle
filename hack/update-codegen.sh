@@ -49,6 +49,7 @@ command -v crd >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "${REPO_ROOT}"
 
+echo "Updating the bundle API"
 deepcopy-gen \
   -h hack/boilerplate.go.txt \
   -O zz_generated.deepcopy \
@@ -65,6 +66,18 @@ client-gen --clientset-name=versioned \
   --input-base "" \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
+
+echo "Updating the bundleext API"
+deepcopy-gen \
+  -h hack/boilerplate.go.txt \
+  -O zz_generated.deepcopy \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1
+
+register-gen \
+  -h hack/boilerplate.go.txt \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1
 
 # TODO(#115): Because we're using apimachinery at 1.9 and tools at 1.10, it
 # means that there are some breakages that need to be fixed up.
@@ -84,7 +97,7 @@ do
   # apimachinery/client-go at 1.9.
   if [[ $f == $clientsetpattern ]]; then
     # Watch is not supported in testing.ObjectTracker in 1.9
-    sed '/fakePtr.AddWatchReactor/,+9d' $f > $f.t
+    sed '/fakePtr\.AddWatchReactor/{N;N;N;N;N;N;N;N;N;d;}' $f > $f.t
     mv $f.t $f
 
     # remove the import
@@ -92,6 +105,8 @@ do
     mv $f.t $f
   fi
 done
+
+echo "Updating CRDs."
 
 # Relies on ../PROJECT file
 # creates CRDS in ../config/crds/

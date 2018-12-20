@@ -26,8 +26,8 @@ type FakeBundleV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeBundleV1alpha1) ComponentPackages(namespace string) v1alpha1.ComponentPackageInterface {
-	return &FakeComponentPackages{c, namespace}
+func (c *FakeBundleV1alpha1) Components(namespace string) v1alpha1.ComponentInterface {
+	return &FakeComponents{c, namespace}
 }
 
 func (c *FakeBundleV1alpha1) ComponentSets(namespace string) v1alpha1.ComponentSetInterface {

@@ -19,6 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // NodeConfig contains configuration for node images. This is a resource that
 // provides information about which images are available for node creation and
 // how to initialize the node images.

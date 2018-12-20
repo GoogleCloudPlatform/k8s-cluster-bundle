@@ -13,9 +13,8 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
-spec:
-  componentName: kubeproxy
-  version: 2.1.0
-  objectFiles:
-  - url: file:///kubeproxy/kubeproxy.yaml
+kind: ComponentBuilder
+componentName: kubeproxy
+version: 2.1.0
+objectFiles:
+- url: file:///kubeproxy/kubeproxy.yaml

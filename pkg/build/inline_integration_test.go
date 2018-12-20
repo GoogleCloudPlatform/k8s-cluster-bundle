@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inline
+package build
 
 import (
 	"context"
@@ -25,12 +25,12 @@ import (
 
 func TestRealisticDataParseAndInline(t *testing.T) {
 	ctx := context.Background()
-	b, err := testutil.ReadData("../../", "examples/cluster/bundle-example.yaml")
+	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
-	dataFiles, err := converter.FromYAML(b).ToBundle()
+	dataFiles, err := converter.FromYAML(b).ToBundleBuilder()
 	if err != nil {
 		t.Fatalf("error converting data: %v", err)
 	}
@@ -39,17 +39,12 @@ func TestRealisticDataParseAndInline(t *testing.T) {
 		t.Fatalf("found zero files, but expected some")
 	}
 
-	pathPrefix := testutil.TestPathPrefix("../../", "examples/cluster/bundle-example.yaml")
+	pathPrefix := testutil.TestPathPrefix("../../", "examples/cluster/bundle-builder-example.yaml")
 	inliner := NewLocalInliner(pathPrefix)
 
-	newData, err := inliner.InlineBundleFiles(ctx, dataFiles)
+	moreInlined, err := inliner.BundleFiles(ctx, dataFiles)
 	if err != nil {
-		t.Fatalf("Error calling InlineBundleFiles(): %v", err)
-	}
-
-	moreInlined, err := inliner.InlineComponentsInBundle(ctx, newData)
-	if err != nil {
-		t.Fatalf("Error calling InlineComponentsInBundle(): %v", err)
+		t.Fatalf("Error calling BundleFiles(): %v", err)
 	}
 
 	_, err = converter.FromObject(moreInlined).ToYAML()

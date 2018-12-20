@@ -262,7 +262,7 @@ components:
     objects:
     - metadata:
         name: 'ubuntu-control-plane'
-      apiVersion: bundleext.gke.io/v1alpha1
+      apiVersion: bundle.gke.io/v1alpha1
       kind: NodeConfig
       initFile: "echo 'I'm a script'"
       osImage:
@@ -300,7 +300,7 @@ func TestImageFinder_NodeImages(t *testing.T) {
 		&ContainerImage{
 			core.ClusterObjectKey{
 				Component: bundle.ComponentReference{ComponentName: "nodeconfig1", Version: "0.1.2"},
-				Object:    core.ObjectRef{APIVersion: "bundleext.gke.io/v1alpha1", Kind: "NodeConfig", Name: "ubuntu-control-plane"},
+				Object:    core.ObjectRef{APIVersion: "bundle.gke.io/v1alpha1", Kind: "NodeConfig", Name: "ubuntu-control-plane"},
 			},
 			"gs://base-os-images/ubuntu/ubuntu-1604-xenial-20180509-1",
 		},

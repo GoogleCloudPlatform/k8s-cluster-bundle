@@ -13,12 +13,11 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
-spec:
-  componentName: kubedns
-  version: 2.0.0
-  objectFiles:
-  - url: file:///kubedns/service.yaml
-  - url: file:///kubedns/service-account.yaml
-  - url: file:///kubedns/config-map.yaml
-  - url: file:///kubedns/deployment.yaml
+kind: ComponentBuilder
+componentName: kubedns
+version: 2.0.0
+objectFiles:
+- url: file:///kubedns/service.yaml
+- url: file:///kubedns/service-account.yaml
+- url: file:///kubedns/config-map.yaml
+- url: file:///kubedns/deployment.yaml

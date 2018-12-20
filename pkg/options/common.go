@@ -25,7 +25,7 @@ type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReferen
 
 // ApplyCommon provides common functionality for applying options, deferring
 // the specific object handling logic.
-func ApplyCommon(comp *bundle.ComponentPackage, opts JSONOptions, objFn ObjHandler) (*bundle.ComponentPackage, error) {
+func ApplyCommon(comp *bundle.Component, opts JSONOptions, objFn ObjHandler) (*bundle.Component, error) {
 	comp = comp.DeepCopy()
 	ref := comp.ComponentReference()
 

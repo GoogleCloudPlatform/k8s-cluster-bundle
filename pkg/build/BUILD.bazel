@@ -4,10 +4,10 @@ go_library(
     name = "go_default_library",
     srcs = [
         "config_map_maker.go",
+        "doc.go",
         "inline.go",
-        "path_rewriter.go",
     ],
-    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline",
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
@@ -31,10 +31,9 @@ go_test(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
-        "//pkg/core:go_default_library",
         "//pkg/files:go_default_library",
-        "//pkg/find:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/validate:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )
