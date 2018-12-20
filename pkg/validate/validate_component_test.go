@@ -57,6 +57,7 @@ components:
   spec:
     componentName: foo-comp
     version: 2.0.3
+    appVersion: 2.4.5
 `
 
 func TestValidateAll(t *testing.T) {
@@ -146,6 +147,48 @@ spec:
 
 		// Tests for Components
 		{
+			desc: "success",
+			set:  defaultComponentSetNoRefs,
+			components: `
+components:
+- apiVersion: 'bundle.gke.io/v1alpha1'
+  kind: ComponentPackage
+  metadata:
+    name: foo-comp-1.0.2
+  spec:
+    componentName: foo-comp
+    version: 2.10.1
+    appVersion: 3.10.1`,
+		},
+		{
+			desc: "success: X.Y app version",
+			set:  defaultComponentSetNoRefs,
+			components: `
+components:
+- apiVersion: 'bundle.gke.io/v1alpha1'
+  kind: ComponentPackage
+  metadata:
+    name: foo-comp-1.0.2
+  spec:
+    componentName: foo-comp
+    version: 2.10.1
+    appVersion: 3.10`,
+		},
+		{
+			desc: "success: X.Y.Z-blah app version",
+			set:  defaultComponentSetNoRefs,
+			components: `
+components:
+- apiVersion: 'bundle.gke.io/v1alpha1'
+  kind: ComponentPackage
+  metadata:
+    name: foo-comp-1.0.2
+  spec:
+    componentName: foo-comp
+    version: 2.10.1
+    appVersion: 3.10.32-blah.0`,
+		},
+		{
 			desc: "fail component: no kind",
 			set:  defaultComponentSet,
 			components: `
@@ -192,6 +235,21 @@ components:
   spec:
     componentName: foo-comp
     version: 2.010.1`,
+			errSubstring: "must be of the form X.Y.Z",
+		},
+		{
+			desc: "fail: component invalid X.Y.Z app version string ",
+			set:  defaultComponentSetNoRefs,
+			components: `
+components:
+- apiVersion: 'bundle.gke.io/v1alpha1'
+  kind: ComponentPackage
+  metadata:
+    name: foo-comp-1.0.2
+  spec:
+    componentName: foo-comp
+    version: 2.10.1,
+    appVersion: 2.010.1`,
 			errSubstring: "must be of the form X.Y.Z",
 		},
 		{
