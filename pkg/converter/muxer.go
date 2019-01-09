@@ -63,7 +63,7 @@ func FromFileName(fname string, contents []byte) *Muxer {
 		return FromJSON(contents)
 	default:
 		// This will be an error during conversion
-		return &Muxer{format: UnknownContent}
+		return &Muxer{format: UnknownContent + ContentType("file: "+fname)}
 	}
 }
 
