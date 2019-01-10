@@ -42,6 +42,10 @@ type GlobalOptions struct {
 	// InlineObjects indicates whether to inline the objects before doing any
 	// processing (typically requires InlineComponents to be useful).
 	InlineObjects bool
+
+	// AllowUnknownFields indicates whether to allow unknown fields during
+	// decoding. Defaults to false.
+	AllowUnknownFields bool
 }
 
 // GlobalOptionsValues is a global tracker for global options (for command line
@@ -51,10 +55,11 @@ var GlobalOptionsValues = &GlobalOptions{}
 // Copy creates an options copy.
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{
-		InputFile:        g.InputFile,
-		InputFormat:      g.InputFormat,
-		OutputFormat:     g.OutputFormat,
-		InlineComponents: g.InlineComponents,
-		InlineObjects:    g.InlineObjects,
+		InputFile:          g.InputFile,
+		InputFormat:        g.InputFormat,
+		OutputFormat:       g.OutputFormat,
+		InlineComponents:   g.InlineComponents,
+		InlineObjects:      g.InlineObjects,
+		AllowUnknownFields: g.AllowUnknownFields,
 	}
 }

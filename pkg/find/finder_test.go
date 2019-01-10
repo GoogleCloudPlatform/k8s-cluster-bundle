@@ -40,7 +40,7 @@ components:
         name: dwerp
 
 - spec:
-    name: kube-apiserver
+    componentName: kube-apiserver
     objects:
     - apiVersion: v1
       kind: Pod

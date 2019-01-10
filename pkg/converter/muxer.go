@@ -15,6 +15,7 @@
 package converter
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -75,20 +76,37 @@ func FromContentType(ctype string, contents []byte) *Muxer {
 }
 
 // Muxer converts from an object's serialized format to an actual instance of
-// the object.
+// the object. By default, the Muxer does not allow unknown fields.
 type Muxer struct {
-	data   []byte
-	format ContentType
+	data               []byte
+	format             ContentType
+	allowUnknownFields bool
+}
+
+// AllowUnknownFields indicates whether to allowUnknownFields
+func (m *Muxer) AllowUnknownFields(allow bool) *Muxer {
+	m.allowUnknownFields = allow
+	return m
 }
 
 func (m *Muxer) mux(f interface{}) error {
 	switch m.format {
 	case YAML:
-		return yaml.Unmarshal(m.data, f)
+		var mod yaml.JSONOpt = func(d *json.Decoder) *json.Decoder {
+			if !m.allowUnknownFields {
+				d.DisallowUnknownFields()
+			}
+			return d
+		}
+		return yaml.Unmarshal(m.data, f, mod)
 	case JSON:
-		return json.Unmarshal(m.data, f)
+		jsonDecoder := json.NewDecoder(bytes.NewReader(m.data))
+		if !m.allowUnknownFields {
+			jsonDecoder.DisallowUnknownFields()
+		}
+		return jsonDecoder.Decode(f)
 	default:
-		return fmt.Errorf("Unknown content type: %q", m.format)
+		return fmt.Errorf("unknown content type: %q", m.format)
 	}
 }
 
