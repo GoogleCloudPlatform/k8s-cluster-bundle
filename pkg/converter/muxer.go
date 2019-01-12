@@ -83,10 +83,13 @@ type Muxer struct {
 	allowUnknownFields bool
 }
 
-// AllowUnknownFields indicates whether to allowUnknownFields
+// AllowUnknownFields indicates whether to allow unknown fields during decoding.
 func (m *Muxer) AllowUnknownFields(allow bool) *Muxer {
-	m.allowUnknownFields = allow
-	return m
+	return &Muxer{
+		data:               m.data,
+		format:             m.format,
+		allowUnknownFields: allow,
+	}
 }
 
 func (m *Muxer) mux(f interface{}) error {

@@ -131,20 +131,20 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 	}
 
 	bw := &BundleWrapper{}
-	uns, err := converter.FromContentType(inFmt, bytes).AllowUnknownFields(g.AllowUnknownFields).ToUnstructured()
+	uns, err := converter.FromContentType(inFmt, bytes).ToUnstructured()
 	if err != nil {
 		return nil, fmt.Errorf("error converting bundle content to unstructured: %v", err)
 	}
 
 	kind := uns.GetKind()
 	if kind == "Bundle" {
-		b, err := converter.FromContentType(inFmt, bytes).AllowUnknownFields(g.AllowUnknownFields).ToBundle()
+		b, err := converter.FromContentType(inFmt, bytes).ToBundle()
 		if err != nil {
 			return nil, err
 		}
 		bw.Bundle = b
 	} else if kind == "ComponentPackage" {
-		c, err := converter.FromContentType(inFmt, bytes).AllowUnknownFields(g.AllowUnknownFields).ToComponentPackage()
+		c, err := converter.FromContentType(inFmt, bytes).ToComponentPackage()
 		if err != nil {
 			return nil, err
 		}

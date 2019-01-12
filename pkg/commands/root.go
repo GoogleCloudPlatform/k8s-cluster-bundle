@@ -54,9 +54,6 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.InlineObjects, "inline-objects", "", true, "Whether to inline the components' object files")
 
-	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.AllowUnknownFields, "allow-unknown-fields", "", false, "Whether to allow unknown fields during decoding.")
-
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
 	inline.AddCommandsTo(ctx, rootCmd)
