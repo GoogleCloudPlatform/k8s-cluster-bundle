@@ -27,6 +27,7 @@ go_test(
         "converter_test.go",
         "example_test.go",
         "exporter_test.go",
+        "muxer_test.go",
         "name_test.go",
     ],
     data = [
