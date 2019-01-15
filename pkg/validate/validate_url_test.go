@@ -47,7 +47,12 @@ func TestValidateURL(t *testing.T) {
 		},
 		{
 			desc: "success: no scheme",
-			in:   "foo/bar/biff",
+			in:   "/foo/bar/biff",
+		},
+		{
+			desc:         "fail: relative path",
+			in:           "foo/bar/biff",
+			expErrSubstr: "must be absolute",
 		},
 	}
 	for _, tc := range testCases {

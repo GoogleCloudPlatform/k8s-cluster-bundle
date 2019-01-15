@@ -28,6 +28,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
 
 type makeInliner func(rw files.FileReaderWriter, inputFile string) fileInliner
@@ -61,8 +62,8 @@ type fileInliner interface {
 }
 
 type BundleReaderWriter interface {
-	ReadBundleData(context.Context, *GlobalOptions) (*BundleWrapper, error)
-	WriteBundleData(context.Context, *BundleWrapper, *GlobalOptions) error
+	ReadBundleData(context.Context, *GlobalOptions) (*wrapper.BundleWrapper, error)
+	WriteBundleData(context.Context, *wrapper.BundleWrapper, *GlobalOptions) error
 	WriteStructuredContents(context.Context, interface{}, *GlobalOptions) error
 }
 
@@ -84,7 +85,7 @@ func NewBundleReaderWriter(rw files.FileReaderWriter, stdio StdioReaderWriter) B
 }
 
 // ReadBundleData reads either data file contents from a file or stdin.
-func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOptions) (*BundleWrapper, error) {
+func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *GlobalOptions) (*wrapper.BundleWrapper, error) {
 	var bytes []byte
 	var err error
 	inFmt := g.InputFormat
@@ -110,40 +111,9 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 		inFmt = "yaml"
 	}
 
-	var bw *BundleWrapper
-	uns, err := converter.FromContentType(inFmt, bytes).ToUnstructured()
+	bw, err := wrapper.FromRaw(inFmt, bytes)
 	if err != nil {
-		return nil, fmt.Errorf("error converting bundle content to unstructured: %v", err)
-	}
-
-	kind := uns.GetKind()
-	switch kind {
-	case "BundleBuilder":
-		b, err := converter.FromContentType(inFmt, bytes).ToBundleBuilder()
-		if err != nil {
-			return nil, err
-		}
-		bw = NewWrapper().FromBundleBuilder(b)
-	case "Bundle":
-		b, err := converter.FromContentType(inFmt, bytes).ToBundle()
-		if err != nil {
-			return nil, err
-		}
-		bw = NewWrapper().FromBundle(b)
-	case "ComponentBuilder":
-		c, err := converter.FromContentType(inFmt, bytes).ToComponentBuilder()
-		if err != nil {
-			return nil, err
-		}
-		bw = NewWrapper().FromComponentBuilder(c)
-	case "Component":
-		c, err := converter.FromContentType(inFmt, bytes).ToComponent()
-		if err != nil {
-			return nil, err
-		}
-		bw = NewWrapper().FromComponent(c)
-	default:
-		return nil, fmt.Errorf("unrecognized bundle-kind %s for content %s", kind, string(bytes))
+		return nil, err
 	}
 
 	// For now, we can only inline component data files because we need the path
@@ -155,28 +125,33 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 }
 
 // inlineData inlines a cluster bundle before processing
-func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) (*BundleWrapper, error) {
+func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *wrapper.BundleWrapper, g *GlobalOptions) (*wrapper.BundleWrapper, error) {
+	if !g.Inline {
+		return bw, nil
+	}
+
 	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
-	if g.Inline && bw.BundleBuilder() != nil {
+	switch bw.Kind() {
+	case "BundleBuilder":
 		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder())
 		if err != nil {
 			return nil, fmt.Errorf("error inlining component data files: %v", err)
 		}
-		return NewWrapper().FromBundle(newBun), nil
-	}
-
-	if g.Inline && bw.ComponentBuilder() != nil {
+		return wrapper.FromBundle(newBun), nil
+	case "ComponentBuilder":
 		newComp, err := inliner.ComponentFiles(ctx, bw.ComponentBuilder())
 		if err != nil {
 			return nil, fmt.Errorf("error inlining objects: %v", err)
 		}
-		return NewWrapper().FromComponent(newComp), nil
+		return wrapper.FromComponent(newComp), nil
+	default:
+		// Bundle and Component types can't be inlined.
+		return bw, nil
 	}
-	return bw, nil
 }
 
 // WriteBundleData writes either the component or bundle object from the BundleWrapper.
-func (brw *realBundleReaderWriter) WriteBundleData(ctx context.Context, bw *BundleWrapper, g *GlobalOptions) error {
+func (brw *realBundleReaderWriter) WriteBundleData(ctx context.Context, bw *wrapper.BundleWrapper, g *GlobalOptions) error {
 	if bw == nil {
 		return fmt.Errorf("bundle wrapper was nil")
 	}

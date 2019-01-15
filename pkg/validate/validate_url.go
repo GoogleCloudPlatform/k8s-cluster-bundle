@@ -17,6 +17,7 @@ package validate
 import (
 	"fmt"
 	"net/url"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -26,9 +27,14 @@ func validateURL(path *field.Path, u string) *field.Error {
 	if u == "" {
 		return field.Required(path, "url field was empty")
 	}
-	_, err := url.Parse(u)
+	p, err := url.Parse(u)
 	if err != nil {
 		return field.Invalid(path, u, fmt.Sprintf("error parsing url: %v", err))
+	}
+	upath := p.Path
+	// Only a sith deals in absolutes.
+	if !filepath.IsAbs(upath) {
+		return field.Invalid(path, upath, fmt.Sprintf("all url paths must be absolute"))
 	}
 	return nil
 }

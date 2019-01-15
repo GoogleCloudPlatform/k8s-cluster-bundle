@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bundleio.go",
-        "bundlewrapper.go",
         "cmdlib.go",
         "doc.go",
         "global_options.go",
@@ -16,6 +15,7 @@ go_library(
         "//pkg/build:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/files:go_default_library",
+        "//pkg/wrapper:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",
     ],
@@ -29,5 +29,6 @@ go_test(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/files:go_default_library",
+        "//pkg/wrapper:go_default_library",
     ],
 )

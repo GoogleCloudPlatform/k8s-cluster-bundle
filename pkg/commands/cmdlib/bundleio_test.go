@@ -24,6 +24,7 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
 
 type fakeStdioRW struct {
@@ -314,25 +315,22 @@ spec:
 
 func TestWriteBundleData(t *testing.T) {
 	testcases := []struct {
-		desc             string
-		opts             *GlobalOptions
-		bundle           string
-		bundleBuilder    string
-		component        string
-		componentBuilder string
-		expStdioSubstr   string
-		expErrSubstr     string
+		desc           string
+		opts           *GlobalOptions
+		content        string
+		expStdioSubstr string
+		expErrSubstr   string
 	}{
 		{
 			desc:           "Test success stdout write: bundle",
 			opts:           &GlobalOptions{},
-			bundle:         bundleEx,
+			content:        bundleEx,
 			expStdioSubstr: "test-pkg",
 		},
 		{
 			desc:           "Test success stdout write: bundle builder",
 			opts:           &GlobalOptions{},
-			bundleBuilder:  bundleBuilderEx,
+			content:        bundleBuilderEx,
 			expStdioSubstr: "inlined/component",
 		},
 		{
@@ -340,12 +338,12 @@ func TestWriteBundleData(t *testing.T) {
 			opts: &GlobalOptions{
 				OutputFormat: "yaml",
 			},
-			component:      componentEx,
+			content:        componentEx,
 			expStdioSubstr: "some-pod",
 		},
 		{
 			desc:           "success stdout write: component builder",
-			component:      componentEx,
+			content:        componentEx,
 			opts:           &GlobalOptions{},
 			expStdioSubstr: "test-comp",
 		},
@@ -354,12 +352,12 @@ func TestWriteBundleData(t *testing.T) {
 			opts: &GlobalOptions{
 				OutputFormat: "json",
 			},
-			component:      componentEx,
+			content:        componentEx,
 			expStdioSubstr: "some-pod",
 		},
 		{
 			desc:           "success: content format defaults to yaml",
-			component:      componentEx,
+			content:        componentEx,
 			opts:           &GlobalOptions{},
 			expStdioSubstr: "some-pod",
 		},
@@ -368,12 +366,7 @@ func TestWriteBundleData(t *testing.T) {
 		{
 			desc:         "error: wrapper nil",
 			opts:         &GlobalOptions{},
-			expErrSubstr: "bundle wrapper was nil",
-		},
-		{
-			desc:         "error: wrapper nil",
-			opts:         &GlobalOptions{},
-			expErrSubstr: "bundle wrapper was nil",
+			expErrSubstr: "content was empty",
 		},
 	}
 
@@ -392,38 +385,12 @@ func TestWriteBundleData(t *testing.T) {
 				},
 			}
 
-			var bwrap *BundleWrapper
-			if tc.bundle != "" {
-				b, err := converter.FromYAMLString(tc.bundle).ToBundle()
-				if err != nil {
-					t.Fatalf("Error converting bundle to YAML: %v", err)
-				}
-				bwrap = NewWrapper().FromBundle(b)
+			bwrap, err := wrapper.FromRaw("yaml", []byte(tc.content))
+			// error checked below.
+			if err == nil {
+				err = brw.WriteBundleData(ctx, bwrap, tc.opts)
 			}
-			if tc.bundleBuilder != "" {
-				b, err := converter.FromYAMLString(tc.bundleBuilder).ToBundleBuilder()
-				if err != nil {
-					t.Fatalf("Error converting bundle builder to YAML: %v", err)
-				}
-				bwrap = NewWrapper().FromBundleBuilder(b)
-			}
-			if tc.component != "" {
-				c, err := converter.FromYAMLString(tc.component).ToComponent()
-				if err != nil {
-					t.Fatalf("Error converting component to YAML: %v", err)
-				}
-				bwrap = NewWrapper().FromComponent(c)
-			}
-			if tc.componentBuilder != "" {
-				c, err := converter.FromYAMLString(tc.componentBuilder).ToComponentBuilder()
-				if err != nil {
-					t.Fatalf("Error converting compnoent builder to YAML: %v", err)
-				}
-				bwrap = NewWrapper().FromComponentBuilder(c)
-			}
-			// TODO(kashomon): Add builders
 
-			err := brw.WriteBundleData(ctx, bwrap, tc.opts)
 			if err != nil && tc.expErrSubstr == "" {
 				t.Fatalf("Got error %q but expected no error", err.Error())
 			} else if err == nil && tc.expErrSubstr != "" {
