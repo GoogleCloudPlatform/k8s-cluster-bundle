@@ -32,7 +32,7 @@ import (
 // as map[string]interface{}. See more at the go docs for `encoding/json`.
 type JSONOptions map[string]interface{}
 
-// OptionsApplier represents an object that can take options and apply them to components.
+// An Applier represents an object that can take options and apply them to components.
 type Applier interface {
 	// ApplyOptions applys options to some subset objects from the component. The
 	// returned component should be copy of the original, with (perhaps) modifications made to the original.

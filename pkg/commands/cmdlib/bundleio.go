@@ -46,12 +46,15 @@ type StdioReaderWriter interface {
 	io.Writer
 }
 
+// RealStdioReaderWriter provides a real STDIN / STDOUT implementation.
 type RealStdioReaderWriter struct{}
 
+// ReadAll reads all the input from STDIN.
 func (r *RealStdioReaderWriter) ReadAll() ([]byte, error) {
 	return ioutil.ReadAll(os.Stdin)
 }
 
+// Write writes content to STDOUT.
 func (r *RealStdioReaderWriter) Write(b []byte) (int, error) {
 	return os.Stdout.Write(b)
 }
@@ -61,6 +64,8 @@ type fileInliner interface {
 	ComponentFiles(context.Context, *bundle.ComponentBuilder) (*bundle.Component, error)
 }
 
+// BundleReaderWriter provides a mockable reading / writing interface for
+// reading / writing bundle data.
 type BundleReaderWriter interface {
 	ReadBundleData(context.Context, *GlobalOptions) (*wrapper.BundleWrapper, error)
 	WriteBundleData(context.Context, *wrapper.BundleWrapper, *GlobalOptions) error

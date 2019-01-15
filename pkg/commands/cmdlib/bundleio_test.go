@@ -256,7 +256,7 @@ spec:
 			},
 			readFile:      componentBuilderEx,
 			inlineCompOut: componentEx,
-			inlineErr:     errors.New("zork!"),
+			inlineErr:     errors.New("zork"),
 			expErrSubstr:  "error inlining objects",
 		},
 	}

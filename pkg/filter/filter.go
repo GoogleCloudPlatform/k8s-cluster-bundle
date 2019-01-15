@@ -22,14 +22,14 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 )
 
-// Filter filters the components and objects to produce a new set of components.
+// Filter filters components and objects to produce a new set of components.
 type Filter struct {
 	// ChangeInPlace controls whether to change the objects in place or to make
 	// copies. By default, the Filter returns deep copies of objects.
 	ChangeInPlace bool
 }
 
-// Filter creates a new Filter.
+// NewFilter creates a new Filter.
 func NewFilter() *Filter {
 	return &Filter{}
 }

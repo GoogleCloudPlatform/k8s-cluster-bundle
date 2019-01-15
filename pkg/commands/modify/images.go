@@ -25,6 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/transformer"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
 
 // options represents options flags for the images command.
@@ -71,9 +72,9 @@ func runModifyImages(ctx context.Context, opts *options, brw cmdlib.BundleReader
 		bw.Bundle().Components = repl
 	} else if bw.Component() != nil {
 		if len(repl) != 1 {
-			return fmt.Errorf("got %d components, but expected exactly one after component-image transform.", len(repl))
+			return fmt.Errorf("got %d components, but expected exactly one after component-image transform", len(repl))
 		}
-		bw = cmdlib.NewWrapper().FromComponent(repl[0])
+		bw = wrapper.FromComponent(repl[0])
 	}
 
 	return brw.WriteBundleData(ctx, bw, gopt)
