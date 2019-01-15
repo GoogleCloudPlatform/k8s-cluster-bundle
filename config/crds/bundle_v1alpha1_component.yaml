@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: componentpackages.bundle.gke.io
+  name: components.bundle.gke.io
 spec:
   group: bundle.gke.io
   names:
-    kind: ComponentPackage
-    plural: componentpackages
+    kind: Component
+    plural: components
   scope: Namespaced
   validation:
     openAPIV3Schema:
@@ -27,7 +27,18 @@ spec:
         metadata:
           type: object
         spec:
+          description: The specification object for the Component.
           properties:
+            appVersion:
+              description: AppVersion is an optional SemVer versions string that should
+                have the form X.Y or X.Y.Z (Major.Minor.Patch), which indicates the
+                version of the application provided by the component. The AppVersion
+                will frequently be the version of the container image and need not
+                be updated when the Version field is updated.  For example, for an
+                etcd component, the version field might be something like 10.9.8,
+                but the app version might be something like 3.3.10, representing the
+                version of Etcd.
+              type: string
             componentName:
               description: ComponentName is the canonical name of this component.
                 For example, 'etcd' or 'kube-proxy'. It must have the same naming
@@ -35,6 +46,13 @@ spec:
                 See more at k8s.io/docs/concepts/overview/working-with-objects/names/
               type: string
             objectFiles:
+              description: 'Objects that are specified via a File-URL. The process
+                of inlining a component turns object files into objects.  During the
+                inline process, if the file is YAML-formatted and contains multiple
+                objects in the YAML-doc, the objects will be split into separate inline
+                objects. In other words, one object file may result in multiple objects.  Each
+                object file must be parsable into a Struct: In other words, it should
+                be representable as either YAML or JSON.'
               items:
                 properties:
                   hash:
@@ -53,18 +71,23 @@ spec:
                 type: object
               type: array
             objects:
+              description: Structured Kubenetes objects that run as part of this app,
+                whether on the master, on the nodes, or in some other fashio.  These
+                Kubernetes objects are inlined and must be YAML/JSON compatible. Each
+                must have `apiVersion`, `kind`, and `metadata`.  This is essentially
+                equivalent to the Kubernetes `Unstructured` type.
               items:
-                description: Structured Kubenetes objects that run as part of this
-                  app, whether on the master, on the nodes, or in some other fashio.  These
-                  Kubernetes objects are inlined and must be YAML/JSON compatible.
-                  Each must have `apiVersion`, `kind`, and `metadata`.  This is essentially
-                  equivalent to the Kubernetes `Unstructured` type.
                 type: object
               type: array
             rawTextFiles:
+              description: Raw files represent arbitrary string data. Unlike object
+                files, these files don't need to be parsable as YAML or JSON. So,
+                during the inline process, the data is inserted into a generated config
+                map before being added to the objects. A ConfigMap is generated per-filegroup.
               items:
                 properties:
                   files:
+                    description: Files that make up this file group.
                     items:
                       properties:
                         hash:

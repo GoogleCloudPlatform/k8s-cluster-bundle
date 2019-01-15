@@ -13,7 +13,7 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: etcd-component
   version: 30.0.2

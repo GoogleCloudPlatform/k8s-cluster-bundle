@@ -27,8 +27,12 @@ spec:
         metadata:
           type: object
         spec:
+          description: The specification object for the ComponentSet
           properties:
             components:
+              description: Components are references to component objects that make
+                up the component set. To get the Metadata.Name for the component,
+                GetLocalObjectRef() should be called on the component reference.
               items:
                 properties:
                   componentName:
@@ -51,6 +55,8 @@ spec:
                 minor-versions should indicate backwards compatible features, and
                 patch changes should indicate backwords compatible. If there are any
                 changes to the bundle, then the version string must be incremented.
+                As such, the version should not be tied to the version of the container
+                images.
               type: string
           type: object
   version: v1alpha1

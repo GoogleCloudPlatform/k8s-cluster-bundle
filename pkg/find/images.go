@@ -27,11 +27,11 @@ import (
 
 // ImageFinder finds container and OS Images in components.
 type ImageFinder struct {
-	components []*bundle.ComponentPackage
+	components []*bundle.Component
 }
 
 // NewImageFinder creates a new ImageFinder.
-func NewImageFinder(c []*bundle.ComponentPackage) *ImageFinder {
+func NewImageFinder(c []*bundle.Component) *ImageFinder {
 	return &ImageFinder{c}
 }
 

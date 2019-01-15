@@ -34,18 +34,18 @@ import (
 // is meant to be internal -- only used / usable by the commands.
 type BundleWrapper struct {
 	Bundle    *bundle.Bundle
-	Component *bundle.ComponentPackage
+	Component *bundle.Component
 }
 
 // AllComponents returns all the components in the BundleWrapper, with the
 // assumption that only one of Bundle or Component is filled out.
-func (bw *BundleWrapper) AllComponents() []*bundle.ComponentPackage {
+func (bw *BundleWrapper) AllComponents() []*bundle.Component {
 	if bw.Bundle != nil {
 		return bw.Bundle.Components
 	} else if bw.Component != nil {
-		return []*bundle.ComponentPackage{bw.Component}
+		return []*bundle.Component{bw.Component}
 	}
-	return []*bundle.ComponentPackage{}
+	return []*bundle.Component{}
 }
 
 type makeInliner func(rw files.FileReaderWriter, inputFile string) fileInliner
@@ -77,7 +77,7 @@ func (r *RealStdioReaderWriter) Write(b []byte) (int, error) {
 type fileInliner interface {
 	InlineBundleFiles(context.Context, *bundle.Bundle) (*bundle.Bundle, error)
 	InlineComponentsInBundle(context.Context, *bundle.Bundle) (*bundle.Bundle, error)
-	InlineComponent(context.Context, *bundle.ComponentPackage) (*bundle.ComponentPackage, error)
+	InlineComponent(context.Context, *bundle.Component) (*bundle.Component, error)
 }
 
 type BundleReaderWriter interface {
@@ -143,8 +143,8 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 			return nil, err
 		}
 		bw.Bundle = b
-	} else if kind == "ComponentPackage" {
-		c, err := converter.FromContentType(inFmt, bytes).ToComponentPackage()
+	} else if kind == "Component" {
+		c, err := converter.FromContentType(inFmt, bytes).ToComponent()
 		if err != nil {
 			return nil, err
 		}

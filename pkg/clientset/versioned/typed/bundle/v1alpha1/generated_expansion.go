@@ -16,6 +16,6 @@
 
 package v1alpha1
 
-type ComponentPackageExpansion interface{}
+type ComponentExpansion interface{}
 
 type ComponentSetExpansion interface{}

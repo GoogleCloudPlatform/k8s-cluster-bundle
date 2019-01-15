@@ -25,7 +25,7 @@ import (
 
 type BundleV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	ComponentPackagesGetter
+	ComponentsGetter
 	ComponentSetsGetter
 }
 
@@ -34,8 +34,8 @@ type BundleV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *BundleV1alpha1Client) ComponentPackages(namespace string) ComponentPackageInterface {
-	return newComponentPackages(c, namespace)
+func (c *BundleV1alpha1Client) Components(namespace string) ComponentInterface {
+	return newComponents(c, namespace)
 }
 
 func (c *BundleV1alpha1Client) ComponentSets(namespace string) ComponentSetInterface {

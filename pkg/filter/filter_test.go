@@ -208,7 +208,7 @@ func TestFilterObjects(t *testing.T) {
 	}
 }
 
-func flatten(comp []*bundle.ComponentPackage) []*unstructured.Unstructured {
+func flatten(comp []*bundle.Component) []*unstructured.Unstructured {
 	var out []*unstructured.Unstructured
 	for _, c := range comp {
 		for _, obj := range c.Spec.Objects {
@@ -228,7 +228,7 @@ func getObjNames(obj []*unstructured.Unstructured) []string {
 
 var componentExample = `
 components:
-- kind: ComponentPackage
+- kind: Component
   metadata:
     name: zap-pod
     labels:
@@ -236,7 +236,7 @@ components:
     annotations:
       foo: bar
     namespace: kube-system
-- kind: ComponentPackage
+- kind: Component
   metadata:
     name: bog-pod
     labels:
@@ -244,7 +244,7 @@ components:
     annotations:
       foof: yar
     namespace: kube-system
-- kind: ComponentPackage
+- kind: Component
   metadata:
     name: nog-pod
     labels:
@@ -252,7 +252,7 @@ components:
     annotations:
       foof: narf
     namespace: kube
-- kind: ComponentPackage
+- kind: Component
   metadata:
     name: zog-dep
     labels:
@@ -306,7 +306,7 @@ func TestFilterComponents(t *testing.T) {
 		{
 			desc: "filter-success: kind filter",
 			opt: &Options{
-				Kinds: []string{"ComponentPackage"},
+				Kinds: []string{"Component"},
 			},
 		},
 
@@ -357,7 +357,7 @@ func TestFilterComponents(t *testing.T) {
 		{
 			desc: "filter-success keeponly: kind filter",
 			opt: &Options{
-				Kinds:    []string{"ComponentPackage"},
+				Kinds:    []string{"Component"},
 				KeepOnly: true,
 			},
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
@@ -379,7 +379,7 @@ func TestFilterComponents(t *testing.T) {
 	}
 }
 
-func getCompObjNames(comp []*bundle.ComponentPackage) []string {
+func getCompObjNames(comp []*bundle.Component) []string {
 	var names []string
 	for _, c := range comp {
 		names = append(names, c.ObjectMeta.Name)

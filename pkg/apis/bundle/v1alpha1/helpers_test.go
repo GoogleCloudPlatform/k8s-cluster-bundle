@@ -63,8 +63,8 @@ func TestGetAllLocalObjectRefs(t *testing.T) {
 }
 
 func TestMakeComponentReference(t *testing.T) {
-	comp := ComponentPackage{
-		Spec: ComponentPackageSpec{
+	comp := Component{
+		Spec: ComponentSpec{
 			ComponentName: "zip",
 			Version:       "1.2.3",
 			ObjectFiles: []File{{
@@ -93,9 +93,9 @@ func TestMakeAndSetName_ComponentSet(t *testing.T) {
 	}
 }
 
-func TestMakeAndSetName_ComponentPackage(t *testing.T) {
-	comp := &ComponentPackage{
-		Spec: ComponentPackageSpec{
+func TestMakeAndSetName_Component(t *testing.T) {
+	comp := &Component{
+		Spec: ComponentSpec{
 			ComponentName: "zap",
 			Version:       "3.5.3",
 		},
@@ -108,8 +108,8 @@ func TestMakeAndSetName_ComponentPackage(t *testing.T) {
 }
 
 func TestMakeAndSetAllNames_Bundle(t *testing.T) {
-	comp := &ComponentPackage{
-		Spec: ComponentPackageSpec{
+	comp := &Component{
+		Spec: ComponentSpec{
 			ComponentName: "zap",
 			Version:       "3.5.3",
 		},
@@ -118,7 +118,7 @@ func TestMakeAndSetAllNames_Bundle(t *testing.T) {
 	b := &Bundle{
 		SetName:    "zorp",
 		Version:    "0.1.0",
-		Components: []*ComponentPackage{comp},
+		Components: []*Component{comp},
 	}
 
 	b.MakeAndSetAllNames()
@@ -134,14 +134,14 @@ func TestMakeAndSetAllNames_Bundle(t *testing.T) {
 }
 
 func TestMakeComponentSet(t *testing.T) {
-	comp1 := &ComponentPackage{
-		Spec: ComponentPackageSpec{
+	comp1 := &Component{
+		Spec: ComponentSpec{
 			ComponentName: "zap",
 			Version:       "3.5.3",
 		},
 	}
-	comp2 := &ComponentPackage{
-		Spec: ComponentPackageSpec{
+	comp2 := &Component{
+		Spec: ComponentSpec{
 			ComponentName: "zip",
 			Version:       "5.4.3",
 		},
@@ -150,7 +150,7 @@ func TestMakeComponentSet(t *testing.T) {
 	b := &Bundle{
 		SetName:    "zorp",
 		Version:    "0.1.0",
-		Components: []*ComponentPackage{comp1, comp2},
+		Components: []*Component{comp1, comp2},
 	}
 
 	got := b.ComponentSet()
