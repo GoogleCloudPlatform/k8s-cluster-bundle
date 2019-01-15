@@ -15,23 +15,44 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         componentFiles:
+          description: ComponentFiles represent ComponentBuilder or Component types
+            that are referenced via file urls.
           items:
             properties:
               digest:
+                description: Optional digest (e.g., sha256) of the binary to ensure
+                  that the correct binary/file object is retrieved.
                 type: string
               url:
+                description: 'URL to find this file; the url string must be parsable
+                  via Go''s net/url library. It is generally recommended that a URI
+                  scheme be provided in the URL, but it is not required. If a scheme
+                  is not provided, it is assumed that the scheme is a file-scheme.  For
+                  example, these are all valid: - foo/bar/biff (a relative path) -
+                  /foo/bar/biff (an absolute path) - file:///foo/bar/biff (an absolute
+                  path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
                 type: string
             type: object
           type: array
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         setName:
+          description: SetName for the resulting Bundle and ComponentSet. The combination
+            of SetName and Version should provide a unique identifier for the generate.
           type: string
         version:
+          description: Version for the Bundle and ComponentSet. See Bundle.Version
+            for more details. The version is optional for the ComponentBuilder
           type: string
   version: v1alpha1
 status:

@@ -15,39 +15,90 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        appVersion:
+          description: AppVersion is an optional SemVer versions string that should
+            have the form X.Y or X.Y.Z (Major.Minor.Patch), which indicates the version
+            of the application provided by the component. The AppVersion will frequently
+            be the version of the container image and need not be updated when the
+            Version field is updated.  For example, for an etcd component, the version
+            field might be something like 10.9.8, but the app version might be something
+            like 3.3.10, representing the version of Etcd.
           type: string
         componentName:
+          description: ComponentName is the canonical name of this component. See
+            ComponentSpec.ComponentName for more details.
           type: string
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         objectFiles:
+          description: 'Objects that are specified via a File-URL. The process of
+            inlining a component turns object files into objects.  During the inline
+            process, if the file is YAML-formatted and contains multiple objects in
+            the YAML-doc, the objects will be split into separate inline objects.
+            In other words, one object file may result in multiple objects.  Each
+            object file must be parsable into a Struct: In other words, it should
+            be representable as either YAML or JSON.'
           items:
             properties:
               digest:
+                description: Optional digest (e.g., sha256) of the binary to ensure
+                  that the correct binary/file object is retrieved.
                 type: string
               url:
+                description: 'URL to find this file; the url string must be parsable
+                  via Go''s net/url library. It is generally recommended that a URI
+                  scheme be provided in the URL, but it is not required. If a scheme
+                  is not provided, it is assumed that the scheme is a file-scheme.  For
+                  example, these are all valid: - foo/bar/biff (a relative path) -
+                  /foo/bar/biff (an absolute path) - file:///foo/bar/biff (an absolute
+                  path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
                 type: string
             type: object
           type: array
         rawTextFiles:
+          description: Raw files represent arbitrary string data. Unlike object files,
+            these files don't need to be parsable as YAML or JSON. So, during the
+            inline process, the data is inserted into a generated config map before
+            being added to the objects. A ConfigMap is generated per-filegroup.
           items:
             properties:
               files:
+                description: Files that make up this file group.
                 items:
                   properties:
                     digest:
+                      description: Optional digest (e.g., sha256) of the binary to
+                        ensure that the correct binary/file object is retrieved.
                       type: string
                     url:
+                      description: 'URL to find this file; the url string must be
+                        parsable via Go''s net/url library. It is generally recommended
+                        that a URI scheme be provided in the URL, but it is not required.
+                        If a scheme is not provided, it is assumed that the scheme
+                        is a file-scheme.  For example, these are all valid: - foo/bar/biff
+                        (a relative path) - /foo/bar/biff (an absolute path) - file:///foo/bar/biff
+                        (an absolute path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
                       type: string
                   type: object
                 type: array
               name:
+                description: Name of the filegroup. For raw text files, this becomes
+                  the name of the.
                 type: string
             type: object
           type: array
         version:
+          description: Version is the version for this component. See ComponentSpec.Version
+            for more details. The version is optional for the ComponentBuilder.
           type: string
   version: v1alpha1
 status:

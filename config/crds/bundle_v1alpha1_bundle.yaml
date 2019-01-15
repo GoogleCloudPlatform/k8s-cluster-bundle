@@ -15,38 +15,87 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         components:
+          description: Components are Components are files that are inlined. The components
+            must be unique based on the combination of ComponentName + Version.
           items:
             properties:
               apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
                 type: string
               kind:
+                description: 'Kind is a string value representing the REST resource
+                  this object represents. Servers may infer this from the endpoint
+                  the client submits requests to. Cannot be updated. In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
                 type: string
               metadata:
                 type: object
               spec:
+                description: The specification object for the Component.
                 properties:
                   appVersion:
+                    description: AppVersion is an optional SemVer versions string
+                      that should have the form X.Y or X.Y.Z (Major.Minor.Patch),
+                      which indicates the version of the application provided by the
+                      component. The AppVersion will frequently be the version of
+                      the container image and need not be updated when the Version
+                      field is updated.  For example, for an etcd component, the version
+                      field might be something like 10.9.8, but the app version might
+                      be something like 3.3.10, representing the version of Etcd.
                     type: string
                   componentName:
+                    description: ComponentName is the canonical name of this component.
+                      For example, 'etcd' or 'kube-proxy'. It must have the same naming
+                      properties as the Metadata.Name to allow for constructing the
+                      name. See more at k8s.io/docs/concepts/overview/working-with-objects/names/
                     type: string
                   objects:
+                    description: Structured Kubenetes objects that run as part of
+                      this app, whether on the master, on the nodes, or in some other
+                      fashio.  These Kubernetes objects are inlined and must be YAML/JSON
+                      compatible. Each must have `apiVersion`, `kind`, and `metadata`.  This
+                      is essentially equivalent to the Kubernetes `Unstructured` type.
                     items:
                       type: object
                     type: array
                   version:
+                    description: Version is the required version for this component.
+                      The version should be a SemVer 2 string (see https://semver.org/)
+                      of the form X.Y.Z (Major.Minor.Patch).  A major-version changes
+                      should indicate breaking changes, minor-versions should indicate
+                      backwards compatible features, and patch changes should indicate
+                      backwards compatible. If there are any changes to the component,
+                      then the version string must be incremented.
                     type: string
                 type: object
             type: object
           type: array
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         setName:
+          description: SetName is the human-readable string for this set of components.
+            It must only contain lower case alphanumerics, periods, and dashes. See
+            more details at k8s.io/docs/concepts/overview/working-with-objects/names/
           type: string
         version:
+          description: Version is the required version string for this component set
+            and should have the form X.Y.Z (Major.Minor.Patch). Generally speaking,
+            major-version changes should indicate breaking changes, minor-versions
+            should indicate backwards compatible features, and patch changes should
+            indicate backwords compatible. If there are any changes to the bundle,
+            then the version string must be incremented.
           type: string
   version: v1alpha1
 status:
