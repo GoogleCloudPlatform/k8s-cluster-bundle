@@ -122,9 +122,27 @@ func (m *Muxer) ToBundle() (*bundle.Bundle, error) {
 	return d, nil
 }
 
+// ToBundleBuilder converts input data to the BundleBuilder type.
+func (m *Muxer) ToBundleBuilder() (*bundle.BundleBuilder, error) {
+	d := &bundle.BundleBuilder{}
+	if err := m.mux(d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
 // ToComponent converts input data to the Component type.
 func (m *Muxer) ToComponent() (*bundle.Component, error) {
 	d := &bundle.Component{}
+	if err := m.mux(d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// ToComponentBuilder converts input data to the ComponentBuilder type.
+func (m *Muxer) ToComponentBuilder() (*bundle.ComponentBuilder, error) {
+	d := &bundle.ComponentBuilder{}
 	if err := m.mux(d); err != nil {
 		return nil, err
 	}
