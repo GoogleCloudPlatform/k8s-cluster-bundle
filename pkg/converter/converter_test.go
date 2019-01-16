@@ -57,13 +57,17 @@ spec:
 `
 
 func TestConvertUnstructured(t *testing.T) {
-	p, err := FromYAMLString(reschedulerManifest).ToUnstructured()
+	firstIttObj, err := FromYAMLString(reschedulerManifest).ToUnstructured()
 	if err != nil {
 		t.Fatalf("unexpected error parsing manifest: %v", err)
 	}
-
+	// Check if one of the original YAML keys are reachable and value match
+	apiversionCheck, ok := firstIttObj.Object["apiVersion"].(string)
+	if !ok || apiversionCheck != "v1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", apiversionCheck)
+	}
 	// convert back for sanity
-	b, err := FromObject(p).ToYAML()
+	b, err := FromObject(firstIttObj).ToYAML()
 	if err != nil {
 		t.Fatalf("unexpected error serializing manifest: %v", err)
 	}
@@ -73,5 +77,11 @@ func TestConvertUnstructured(t *testing.T) {
 	// name, and so it should be stable.
 	if strings.Trim(str, " \n\t") != strings.Trim(reschedulerManifest, " \n\t") {
 		t.Errorf("Got serilaized manifest:\n\n%s\nexpected it to equal:\n\n%s", str, reschedulerManifest)
+	}
+	// Convert YAML to Object one more time
+	secondIttObj, err := FromYAMLString(str).ToUnstructured()
+	apiversionCheck, ok = secondIttObj.Object["apiVersion"].(string)
+	if !ok || apiversionCheck != "v1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", apiversionCheck)
 	}
 }
