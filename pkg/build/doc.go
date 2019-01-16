@@ -12,20 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testutil
-
-import (
-	"strings"
-	"testing"
-)
-
-// CheckErrorCases checks error cases for tests
-func CheckErrorCases(t *testing.T, err error, expErrSubstr string) {
-	if err == nil && expErrSubstr != "" {
-		t.Fatalf("Got no error but expected error containing %q", expErrSubstr)
-	} else if err != nil && expErrSubstr == "" {
-		t.Fatalf("Got error %q but expected no error", err.Error())
-	} else if err != nil && !strings.Contains(err.Error(), expErrSubstr) {
-		t.Fatalf("Got error %q but expected it to contain %q", err.Error(), expErrSubstr)
-	}
-}
+// Package build has functionality for building components, bundles, and
+// component sets from the builder types.
+package build
