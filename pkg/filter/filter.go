@@ -65,9 +65,9 @@ type Options struct {
 // components. By default components are removed, unless KeepOnly is set, and
 // then the opposite is true. Filtering for components doesn't take into
 // account the properties of the object-children of the components.
-func (f *Filter) Components(data []*bundle.ComponentPackage, o *Options) []*bundle.ComponentPackage {
+func (f *Filter) Components(data []*bundle.Component, o *Options) []*bundle.Component {
 	if !f.ChangeInPlace {
-		var newData []*bundle.ComponentPackage
+		var newData []*bundle.Component
 		for _, cp := range data {
 			newData = append(newData, cp.DeepCopy())
 		}
@@ -78,8 +78,8 @@ func (f *Filter) Components(data []*bundle.ComponentPackage, o *Options) []*bund
 		return data
 	}
 
-	var matched []*bundle.ComponentPackage
-	var notMatched []*bundle.ComponentPackage
+	var matched []*bundle.Component
+	var notMatched []*bundle.Component
 	for _, c := range data {
 		od := &objectData{
 			kind: c.Kind,

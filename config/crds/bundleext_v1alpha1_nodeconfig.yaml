@@ -20,6 +20,8 @@ spec:
             internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         envVars:
+          description: EnvVars are variables to set before startup to configure the
+            init script.
           items:
             properties:
               name:
@@ -33,6 +35,7 @@ spec:
             type: object
           type: array
         externalInitFile:
+          description: ExternalInitFile is an externally specified init file.
           properties:
             hash:
               description: Optional Sha256 hash of the binary to ensure we are pulling
@@ -49,6 +52,7 @@ spec:
               type: string
           type: object
         initFile:
+          description: InitFile is specified inline as a UTF-8 encoded byte string.
           format: byte
           type: string
         kind:
@@ -59,6 +63,7 @@ spec:
         metadata:
           type: object
         osImage:
+          description: OsImage is the the OS image to use for VM creation.
           properties:
             hash:
               description: Optional Sha256 hash of the binary to ensure we are pulling

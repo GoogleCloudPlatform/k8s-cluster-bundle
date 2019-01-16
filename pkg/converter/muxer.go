@@ -122,9 +122,9 @@ func (m *Muxer) ToBundle() (*bundle.Bundle, error) {
 	return d, nil
 }
 
-// ToComponentPackage converts input data to the ComponentPackage type.
-func (m *Muxer) ToComponentPackage() (*bundle.ComponentPackage, error) {
-	d := &bundle.ComponentPackage{}
+// ToComponent converts input data to the Component type.
+func (m *Muxer) ToComponent() (*bundle.Component, error) {
+	d := &bundle.Component{}
 	if err := m.mux(d); err != nil {
 		return nil, err
 	}

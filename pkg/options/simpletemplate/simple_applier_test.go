@@ -23,7 +23,7 @@ import (
 )
 
 var component = `
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: logger
   objects:
@@ -39,7 +39,7 @@ spec:
 `
 
 func TestSimpleApplier(t *testing.T) {
-	comp, err := converter.FromYAMLString(component).ToComponentPackage()
+	comp, err := converter.FromYAMLString(component).ToComponent()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestSimpleApplier(t *testing.T) {
 }
 
 var multiComponent = `
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: logger
   objects:
@@ -122,7 +122,7 @@ spec:
         image: gcr.io/floof/dapper`
 
 func TestSimpleApplier_MultiItems(t *testing.T) {
-	comp, err := converter.FromYAMLString(multiComponent).ToComponentPackage()
+	comp, err := converter.FromYAMLString(multiComponent).ToComponent()
 	if err != nil {
 		t.Fatalf("Error converting component to yaml: %v", err)
 	}

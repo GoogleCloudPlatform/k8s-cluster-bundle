@@ -29,7 +29,7 @@ var FakeComponentData = `
 kind: Bundle
 components:
 - apiVersion: bundle.gke.io/v1alpha1
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: test-pkg
   spec:

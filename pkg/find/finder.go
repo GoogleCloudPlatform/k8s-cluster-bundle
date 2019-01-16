@@ -27,20 +27,20 @@ import (
 // component data. The data is intended to be readonly; if modifications are
 // made to the data, subsequent lookups will fail.
 type ComponentFinder struct {
-	nameCompLookup map[string][]*bundle.ComponentPackage
-	keyCompLookup  map[bundle.ComponentReference]*bundle.ComponentPackage
-	data           []*bundle.ComponentPackage
+	nameCompLookup map[string][]*bundle.Component
+	keyCompLookup  map[bundle.ComponentReference]*bundle.Component
+	data           []*bundle.Component
 }
 
 // NewComponentFinder creates a new ComponentFinder or returns an error.
-func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
-	nlup := make(map[string][]*bundle.ComponentPackage)
-	klup := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
+func NewComponentFinder(data []*bundle.Component) *ComponentFinder {
+	nlup := make(map[string][]*bundle.Component)
+	klup := make(map[bundle.ComponentReference]*bundle.Component)
 	for _, comp := range data {
 		name := comp.Spec.ComponentName
 		klup[comp.ComponentReference()] = comp
 		if list := nlup[name]; list == nil {
-			nlup[name] = []*bundle.ComponentPackage{comp}
+			nlup[name] = []*bundle.Component{comp}
 		} else {
 			nlup[name] = append(nlup[name], comp)
 		}
@@ -54,19 +54,19 @@ func NewComponentFinder(data []*bundle.ComponentPackage) *ComponentFinder {
 
 // Component returns the component package that matches a reference,
 // returning nil if no match is found.
-func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.ComponentPackage {
+func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.Component {
 	return f.keyCompLookup[ref]
 }
 
 // ComponentsFromName returns the components that matches a string-name.
-func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.ComponentPackage {
+func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.Component {
 	return f.nameCompLookup[name]
 }
 
 // UniqueComponentFromName returns the single component package that matches a
 // string-name. If no component is found, nil is returned. If there are two
 // components that match the name, the method returns an error.
-func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.ComponentPackage, error) {
+func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.Component, error) {
 	comps := f.ComponentsFromName(name)
 	if len(comps) == 0 {
 		return nil, nil
@@ -76,7 +76,7 @@ func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.Componen
 	return comps[0], nil
 }
 
-// Objects returns ComponentPackage's Cluster objects (given some object
+// Objects returns Component's Cluster objects (given some object
 // ref) or nil.
 func (f *ComponentFinder) Objects(cref bundle.ComponentReference, ref core.ObjectRef) []*unstructured.Unstructured {
 	comp := f.Component(cref)
@@ -102,11 +102,11 @@ func (f *ComponentFinder) ObjectsFromUniqueComponent(name string, ref core.Objec
 
 // ObjectFinder finds objects within components
 type ObjectFinder struct {
-	component *bundle.ComponentPackage
+	component *bundle.Component
 }
 
 // NewObjectFinder returns an ObjectFinder instance.
-func NewObjectFinder(component *bundle.ComponentPackage) *ObjectFinder {
+func NewObjectFinder(component *bundle.Component) *ObjectFinder {
 	return &ObjectFinder{component}
 }
 

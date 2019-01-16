@@ -13,7 +13,7 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: kubedns
   version: 2.0.0

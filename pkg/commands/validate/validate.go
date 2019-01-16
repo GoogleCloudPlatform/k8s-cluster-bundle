@@ -47,7 +47,7 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	}
 }
 
-type componentValidator func([]*bundle.ComponentPackage) field.ErrorList
+type componentValidator func([]*bundle.Component) field.ErrorList
 
 // componentValidationFn validates components.
 var componentValidationFn componentValidator = validate.AllComponents

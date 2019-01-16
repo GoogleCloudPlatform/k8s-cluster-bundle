@@ -48,7 +48,7 @@ var (
 )
 
 // All validates components and components sets, providing as many errors as it can.
-func All(cp []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func All(cp []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 	errs = append(errs, ComponentSet(cs)...)
 	errs = append(errs, AllComponents(cp)...)
@@ -62,7 +62,7 @@ func cPath(ref bundle.ComponentReference) *field.Path {
 }
 
 // AllComponents validates a list of components.
-func AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponents(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
 	for _, c := range components {
@@ -80,7 +80,7 @@ func AllComponents(components []*bundle.ComponentPackage) field.ErrorList {
 }
 
 // Component validates a single component.
-func Component(c *bundle.ComponentPackage) field.ErrorList {
+func Component(c *bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	pi := field.NewPath("Component")
 
@@ -108,9 +108,9 @@ func Component(c *bundle.ComponentPackage) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("APIVersion"), api, "must have the form \"bundle.gke.io/<version>\""))
 	}
 
-	expType := "ComponentPackage"
+	expType := "Component"
 	if k := c.Kind; k != expType {
-		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be ComponentPackage"))
+		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be Component"))
 	}
 
 	if !versionPattern.MatchString(ver) {
@@ -167,10 +167,10 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 }
 
 // ComponentsAndComponentSet validates components in the context of a component set.
-func ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle.ComponentSet) field.ErrorList {
+func ComponentsAndComponentSet(components []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
 	errs := field.ErrorList{}
 
-	compMap := make(map[bundle.ComponentReference]*bundle.ComponentPackage)
+	compMap := make(map[bundle.ComponentReference]*bundle.Component)
 	for _, c := range components {
 		compMap[c.ComponentReference()] = c
 	}
@@ -189,7 +189,7 @@ func ComponentsAndComponentSet(components []*bundle.ComponentPackage, cs *bundle
 }
 
 // AllComponentObjects validates all objects in all componenst
-func AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList {
+func AllComponentObjects(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	for _, ca := range components {
 		errs = append(errs, ComponentObjects(ca)...)
@@ -198,7 +198,7 @@ func AllComponentObjects(components []*bundle.ComponentPackage) field.ErrorList 
 }
 
 // ComponentObjects validates objects in a componenst.
-func ComponentObjects(cp *bundle.ComponentPackage) field.ErrorList {
+func ComponentObjects(cp *bundle.Component) field.ErrorList {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 

@@ -25,11 +25,11 @@ import (
 // ImageTransformer makes modifications to container and node images in
 // Bundles.
 type ImageTransformer struct {
-	components []*bundle.ComponentPackage
+	components []*bundle.Component
 }
 
 // NewImageTransformer creates a new ImageTransformer instance.
-func NewImageTransformer(comp []*bundle.ComponentPackage) *ImageTransformer {
+func NewImageTransformer(comp []*bundle.Component) *ImageTransformer {
 	return &ImageTransformer{comp}
 }
 
@@ -46,7 +46,7 @@ type ImageSubRule struct {
 //
 // Rules are applied in order to images. If two rules apply, then they will be
 // applied in order.
-func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) []*bundle.ComponentPackage {
+func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) []*bundle.Component {
 	newComp := (&bundle.Bundle{Components: t.components}).DeepCopy().Components
 	finder := find.NewImageFinder(newComp)
 	finder.WalkAllImages(func(_ core.ClusterObjectKey, img string) string {

@@ -71,7 +71,7 @@ type fakeInliner struct {
 	bundleObjIn  *bundle.Bundle
 	bundleObjOut string
 
-	componentIn  *bundle.ComponentPackage
+	componentIn  *bundle.Component
 	componentOut string
 	err          error
 }
@@ -94,9 +94,9 @@ func (f *fakeInliner) InlineComponentsInBundle(_ context.Context, b *bundle.Bund
 	return o, f.err
 }
 
-func (f *fakeInliner) InlineComponent(_ context.Context, c *bundle.ComponentPackage) (*bundle.ComponentPackage, error) {
+func (f *fakeInliner) InlineComponent(_ context.Context, c *bundle.Component) (*bundle.Component, error) {
 	f.componentIn = c
-	o, err := converter.FromYAMLString(f.componentOut).ToComponentPackage()
+	o, err := converter.FromYAMLString(f.componentOut).ToComponent()
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ apiVersion: bundle.gke.io/v1alpha1
 kind: Bundle
 components:
 - apiVersion: bundle.gke.io/v1alpha1
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: test-pkg
   spec:
@@ -125,7 +125,7 @@ componentFiles:
 
 var successComponent = `
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
+kind: Component
 metadata:
   name: test-pkg
 spec:
@@ -136,7 +136,7 @@ spec:
 
 var inlinedComponent = `
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
+kind: Component
 metadata:
   name: test-pkg
 spec:
@@ -153,7 +153,7 @@ apiVersion: bundle.gke.io/v1alpha1
 kind: Bundle
 components:
 - apiVersion: bundle.gke.io/v1alpha1
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: test-pkg
   spec:
@@ -404,7 +404,7 @@ func TestWriteBundleData(t *testing.T) {
 				bwrap.Bundle = b
 			}
 			if tc.component != "" {
-				c, err := converter.FromYAMLString(tc.component).ToComponentPackage()
+				c, err := converter.FromYAMLString(tc.component).ToComponent()
 				if err != nil {
 					t.Fatalf("Error converting bundle to YAML: %v", err)
 				}

@@ -84,7 +84,7 @@ do
   # apimachinery/client-go at 1.9.
   if [[ $f == $clientsetpattern ]]; then
     # Watch is not supported in testing.ObjectTracker in 1.9
-    sed '/fakePtr.AddWatchReactor/,+9d' $f > $f.t
+    sed '/fakePtr.AddWatchReactor/{N;N;N;N;N;N;N;N;N;d;}' $f > $f.t
     mv $f.t $f
 
     # remove the import

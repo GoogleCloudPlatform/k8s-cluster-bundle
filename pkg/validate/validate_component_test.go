@@ -44,14 +44,14 @@ spec:
 var defaultComponentData = `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
     componentName: foo-comp
     version: 1.0.2
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: bar-comp-2.0.3
   spec:
@@ -152,7 +152,7 @@ spec:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -166,7 +166,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -180,7 +180,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -199,7 +199,7 @@ components:
   spec:
     componentName: foo-comp
     version: 1.0.2`,
-			errSubstring: "must be ComponentPackage",
+			errSubstring: "must be Component",
 		},
 		{
 			desc: "fail component: duplicate component reference",
@@ -207,14 +207,14 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
     componentName: foo-comp
     version: 1.0.2
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2-zed
   spec:
@@ -229,7 +229,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -243,7 +243,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -258,7 +258,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -272,7 +272,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -290,7 +290,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:
@@ -313,7 +313,7 @@ components:
 			components: `
 components:
 - apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: ComponentPackage
+  kind: Component
   metadata:
     name: foo-comp-1.0.2
   spec:

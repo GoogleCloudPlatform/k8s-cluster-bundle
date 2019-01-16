@@ -70,8 +70,8 @@ type File struct {
 	Hash string `json:"hash,omitempty"`
 }
 
-// ComponentPackageSpec represents the spec for the component.
-type ComponentPackageSpec struct {
+// ComponentSpec represents the spec for the component.
+type ComponentSpec struct {
 	// ComponentName is the canonical name of this component. For example, 'etcd'
 	// or 'kube-proxy'. It must have the same naming properties as the
 	// Metadata.Name to allow for constructing the name.
@@ -145,11 +145,11 @@ type ComponentSetList struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentPackageList contains a list of ComponentPackages.
-type ComponentPackageList struct {
+// ComponentList contains a list of Components.
+type ComponentList struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Items             []ComponentPackage `json:"items,omitempty"`
+	Items             []Component `json:"items,omitempty"`
 }
 
 // +genclient
@@ -166,12 +166,12 @@ type ComponentSet struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentPackage represents Kubernetes objects grouped into
+// Component represents Kubernetes objects grouped into
 // components and versioned together. These could be applications or they
 // could be some sort of supporting collection of objects.
-type ComponentPackage struct {
+type Component struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// The specification object for the ComponentPackage.
-	Spec ComponentPackageSpec `json:"spec,omitempty"`
+	// The specification object for the Component.
+	Spec ComponentSpec `json:"spec,omitempty"`
 }

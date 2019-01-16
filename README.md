@@ -15,11 +15,11 @@ changes for a while until the API settles down.
 ## An Introduction to Packaging in the Cluster Bundle
 
 Packaging in the cluster bundle revolves around a new type, called the
-Component Package:
+Component:
 
-* **Component Package**: A versioned collection of Kubernetes objects. This
+* **Component**: A versioned collection of Kubernetes objects. This
   should correspond to a logical application.
-* **Component Set**: A set of references to Component Packages.
+* **Component Set**: A set of references to Components.
 
 The Cluster Bundle APIs are minimal and focused. In particular, they are
 designed to represent Kubernetes components without worrying about deployment.
@@ -27,13 +27,13 @@ It is assumed that external deployment mechanisms like a command line interface
 or a deployment controller will consume the components and apply the components
 to a cluster.
 
-### Component Packages
+### Components
 
 In the wild, component packages look something like the following:
 
 ```yaml
 apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentPackage
+kind: Component
 spec:
   # A human readable name for the component. The combination of name + version
   # should be unique in a cluster.
@@ -54,7 +54,7 @@ the component. After inlining, the component might look like:
 
 ```yaml
 apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentPackage
+kind: Component
 spec:
   componentName: etcd-component
   version: 30.0.2
@@ -79,7 +79,7 @@ this text is converted into a config map and then added to the objects list:
 
 ```yaml
 apiVersion: bundle.gke.io/v1alpha1
-kind: ComponentPackage
+kind: Component
 spec:
   canonicalName: data-blob
   version: 0.1.0

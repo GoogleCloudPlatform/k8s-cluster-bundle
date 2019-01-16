@@ -67,13 +67,13 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader,
 // them into components. Thus, the returned data is a copy with the
 // file-references removed.
 func (n *Inliner) InlineBundleFiles(ctx context.Context, data *bundle.Bundle) (*bundle.Bundle, error) {
-	var out []*bundle.ComponentPackage
+	var out []*bundle.Component
 	for _, f := range data.ComponentFiles {
 		contents, err := n.readFile(ctx, f)
 		if err != nil {
 			return nil, fmt.Errorf("error reading file %q: %v", f.URL, err)
 		}
-		comp, err := converter.FromFileName(f.URL, contents).ToComponentPackage()
+		comp, err := converter.FromFileName(f.URL, contents).ToComponent()
 		if err != nil {
 			return nil, fmt.Errorf("error converting file %q to a component package: %v", f.URL, err)
 		}
@@ -99,7 +99,7 @@ var multiDoc = regexp.MustCompile("---(\n|$)")
 
 // InlineComponent reads file-references for component objects.
 // The returned components are copies with the file-references removed.
-func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPackage) (*bundle.ComponentPackage, error) {
+func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.Component) (*bundle.Component, error) {
 	comp = comp.DeepCopy()
 	name := comp.Spec.ComponentName
 	var newObjs []*unstructured.Unstructured
@@ -170,9 +170,9 @@ func (n *Inliner) InlineComponent(ctx context.Context, comp *bundle.ComponentPac
 	return comp, nil
 }
 
-// InlineAllComponents inlines objects into ComponentPackages.
-func (n *Inliner) InlineAllComponents(ctx context.Context, packs []*bundle.ComponentPackage) ([]*bundle.ComponentPackage, error) {
-	var out []*bundle.ComponentPackage
+// InlineAllComponents inlines objects into Components.
+func (n *Inliner) InlineAllComponents(ctx context.Context, packs []*bundle.Component) ([]*bundle.Component, error) {
+	var out []*bundle.Component
 	for _, p := range packs {
 		newp, err := n.InlineComponent(ctx, p)
 		if err != nil {
@@ -213,7 +213,7 @@ func (n *Inliner) readFile(ctx context.Context, file bundle.File) ([]byte, error
 
 // rewriteObjPaths rewrites relative-path'd file-references during component
 // inlining.
-func (n *Inliner) rewriteObjectPaths(ctx context.Context, compFile bundle.File, comp *bundle.ComponentPackage) error {
+func (n *Inliner) rewriteObjectPaths(ctx context.Context, compFile bundle.File, comp *bundle.Component) error {
 	compURL, err := compFile.ParsedURL()
 	if err != nil {
 		return err

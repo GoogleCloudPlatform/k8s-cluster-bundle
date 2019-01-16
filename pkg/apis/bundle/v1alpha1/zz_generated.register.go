@@ -57,8 +57,8 @@ func init() {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Bundle{},
-		&ComponentPackage{},
-		&ComponentPackageList{},
+		&Component{},
+		&ComponentList{},
 		&ComponentSet{},
 		&ComponentSetList{},
 	)
