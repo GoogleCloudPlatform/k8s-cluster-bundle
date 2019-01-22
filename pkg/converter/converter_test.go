@@ -56,6 +56,28 @@ spec:
     name: logfile
 `
 
+const testBundleManifest = `
+apiVersion: bundle.gke.io/v1alpha1
+kind: Bundle
+metadata:
+  creationTimestamp: null
+  name: bundle-example-2.3.5
+setName: bundle-example
+version: 2.3.5
+`
+
+const testComponentManifest = `
+apiVersion: bundle.gke.io/v1alpha1
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  componentName: data-blob
+  objectFiles:
+  - url: file:///etcd/etcd-server.yaml
+  version: 0.1.0
+`
+
 func TestConvertUnstructured(t *testing.T) {
 	firstIttObj, err := FromYAMLString(reschedulerManifest).ToUnstructured()
 	if err != nil {
@@ -83,5 +105,61 @@ func TestConvertUnstructured(t *testing.T) {
 	apiversionCheck, ok = secondIttObj.Object["apiVersion"].(string)
 	if !ok || apiversionCheck != "v1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", apiversionCheck)
+	}
+}
+
+func TestConvertBundle(t *testing.T) {
+	firstIttObj, err := FromYAMLString(testBundleManifest).ToBundle()
+	if err != nil {
+		t.Fatalf("unexpected error parsing manifest: %v", err)
+	}
+	// Check if one of the original YAML keys are reachable and value match
+	if firstIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", firstIttObj.APIVersion)
+	}
+	// convert back for sanity
+	b, err := FromObject(firstIttObj).ToYAML()
+	if err != nil {
+		t.Fatalf("unexpected error serializing manifest: %v", err)
+	}
+	str := string(b)
+
+	// Even though the YAMLs have maps, YAML generation sorts the keys based on
+	// name, and so it should be stable.
+	if strings.Trim(str, " \n\t") != strings.Trim(testBundleManifest, " \n\t") {
+		t.Errorf("Got serilaized manifest:\n\n%s\nexpected it to equal:\n\n%s", str, testBundleManifest)
+	}
+	// Convert YAML to Object one more time
+	secondIttObj, err := FromYAMLString(str).ToBundle()
+	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", firstIttObj.APIVersion)
+	}
+}
+
+func TestConvertComponent(t *testing.T) {
+	firstIttObj, err := FromYAMLString(testComponentManifest).ToComponent()
+	if err != nil {
+		t.Fatalf("unexpected error parsing manifest: %v", err)
+	}
+	// Check if one of the original YAML keys are reachable and value match
+	if firstIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", firstIttObj.APIVersion)
+	}
+	// convert back for sanity
+	b, err := FromObject(firstIttObj).ToYAML()
+	if err != nil {
+		t.Fatalf("unexpected error serializing manifest: %v", err)
+	}
+	str := string(b)
+
+	// Even though the YAMLs have maps, YAML generation sorts the keys based on
+	// name, and so it should be stable.
+	if strings.Trim(str, " \n\t") != strings.Trim(testComponentManifest, " \n\t") {
+		t.Errorf("Got serilaized manifest:\n\n%s\nexpected it to equal:\n\n%s", str, testComponentManifest)
+	}
+	// Convert YAML to Object one more time
+	secondIttObj, err := FromYAMLString(str).ToComponent()
+	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", secondIttObj.APIVersion)
 	}
 }
