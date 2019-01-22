@@ -24,6 +24,7 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
 
 type fakeStdioRW struct {
@@ -65,36 +66,24 @@ func (rw *fakeFileRW) WriteFile(_ context.Context, path string, bytes []byte, pe
 }
 
 type fakeInliner struct {
-	bundleCompIn  *bundle.Bundle
-	bundleCompOut string
+	bundleIn  *bundle.BundleBuilder
+	bundleOut string
 
-	bundleObjIn  *bundle.Bundle
-	bundleObjOut string
-
-	componentIn  *bundle.Component
+	componentIn  *bundle.ComponentBuilder
 	componentOut string
 	err          error
 }
 
-func (f *fakeInliner) InlineBundleFiles(_ context.Context, b *bundle.Bundle) (*bundle.Bundle, error) {
-	f.bundleCompIn = b
-	o, err := converter.FromYAMLString(f.bundleCompOut).ToBundle()
+func (f *fakeInliner) BundleFiles(_ context.Context, b *bundle.BundleBuilder) (*bundle.Bundle, error) {
+	f.bundleIn = b
+	o, err := converter.FromYAMLString(f.bundleOut).ToBundle()
 	if err != nil {
 		return nil, err
 	}
 	return o, f.err
 }
 
-func (f *fakeInliner) InlineComponentsInBundle(_ context.Context, b *bundle.Bundle) (*bundle.Bundle, error) {
-	f.bundleObjIn = b
-	o, err := converter.FromYAMLString(f.bundleObjOut).ToBundle()
-	if err != nil {
-		return nil, err
-	}
-	return o, f.err
-}
-
-func (f *fakeInliner) InlineComponent(_ context.Context, c *bundle.Component) (*bundle.Component, error) {
+func (f *fakeInliner) ComponentFiles(_ context.Context, c *bundle.ComponentBuilder) (*bundle.Component, error) {
 	f.componentIn = c
 	o, err := converter.FromYAMLString(f.componentOut).ToComponent()
 	if err != nil {
@@ -103,52 +92,7 @@ func (f *fakeInliner) InlineComponent(_ context.Context, c *bundle.Component) (*
 	return o, f.err
 }
 
-var successBundle = `
-apiVersion: bundle.gke.io/v1alpha1
-kind: Bundle
-components:
-- apiVersion: bundle.gke.io/v1alpha1
-  kind: Component
-  metadata:
-    name: test-pkg
-  spec:
-    componentName: test-comp
-    version: 0.1.0
-    objectFiles:
-    - url: zip/bar/biff.yaml`
-
-var notInlineBundle = `
-apiVersion: bundle.gke.io/v1alpha1
-kind: Bundle
-componentFiles:
-- url: some/inline/component.yaml`
-
-var successComponent = `
-apiVersion: bundle.gke.io/v1alpha1
-kind: Component
-metadata:
-  name: test-pkg
-spec:
-  componentName: test-comp
-  version: 0.1.0
-  objectFiles:
-  - url: zip/bar/biff.yaml`
-
-var inlinedComponent = `
-apiVersion: bundle.gke.io/v1alpha1
-kind: Component
-metadata:
-  name: test-pkg
-spec:
-  componentName: test-comp
-  version: 0.1.0
-  objects:
-  - apiVersion: v1
-    kind: Pod
-    metadata:
-      name: some-pod`
-
-var fullyInlinedBundle = `
+var bundleEx = `
 apiVersion: bundle.gke.io/v1alpha1
 kind: Bundle
 components:
@@ -165,6 +109,36 @@ components:
       metadata:
         name: some-pod`
 
+var bundleBuilderEx = `
+apiVersion: bundle.gke.io/v1alpha1
+kind: BundleBuilder
+componentFiles:
+- url: /some/inlined/component.yaml`
+
+var componentEx = `
+apiVersion: bundle.gke.io/v1alpha1
+kind: Component
+metadata:
+  name: test-pkg
+spec:
+  componentName: test-comp
+  version: 0.1.0
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: some-pod`
+
+var componentBuilderEx = `
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+metadata:
+  name: test-pkg
+componentName: test-comp
+version: 0.1.0
+objectFiles:
+- url: "/foo/bar/biff.yaml"`
+
 func TestReadBundleData(t *testing.T) {
 	testcases := []struct {
 		desc      string
@@ -172,78 +146,91 @@ func TestReadBundleData(t *testing.T) {
 		readFile  string
 		readStdin string
 
-		inlineBundleCompOut string
-		inlineBundleObjOut  string
-		inlineCompObjOut    string
-		inlineErr           error
+		inlineBundleOut string
+		inlineCompOut   string
+		inlineErr       error
 
 		expDataSubstr string
 		expErrSubstr  string
 	}{
+		// Basic success for four base types.
 		{
 			desc: "Test success file read: bundle",
 			opts: &GlobalOptions{
-				InputFile: "foo/bar/biff.yaml",
+				InputFile: "/foo/bar/biff.yaml",
 			},
-			readFile: successBundle,
+			readFile: bundleEx,
 		},
 		{
 			desc: "Test success file read: component",
 			opts: &GlobalOptions{
-				InputFile: "foo/bar/biff.yaml",
+				InputFile: "/foo/bar/biff.yaml",
 			},
-			readFile: successComponent,
+			readFile: componentEx,
 		},
+		{
+			desc: "Test success file read: bundle builder",
+			opts: &GlobalOptions{
+				InputFile: "/foo/bar/biff.yaml",
+			},
+			readFile: bundleBuilderEx,
+		},
+		{
+			desc: "Test success file read: component builder",
+			opts: &GlobalOptions{
+				InputFile: "/foo/bar/biff.yaml",
+			},
+			readFile: componentBuilderEx,
+		},
+
 		{
 			desc: "Test success stdin read: bundle",
 			opts: &GlobalOptions{
 				InputFormat: "yaml",
 			},
-			readStdin: successBundle,
+			readStdin: bundleEx,
 		},
 		{
 			desc: "Test success stdin read: component",
 			opts: &GlobalOptions{
 				InputFormat: "yaml",
 			},
-			readStdin: successComponent,
+			readStdin: componentEx,
 		},
 		{
 			desc: "Test success file read + inline comp: bundle",
 			opts: &GlobalOptions{
-				InputFile:        "foo/bar/biff.yaml",
-				InlineComponents: true,
+				InputFile: "/foo/bar/biff.yaml",
+				Inline:    true,
 			},
-			readFile:            notInlineBundle,
-			inlineBundleCompOut: successBundle,
-			expDataSubstr:       "test-pkg",
+			readFile:        bundleBuilderEx,
+			inlineBundleOut: bundleEx,
+			expDataSubstr:   "test-pkg",
 		},
 		{
 			desc: "Test success file read + inline obj: bundle",
 			opts: &GlobalOptions{
-				InputFile:        "foo/bar/biff.yaml",
-				InlineComponents: true,
-				InlineObjects:    true,
+				InputFile: "/foo/bar/biff.yaml",
+				Inline:    true,
 			},
-			readFile:            notInlineBundle,
-			inlineBundleCompOut: successBundle,
-			inlineBundleObjOut:  fullyInlinedBundle,
-			expDataSubstr:       "some-pod",
+			readFile:        bundleBuilderEx,
+			inlineBundleOut: bundleEx,
+			expDataSubstr:   "some-pod",
 		},
 		{
 			desc: "Test success component file read + inline obj: component",
 			opts: &GlobalOptions{
-				InputFile:     "foo/bar/biff.yaml",
-				InlineObjects: true,
+				InputFile: "/foo/bar/biff.yaml",
+				Inline:    true,
 			},
-			readFile:         successComponent,
-			inlineCompObjOut: inlinedComponent,
-			expDataSubstr:    "some-pod",
+			readFile:      componentBuilderEx,
+			inlineCompOut: componentEx,
+			expDataSubstr: "some-pod",
 		},
 		{
 			desc:          "Succces: default content type to yaml",
 			opts:          &GlobalOptions{},
-			readStdin:     successBundle,
+			readStdin:     bundleEx,
 			expDataSubstr: "test-pkg",
 		},
 
@@ -264,13 +251,13 @@ spec:
 		{
 			desc: "Error: inlining",
 			opts: &GlobalOptions{
-				InputFile:     "foo/bar/biff.yaml",
-				InlineObjects: true,
+				InputFile: "foo/bar/biff.yaml",
+				Inline:    true,
 			},
-			readFile:         successComponent,
-			inlineCompObjOut: inlinedComponent,
-			inlineErr:        errors.New("zork!"),
-			expErrSubstr:     "error inlining objects",
+			readFile:      componentBuilderEx,
+			inlineCompOut: componentEx,
+			inlineErr:     errors.New("zork"),
+			expErrSubstr:  "error inlining objects",
 		},
 	}
 
@@ -287,10 +274,9 @@ spec:
 				},
 				makeInlinerFn: func(rw files.FileReaderWriter, inputFile string) fileInliner {
 					return &fakeInliner{
-						bundleCompOut: tc.inlineBundleCompOut,
-						bundleObjOut:  tc.inlineBundleObjOut,
-						componentOut:  tc.inlineCompObjOut,
-						err:           tc.inlineErr,
+						bundleOut:    tc.inlineBundleOut,
+						componentOut: tc.inlineCompOut,
+						err:          tc.inlineErr,
 					}
 				},
 			}
@@ -311,15 +297,17 @@ spec:
 			if data == nil {
 				t.Fatalf("Got nil data, but expected some data")
 			}
-			if data.Bundle == nil && data.Component == nil {
-				t.Fatalf("expected one of bundle or component to be non-nil")
+
+			obj := data.Object()
+			if obj == nil {
+				t.Fatalf("expected wrapped bundle object to be non-nil")
 			}
-			outyaml, err := converter.FromObject(data).ToYAML()
+			outyaml, err := converter.FromObject(obj).ToYAML()
 			if err != nil {
 				t.Fatalf("error converting back to yaml: %v", err)
 			}
 			if tc.expDataSubstr != "" && !strings.Contains(string(outyaml), tc.expDataSubstr) {
-				t.Errorf("got data %s but expected it to contain %q", string(outyaml), tc.expDataSubstr)
+				t.Errorf("got data\n%s but expected it to contain %q", string(outyaml), tc.expDataSubstr)
 			}
 		})
 	}
@@ -327,56 +315,58 @@ spec:
 
 func TestWriteBundleData(t *testing.T) {
 	testcases := []struct {
-		desc      string
-		opts      *GlobalOptions
-		bundle    string
-		component string
-
+		desc           string
+		opts           *GlobalOptions
+		content        string
 		expStdioSubstr string
-
-		expErrSubstr string
+		expErrSubstr   string
 	}{
 		{
 			desc:           "Test success stdout write: bundle",
 			opts:           &GlobalOptions{},
-			bundle:         successBundle,
+			content:        bundleEx,
 			expStdioSubstr: "test-pkg",
+		},
+		{
+			desc:           "Test success stdout write: bundle builder",
+			opts:           &GlobalOptions{},
+			content:        bundleBuilderEx,
+			expStdioSubstr: "inlined/component",
 		},
 		{
 			desc: "Test success stdout write: component",
 			opts: &GlobalOptions{
 				OutputFormat: "yaml",
 			},
-			component:      inlinedComponent,
+			content:        componentEx,
 			expStdioSubstr: "some-pod",
+		},
+		{
+			desc:           "success stdout write: component builder",
+			content:        componentEx,
+			opts:           &GlobalOptions{},
+			expStdioSubstr: "test-comp",
 		},
 		{
 			desc: "Test success stdout write json: component",
 			opts: &GlobalOptions{
 				OutputFormat: "json",
 			},
-			component:      inlinedComponent,
+			content:        componentEx,
 			expStdioSubstr: "some-pod",
 		},
 		{
 			desc:           "success: content format defaults to yaml",
-			component:      inlinedComponent,
+			content:        componentEx,
 			opts:           &GlobalOptions{},
 			expStdioSubstr: "some-pod",
 		},
 
 		// Errors
 		{
-			desc:         "error: both nil",
+			desc:         "error: wrapper nil",
 			opts:         &GlobalOptions{},
-			expErrSubstr: "both the bundle and the component fields were nil",
-		},
-		{
-			desc:         "error: both nil",
-			opts:         &GlobalOptions{},
-			bundle:       successBundle,
-			component:    inlinedComponent,
-			expErrSubstr: "both the bundle and the component fields were non-nil",
+			expErrSubstr: "content was empty",
 		},
 	}
 
@@ -395,23 +385,12 @@ func TestWriteBundleData(t *testing.T) {
 				},
 			}
 
-			bwrap := &BundleWrapper{}
-			if tc.bundle != "" {
-				b, err := converter.FromYAMLString(tc.bundle).ToBundle()
-				if err != nil {
-					t.Fatalf("Error converting bundle to YAML: %v", err)
-				}
-				bwrap.Bundle = b
-			}
-			if tc.component != "" {
-				c, err := converter.FromYAMLString(tc.component).ToComponent()
-				if err != nil {
-					t.Fatalf("Error converting bundle to YAML: %v", err)
-				}
-				bwrap.Component = c
+			bwrap, err := wrapper.FromRaw("yaml", []byte(tc.content))
+			// error checked below.
+			if err == nil {
+				err = brw.WriteBundleData(ctx, bwrap, tc.opts)
 			}
 
-			err := brw.WriteBundleData(ctx, bwrap, tc.opts)
 			if err != nil && tc.expErrSubstr == "" {
 				t.Fatalf("Got error %q but expected no error", err.Error())
 			} else if err == nil && tc.expErrSubstr != "" {

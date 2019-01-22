@@ -13,10 +13,9 @@
 # limitations under the License.
 
 apiVersion: bundle.gke.io/v1alpha1
-kind: Component
-spec:
-  componentName: node-config
-  version: 2.3.4
-  objectFiles:
-  - url: file:///nodes/ubuntu-cluster-node.yaml
-  - url: file:///nodes/ubuntu-master-node.yaml
+kind: ComponentBuilder
+componentName: node-config
+version: 2.3.4
+objectFiles:
+- url: file:///nodes/ubuntu-cluster-node.yaml
+- url: file:///nodes/ubuntu-master-node.yaml

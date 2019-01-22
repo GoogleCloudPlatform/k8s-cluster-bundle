@@ -73,6 +73,14 @@ func (c *Component) ComponentReference() ComponentReference {
 	}
 }
 
+// ComponentReference creates a ComponentReference from a component.
+func (c *ComponentBuilder) ComponentReference() ComponentReference {
+	return ComponentReference{
+		ComponentName: c.ComponentName,
+		Version:       c.Version,
+	}
+}
+
 // ComponentSet creates a ComponentSet from a Bundle. Only components that
 // are inlined into the Bundle are considered for the purposes of ComponentSet
 // creation.

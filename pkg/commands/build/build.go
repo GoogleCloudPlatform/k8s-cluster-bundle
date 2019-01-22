@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inline
+package build
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/inline"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
-// options represents options flags for the inline command.
+// options represents options flags for the build command.
 type options struct{}
 
 // opts is a global options instance for reference via the add commands.
@@ -33,8 +33,7 @@ var opts = &options{}
 
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	gopt.InlineComponents = true
-	gopt.InlineObjects = true
+	gopt.Inline = true
 	brw := cmdlib.NewBundleReaderWriter(
 		&files.LocalFileSystemReaderWriter{},
 		&cmdlib.RealStdioReaderWriter{})
@@ -45,8 +44,8 @@ func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 
 // createInlinerFn creates an Inliner that works with the given current working
 // directory for the purposes of dependency injection.
-var createInlinerFn = func(pbr files.FileObjReader) *inline.Inliner {
-	return inline.NewInlinerWithScheme(files.FileScheme, pbr, inline.DefaultPathRewriter)
+var createInlinerFn = func(pbr files.FileObjReader) *build.Inliner {
+	return build.NewInlinerWithScheme(files.FileScheme, pbr)
 }
 
 func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {

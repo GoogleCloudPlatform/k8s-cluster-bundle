@@ -18,10 +18,10 @@ import (
 	"context"
 	"flag"
 
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/inline"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/spf13/cobra"
@@ -49,14 +49,11 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 			"If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.InlineComponents, "inline-components", "l", true, "Whether to inline the component data files before processing")
-
-	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.InlineObjects, "inline-objects", "", true, "Whether to inline the components' object files")
+		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline files before processing")
 
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
-	inline.AddCommandsTo(ctx, rootCmd)
+	build.AddCommandsTo(ctx, rootCmd)
 	modify.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
 

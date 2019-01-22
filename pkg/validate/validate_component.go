@@ -225,13 +225,5 @@ func ComponentObjects(cp *bundle.Component) field.ErrorList {
 		}
 		compObjects[oref] = true
 	}
-
-	for i, objfile := range cp.Spec.ObjectFiles {
-		url := objfile.URL
-		fp := basep.Child("Spec", "ObjectFiles").Index(i)
-		if urlErr := validateURL(fp, url); urlErr != nil {
-			errs = append(errs, urlErr)
-		}
-	}
 	return errs
 }
