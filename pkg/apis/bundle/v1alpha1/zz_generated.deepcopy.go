@@ -28,11 +28,6 @@ func (in *Bundle) DeepCopyInto(out *Bundle) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	if in.ComponentFiles != nil {
-		in, out := &in.ComponentFiles, &out.ComponentFiles
-		*out = make([]File, len(*in))
-		copy(*out, *in)
-	}
 	if in.Components != nil {
 		in, out := &in.Components, &out.Components
 		*out = make([]*Component, len(*in))
@@ -302,18 +297,6 @@ func (in *ComponentSpec) DeepCopyInto(out *ComponentSpec) {
 				in, out := &(*in)[i], &(*out)[i]
 				*out = (*in).DeepCopy()
 			}
-		}
-	}
-	if in.ObjectFiles != nil {
-		in, out := &in.ObjectFiles, &out.ObjectFiles
-		*out = make([]File, len(*in))
-		copy(*out, *in)
-	}
-	if in.RawTextFiles != nil {
-		in, out := &in.RawTextFiles, &out.RawTextFiles
-		*out = make([]FileGroup, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	return

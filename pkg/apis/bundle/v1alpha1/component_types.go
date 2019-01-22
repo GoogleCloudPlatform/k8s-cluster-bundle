@@ -104,22 +104,6 @@ type ComponentSpec struct {
 	//
 	// This is essentially equivalent to the Kubernetes `Unstructured` type.
 	Objects []*unstructured.Unstructured `json:"objects,omitempty"`
-
-	// Objects that are specified via a File-URL. The process of inlining a
-	// component turns object files into objects.  During the inline process, if
-	// the file is YAML-formatted and contains multiple objects in the YAML-doc,
-	// the objects will be split into separate inline objects. In other words,
-	// one object file may result in multiple objects.
-	//
-	// Each object file must be parsable into a Struct: In other words,
-	// it should be representable as either YAML or JSON.
-	ObjectFiles []File `json:"objectFiles,omitempty"`
-
-	// Raw files represent arbitrary string data. Unlike object files,
-	// these files don't need to be parsable as YAML or JSON. So, during the
-	// inline process, the data is inserted into a generated config map before
-	// being added to the objects. A ConfigMap is generated per-filegroup.
-	RawTextFiles []FileGroup `json:"rawTextFiles,omitempty"`
 }
 
 // FileGroup represents a collection of files.  When used to create ConfigMaps

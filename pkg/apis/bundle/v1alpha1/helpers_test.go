@@ -67,9 +67,6 @@ func TestMakeComponentReference(t *testing.T) {
 		Spec: ComponentSpec{
 			ComponentName: "zip",
 			Version:       "1.2.3",
-			ObjectFiles: []File{{
-				URL: "file://foo.yaml",
-			}},
 		},
 	}
 	exp := ComponentReference{"zip", "1.2.3"}

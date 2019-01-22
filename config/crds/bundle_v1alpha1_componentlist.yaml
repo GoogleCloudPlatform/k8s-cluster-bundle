@@ -54,34 +54,6 @@ spec:
                       properties as the Metadata.Name to allow for constructing the
                       name. See more at k8s.io/docs/concepts/overview/working-with-objects/names/
                     type: string
-                  objectFiles:
-                    description: 'Objects that are specified via a File-URL. The process
-                      of inlining a component turns object files into objects.  During
-                      the inline process, if the file is YAML-formatted and contains
-                      multiple objects in the YAML-doc, the objects will be split
-                      into separate inline objects. In other words, one object file
-                      may result in multiple objects.  Each object file must be parsable
-                      into a Struct: In other words, it should be representable as
-                      either YAML or JSON.'
-                    items:
-                      properties:
-                        hash:
-                          description: Optional Sha256 hash of the binary to ensure
-                            we are pulling the correct binary/file.
-                          type: string
-                        url:
-                          description: 'URL to find this file; the url string must
-                            be parsable via Go''s net/url library. It is generally
-                            recommended that a URI scheme be provided in the URL,
-                            but it is not required. If a scheme is not provided, it
-                            is assumed that the scheme is a file-scheme.  For example,
-                            these are all valid: - foo/bar/biff (a relative path)
-                            - /foo/bar/biff (an absolute path) - file:///foo/bar/biff
-                            (an absolute path with an explicit ''file'' scheme) -
-                            http://example.com/foo.yaml'
-                          type: string
-                      type: object
-                    type: array
                   objects:
                     description: Structured Kubenetes objects that run as part of
                       this app, whether on the master, on the nodes, or in some other
@@ -89,41 +61,6 @@ spec:
                       compatible. Each must have `apiVersion`, `kind`, and `metadata`.  This
                       is essentially equivalent to the Kubernetes `Unstructured` type.
                     items:
-                      type: object
-                    type: array
-                  rawTextFiles:
-                    description: Raw files represent arbitrary string data. Unlike
-                      object files, these files don't need to be parsable as YAML
-                      or JSON. So, during the inline process, the data is inserted
-                      into a generated config map before being added to the objects.
-                      A ConfigMap is generated per-filegroup.
-                    items:
-                      properties:
-                        files:
-                          description: Files that make up this file group.
-                          items:
-                            properties:
-                              hash:
-                                description: Optional Sha256 hash of the binary to
-                                  ensure we are pulling the correct binary/file.
-                                type: string
-                              url:
-                                description: 'URL to find this file; the url string
-                                  must be parsable via Go''s net/url library. It is
-                                  generally recommended that a URI scheme be provided
-                                  in the URL, but it is not required. If a scheme
-                                  is not provided, it is assumed that the scheme is
-                                  a file-scheme.  For example, these are all valid:
-                                  - foo/bar/biff (a relative path) - /foo/bar/biff
-                                  (an absolute path) - file:///foo/bar/biff (an absolute
-                                  path with an explicit ''file'' scheme) - http://example.com/foo.yaml'
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Name of the filegroup. For raw text files,
-                            this becomes the name of the.
-                          type: string
                       type: object
                     type: array
                   version:

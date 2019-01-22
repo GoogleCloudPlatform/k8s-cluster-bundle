@@ -42,10 +42,6 @@ type Bundle struct {
 	// string must be incremented.
 	Version string `json:"version,omitempty"`
 
-	// ComponentFiles reference Component files. The component files can
-	// be inlined as directly included components (see `Components` below).
-	ComponentFiles []File `json:"componentFiles,omitempty"`
-
 	// Components are Components are files that are inlined. The
 	// components must be unique based on the combination of ComponentName +
 	// Version.

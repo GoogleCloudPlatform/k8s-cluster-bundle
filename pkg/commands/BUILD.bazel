@@ -9,10 +9,10 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/commands/build:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",
         "//pkg/commands/filter:go_default_library",
         "//pkg/commands/find:go_default_library",
-        "//pkg/commands/inline:go_default_library",
         "//pkg/commands/modify:go_default_library",
         "//pkg/commands/validate:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",

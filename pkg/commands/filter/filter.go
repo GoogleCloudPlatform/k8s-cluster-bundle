@@ -106,15 +106,15 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *c
 	}
 	fopts.KeepOnly = o.keepOnly
 
-	if o.filterType == "components" && bw.Bundle != nil {
-		bw.Bundle.Components = filter.NewFilter().Components(bw.Bundle.Components, fopts)
-	} else if o.filterType == "objects" && bw.Bundle != nil {
-		for i, c := range bw.Bundle.Components {
-			bw.Bundle.Components[i].Spec.Objects =
+	if o.filterType == "components" && bw.Bundle() != nil {
+		bw.Bundle().Components = filter.NewFilter().Components(bw.Bundle().Components, fopts)
+	} else if o.filterType == "objects" && bw.Bundle() != nil {
+		for i, c := range bw.Bundle().Components {
+			bw.Bundle().Components[i].Spec.Objects =
 				filter.NewFilter().Objects(c.Spec.Objects, fopts)
 		}
-	} else if o.filterType == "objects" && bw.Component != nil {
-		bw.Component.Spec.Objects = filter.NewFilter().Objects(bw.Component.Spec.Objects, fopts)
+	} else if o.filterType == "objects" && bw.Component() != nil {
+		bw.Component().Spec.Objects = filter.NewFilter().Objects(bw.Component().Spec.Objects, fopts)
 	} else {
 		return fmt.Errorf("unknown filter type: %s", o.filterType)
 	}

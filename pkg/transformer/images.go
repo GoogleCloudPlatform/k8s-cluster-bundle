@@ -47,7 +47,9 @@ type ImageSubRule struct {
 // Rules are applied in order to images. If two rules apply, then they will be
 // applied in order.
 func (t *ImageTransformer) TransformImagesStringSub(rules []*ImageSubRule) []*bundle.Component {
-	newComp := (&bundle.Bundle{Components: t.components}).DeepCopy().Components
+	bun := &bundle.Bundle{Components: t.components}
+	bun = bun.DeepCopy()
+	newComp := bun.Components
 	finder := find.NewImageFinder(newComp)
 	finder.WalkAllImages(func(_ core.ClusterObjectKey, img string) string {
 		for _, r := range rules {

@@ -24,9 +24,6 @@ import (
 )
 
 func TestRealisticDataParseAndInline(t *testing.T) {
-	// TODO(kashomon): Re-enable this test once the examples have been converted.
-	t.Skipf("Test skipped: re-add when examples have been converted to bundle-building")
-
 	ctx := context.Background()
 	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
