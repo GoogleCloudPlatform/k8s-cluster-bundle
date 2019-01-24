@@ -100,7 +100,10 @@ kind: Component`,
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			bw, err := FromRaw(tc.contentType, []byte(tc.content))
-			testutil.CheckErrorCases(t, err, tc.expErrSubstr)
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
 			if err != nil {
 				return
 			}

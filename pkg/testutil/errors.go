@@ -15,17 +15,18 @@
 package testutil
 
 import (
+	"fmt"
 	"strings"
-	"testing"
 )
 
 // CheckErrorCases checks error cases for tests
-func CheckErrorCases(t *testing.T, err error, expErrSubstr string) {
+func CheckErrorCases(err error, expErrSubstr string) error {
 	if err == nil && expErrSubstr != "" {
-		t.Fatalf("Got no error but expected error containing %q", expErrSubstr)
+		return fmt.Errorf("got no error but expected error containing %q", expErrSubstr)
 	} else if err != nil && expErrSubstr == "" {
-		t.Fatalf("Got error %q but expected no error", err.Error())
+		return fmt.Errorf("got error %q but expected no error", err.Error())
 	} else if err != nil && !strings.Contains(err.Error(), expErrSubstr) {
-		t.Fatalf("Got error %q but expected it to contain %q", err.Error(), expErrSubstr)
+		return fmt.Errorf("Got error %q but expected it to contain %q", err.Error(), expErrSubstr)
 	}
+	return nil
 }

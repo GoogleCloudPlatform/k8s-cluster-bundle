@@ -73,8 +73,11 @@ metadata:
   creationTimestamp: null
 spec:
   componentName: data-blob
-  objectFiles:
-  - url: file:///etcd/etcd-server.yaml
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: etcd-server
   version: 0.1.0
 `
 

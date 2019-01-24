@@ -307,7 +307,12 @@ objectFiles:
 
 			inliner := NewInlinerWithScheme(files.FileScheme, &fakeLocalReader{tc.files})
 			got, err := inliner.BundleFiles(ctx, data)
-			testutil.CheckErrorCases(t, err, tc.expErrSubstr)
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
+			// It's possible we expect to have an error. But, if that's the case, we
+			// can't continue.
 			if err != nil {
 				return
 			}
@@ -418,7 +423,10 @@ blar
 
 			inliner := NewInlinerWithScheme(files.FileScheme, &fakeLocalReader{tc.files})
 			got, err := inliner.ComponentFiles(ctx, data)
-			testutil.CheckErrorCases(t, err, tc.expErrSubstr)
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
 			if err != nil {
 				return
 			}
