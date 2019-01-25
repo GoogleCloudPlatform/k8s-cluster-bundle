@@ -15,9 +15,8 @@
 package options
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // ObjHandler is a function that can apply options to a Kubernetes object.

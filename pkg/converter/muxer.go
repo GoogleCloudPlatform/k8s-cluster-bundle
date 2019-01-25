@@ -58,7 +58,7 @@ func FromJSON(b []byte) *Muxer {
 func FromFileName(fname string, contents []byte) *Muxer {
 	ext := filepath.Ext(fname)
 	switch ext {
-	case ".yaml":
+	case ".yaml", ".yml":
 		return FromYAML(contents)
 	case ".json":
 		return FromJSON(contents)
@@ -162,6 +162,15 @@ func (m *Muxer) ToComponentSet() (*bundle.ComponentSet, error) {
 func (m *Muxer) ToUnstructured() (*unstructured.Unstructured, error) {
 	d := &unstructured.Unstructured{}
 	if err := m.mux(d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// ToJSONMap converts from json/yaml data to a map of string-to-interface.
+func (m *Muxer) ToJSONMap() (map[string]interface{}, error) {
+	d := make(map[string]interface{})
+	if err := m.mux(&d); err != nil {
 		return nil, err
 	}
 	return d, nil

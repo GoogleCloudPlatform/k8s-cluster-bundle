@@ -1,0 +1,3 @@
+# Options for applying to the component via patch-templates
+namespace: foo-namespace
+buildLabel: test-build
