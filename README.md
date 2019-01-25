@@ -21,43 +21,31 @@ Component:
   should correspond to a logical application.
 * **Component Set**: A set of references to Components.
 
-The Cluster Bundle APIs are minimal and focused. In particular, they are
-designed to represent Kubernetes components without worrying about deployment.
-It is assumed that external deployment mechanisms like a command line interface
-or a deployment controller will consume the components and apply the components
-to a cluster.
+The Cluster Bundle APIs are minimal and focused on the problem of packaging
+Kubernetes objects into a single container. In particular, they are designed to
+represent Kubernetes components without worrying about deployment.  It is
+assumed that external deployment mechanisms like a command line interface or a
+deployment controller will consume the components and apply the components to a
+cluster.
 
 ### Components
 
-In the wild, component packages look something like the following:
+In the wild, components look like the following:
 
 ```yaml
-apiVersion: 'bundle.gke.io/v1alpha1'
+apiVersion: bundle.gke.io/v1alpha1
 kind: Component
 spec:
+
   # A human readable name for the component. The combination of name + version
   # should be unique in a cluster.
   componentName: etcd-component
 
-  # Version of the component, representing changes to the manifest (like a flag
-  # change) or the to container image[s].
+  # Version of the component, representing any and all changes to the included
+  # object manifests.
   version: 30.0.2
 
-  # Kubernetes objects that make up this component.
-  objectFiles:
-  - url: 'file://etcd-server.yaml'
-```
-
-All cluster objects can be *inlined*, which means they are imported directly
-into the component, which allows the component package to hermetically describe
-the component. After inlining, the component might look like:
-
-```yaml
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: Component
-spec:
-  componentName: etcd-component
-  version: 30.0.2
+  # A list of included Kubernetes objects.
   objects:
   - apiVersion: v1
     kind: Pod
@@ -74,6 +62,43 @@ spec:
     # and so on
 ```
 
+Some notes about Components:
+
+- Components must be named with a canonical component name.
+- Components must have a version field that indicates the precise version of
+  the component. Any time any change is made to the component, the version
+  should update.
+- The combination of the canonical component name + the version should be
+  unique for a component.
+- Objects must be Kubernetes objects -- they must have apiversion, kind, and
+  metadata. Other than that, there are no restrictions on what objects can be
+  contained in a component.
+
+You can see more about components in the [APIs directory]
+(https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/tree/master/pkg/apis/bundle/v1alpha1)
+
+## Component Building
+
+To make it easier to create components, the Cluster Bundle provides builder
+types that allow users to inline
+
+```yaml
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+
+componentName: etcd-component
+
+version: 30.0.2
+
+# File-references to kubernetes objects that make up this component.
+objectFiles:
+- url: file:///etcd-server.yaml
+```
+
+All cluster objects can be *inlined*, which means they are imported directly
+into the component, which allows the component package to hermetically describe
+the component.
+
 Additionally, raw text can be imported into a component package. When inlined,
 this text is converted into a config map and then added to the objects list:
 
@@ -84,23 +109,29 @@ spec:
   canonicalName: data-blob
   version: 0.1.0
   rawTextFiles:
-  - url: 'file://some-data.txt'
+  - name: data-blob
+    files:
+    - url: file:///some-data.txt
 ```
+
+Builder objects can be built using `bundlectl build --input-file=my-component.yaml`
 
 ### ComponentSets
 
-Component Sets are collections of components, which makes it possible publish,
-validate, and deploy components as a single unit.
+Component Sets are collections of references to components, which makes it
+possible publish, validate, and deploy components as a single unit.
 
 ```yaml
 apiVersion: 'bundle.gke.io/v1alpha1'
 kind: ComponentSet
 spec:
-  version: '2.3.4'
+  version: 2.3.4
 
   components:
-  - etcd-server-30.0.2
-  - data-blob-0.1.0
+  - componentName: etcd-server
+    version: 30.0.2
+  - componentName: data-blob
+    version: 0.1.0
 ```
 
 ## Bundle CLI (bundlectl)
@@ -128,12 +159,12 @@ And so, in the examples directory, you will see:
 
 ```yaml
 componentFiles:
-- url: 'file://etcd/etcd-component.yaml'
-- url: 'file://nodes/nodes-component.yaml'
-- url: 'file://kubernetes/kubernetes-component.yaml'
-- url: 'file://kubedns/kubedns-component.yaml'
-- url: 'file://kubeproxy/kube-proxy-component.yaml'
-- url: 'file://datablob/data-blob-component.yaml'
+- url: file:///etcd/etcd-component.yaml
+- url: file:///nodes/nodes-component.yaml
+- url: file:///kubernetes/kubernetes-component.yaml
+- url: file:///kubedns/kubedns-component.yaml
+- url: file:///kubeproxy/kube-proxy-component.yaml
+- url: file:///datablob/data-blob-component.yaml
 ```
 
 To validate component data, run:

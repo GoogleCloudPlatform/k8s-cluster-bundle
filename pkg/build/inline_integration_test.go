@@ -23,7 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
 )
 
-func TestRealisticDataParseAndInline(t *testing.T) {
+func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 	ctx := context.Background()
 	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
@@ -54,6 +54,43 @@ func TestRealisticDataParseAndInline(t *testing.T) {
 
 	// Ensure it validates
 	if errs := validate.AllComponents(moreInlined.Components); len(errs) > 0 {
+		for _, e := range errs {
+			t.Errorf("Errors in validaton: %q", e.Error())
+		}
+	}
+}
+
+func TestRealisticDataParseAndInline_Component(t *testing.T) {
+	ctx := context.Background()
+	b, err := testutil.ReadData("../../", "examples/component/etcd-component-builder.yaml")
+	if err != nil {
+		t.Fatalf("Error reading file %v", err)
+	}
+
+	cb, err := converter.FromYAML(b).ToComponentBuilder()
+	if err != nil {
+		t.Fatalf("error converting data: %v", err)
+	}
+
+	if l := len(cb.ObjectFiles); l == 0 {
+		t.Fatalf("found zero files, but expected some")
+	}
+
+	pathPrefix := testutil.TestPathPrefix("../../", "examples/component/etcd-component-builder.yaml")
+	inliner := NewLocalInliner(pathPrefix)
+
+	component, err := inliner.ComponentFiles(ctx, cb)
+	if err != nil {
+		t.Fatalf("Error calling ComponentFiles(): %v", err)
+	}
+
+	_, err = converter.FromObject(component).ToYAML()
+	if err != nil {
+		t.Fatalf("Error converting the inlined component back into YAML: %v", err)
+	}
+
+	// Ensure it validates
+	if errs := validate.Component(component); len(errs) > 0 {
 		for _, e := range errs {
 			t.Errorf("Errors in validaton: %q", e.Error())
 		}

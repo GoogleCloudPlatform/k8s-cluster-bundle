@@ -20,7 +20,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
-func TestRealisticDataParse(t *testing.T) {
+func TestRealisticDataParse_BundleBuilder(t *testing.T) {
 	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
@@ -49,5 +49,37 @@ func TestRealisticDataParse_ComponentSet(t *testing.T) {
 
 	if l := len(cset.Spec.Components); l == 0 {
 		t.Fatalf("found zero components, but expected some")
+	}
+}
+
+func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
+	b, err := testutil.ReadData("../../", "examples/component/etcd-component-builder.yaml")
+	if err != nil {
+		t.Fatalf("Error reading file %v", err)
+	}
+
+	comp, err := FromYAML(b).ToComponentBuilder()
+	if err != nil {
+		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+	}
+
+	if l := len(comp.ObjectFiles); l == 0 {
+		t.Fatalf("found zero object urls, but expected some")
+	}
+}
+
+func TestRealisticDataParse_Component(t *testing.T) {
+	b, err := testutil.ReadData("../../", "examples/component/etcd-component.yaml")
+	if err != nil {
+		t.Fatalf("Error reading file %v", err)
+	}
+
+	comp, err := FromYAML(b).ToComponent()
+	if err != nil {
+		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+	}
+
+	if l := len(comp.Spec.Objects); l == 0 {
+		t.Fatalf("found zero objects, but expected some")
 	}
 }
