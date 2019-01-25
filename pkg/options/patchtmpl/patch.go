@@ -70,6 +70,11 @@ type parsedPatch struct {
 	uns *unstructured.Unstructured
 }
 
+// String returns the string form of the parsed patch.
+func (p *parsedPatch) String() string {
+	return string(p.raw)
+}
+
 func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) ([]*parsedPatch, error) {
 	tfil := a.tmplFilter
 	if tfil == nil {
@@ -141,7 +146,6 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 		if len(objJSON) == 0 {
 			return nil, fmt.Errorf("converted object JSON was empty")
 		}
-		fmt.Errorf("obj: %s", objJSON)
 
 		deserializer := scheme.Codecs.UniversalDeserializer()
 		for _, pat := range patches {

@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/spf13/cobra"
 )
@@ -51,10 +52,11 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline files before processing")
 
+	build.AddCommandsTo(ctx, rootCmd)
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
-	build.AddCommandsTo(ctx, rootCmd)
 	modify.AddCommandsTo(ctx, rootCmd)
+	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
 
 	// This is magic hackery I don't unherdstand but somehow this fixes

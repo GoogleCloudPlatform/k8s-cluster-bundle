@@ -97,5 +97,17 @@ spec:
       kind: Pod
       metadata:
         namespace:
-          {{.Namespace}}
+          {{.namespace}}
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      annotations:
+        bundle.gke.io/inline-type: kube-object
+        build-label-test: build-label-test
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          build-label: {{.buildLabel}}
   version: 30.0.2
