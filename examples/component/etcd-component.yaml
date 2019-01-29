@@ -103,7 +103,6 @@ spec:
     metadata:
       annotations:
         bundle.gke.io/inline-type: kube-object
-        build-label-test: build-label-test
     template: |
       apiVersion: v1
       kind: Pod
