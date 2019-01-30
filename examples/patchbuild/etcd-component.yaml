@@ -1,0 +1,89 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  componentName: etcd-component
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      annotations:
+        bundle.gke.io/inline-type: kube-object
+      name: etcd-server
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - |
+          exec /usr/local/bin/etcd
+          --name etcd-server-primary
+          --listen-peer-urls $(LISTEN_PEER_URLS)
+          --initial-advertise-peer-urls $(INITIAL_ADVERTISE_PEER_URLS)
+          --advertise-client-urls $(CLIENT_URLS)
+          --listen-client-urls $(CLIENT_URLS)
+          --quota-backend-bytes=6442450944
+          --data-dir /var/etcd/data
+          --initial-cluster-state new
+          --initial-cluster etcd-server-primary=$(CLIENT_URLS)
+          1>>/var/log/etcd.log
+          2>&1
+        env:
+        - name: TARGET_STORAGE
+          value: etcd3
+        - name: TARGET_VERSION
+          value: 3.1.11
+        - name: DATA_DIRECTORY
+          value: /var/etcd/data
+        - name: INITIAL_CLUSTER
+          value: etcd-server-primary=http://10.1.1.1:2380
+        - name: LISTEN_PEER_URLS
+          value: http://10.1.1.1:2380
+        - name: INITIAL_ADVERTISE_PEER_URLS
+          value: http://10.1.1.1:2380
+        - name: CLIENT_URLS
+          value: http://127.0.0.1:2379
+        - name: ETCD_CREDS
+          value: ""
+        image: k8s.gcr.io/etcd:3.1.11
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /health
+            port: 2379
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: etcd-container
+        ports:
+        - containerPort: 2380
+          hostPort: 2380
+          name: serverport
+        - containerPort: 2379
+          hostPort: 2379
+          name: clientport
+        resources:
+          requests:
+            cpu: 200m
+        volumeMounts:
+        - mountPath: /var/etcd
+          name: varetcd
+          readOnly: false
+        - mountPath: /var/log/etcd.log
+          name: varlogetcd
+          readOnly: false
+        - mountPath: /etc/srv/kubernetes
+          name: etc
+          readOnly: false
+      hostNetwork: true
+      volumes:
+      - hostPath:
+          path: /mnt/disks/master-pd/var/etcd
+        name: varetcd
+      - hostPath:
+          path: /var/log/etcd.log
+          type: FileOrCreate
+        name: varlogetcd
+      - hostPath:
+          path: /etc/srv/kubernetes
+        name: etc

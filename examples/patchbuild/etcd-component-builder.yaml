@@ -1,0 +1,9 @@
+# Wrapper around the etcd object
+
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+componentName: etcd-component
+version: 30.0.2
+objectFiles:
+- url: /etcd-server.yaml
+- url: /etcd-image-patch.yaml

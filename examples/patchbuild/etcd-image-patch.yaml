@@ -1,0 +1,28 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplateBuilder
+description: A patch that can modify etcd images.
+template: |
+  apiVersion: v1
+  kind: Pod
+  spec:
+    containers:
+    - name: etcd-container
+      image: {{.Registry}}/etcd:{{.EtcdImageTag}}
+buildSchema:
+  required:
+  - EtcdImageTag
+  parameters:
+    # By default, Registry is not provided during build, so we similate
+    # pass-through.
+    Registry:
+      default: '{{.Registry}}'
+      type: string
+    # EtcdImageTag must be provided during build.
+    EtcdImageTag:
+      type: string
+targetSchema:
+  required:
+  - Registry
+  parameters:
+    Registry:
+      type: string

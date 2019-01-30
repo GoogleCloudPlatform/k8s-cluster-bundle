@@ -15,16 +15,50 @@
 package v1alpha1
 
 import (
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PatchTemplate contains configuration for patching objects.
 type PatchTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Description of what this patch is meant to do. For informational purposes
+	// only.
+	Description string
+
 	// Template is a template that creates a patch for a K8S object. In other
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
 	Template string
+
+	// OptionsSchema is the schema for the parameters meant to be applied to
+	// the patch template.
+	OptionsSchema *apiextensions.JSONSchemaProps
+}
+
+// PatchTemplateBuilder contains configuration for creating patch objects.
+type PatchTemplateBuilder struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Description of what the target patch is meant to do. For informational
+	// purposes only.
+	Description string
+
+	// Template is a template that creates a patch for a K8S object. In other
+	// words, a templated YAML blob that's meant to be applied via
+	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
+	Template string
+
+	// BuildSchema is the schema for the parameters meant to be applied to
+	// the patch template.
+	BuildSchema *apiextensions.JSONSchemaProps
+
+	// TargetSchema is the schema for the parameters after the build-phase. This
+	// becomes the 'OptionsSchema' field.
+	TargetSchema *apiextensions.JSONSchemaProps
 }

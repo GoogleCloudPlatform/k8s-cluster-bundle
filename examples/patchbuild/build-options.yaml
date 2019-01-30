@@ -1,0 +1,2 @@
+# Options for applying to the Patch during build-time
+EtcdTag: 1.2.3

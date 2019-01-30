@@ -49,17 +49,27 @@ command -v crd >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "${REPO_ROOT}"
 
+echo "Running deepcopy-gen on apis/bundle/v1alpha1"
 deepcopy-gen \
   -h hack/boilerplate.go.txt \
   -O zz_generated.deepcopy \
   --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
+echo "Running deepcopy-gen on apis/bundleext/v1alpha1"
+deepcopy-gen \
+  -h hack/boilerplate.go.txt \
+  -O zz_generated.deepcopy \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1
+
+echo "Running register-gen on apis/bundle/v1alpha1"
 register-gen \
   -h hack/boilerplate.go.txt \
   --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
+echo "Running client-gen on apis/bundle/v1alpha1"
 client-gen --clientset-name=versioned \
   -h hack/boilerplate.go.txt \
   --input-base "" \

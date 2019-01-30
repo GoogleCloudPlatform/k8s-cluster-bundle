@@ -6,11 +6,14 @@ go_library(
         "doc.go",
         "node_config_types.go",
         "patch_template_types.go",
+        "zz_generated.deepcopy.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
     ],
 )

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package v1alpha1 represents the v1alpha1 version of extenisons for the
-// Cluster Bundle API. These are APIs that are not core to the Cluster Bundle,
-// but provide additional, non-core functionality.
-//
-// These types here are quite experimental and indicate how we think the
-// ClusterBundle and components might be used to create clusters.
-//
-// +k8s:deepcopy-gen=package,register
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=bundleext.gke.io
-package v1alpha1
+// Package partial patch provides functionality for applying a subset of options to patches.
+package partialpatch
+
+type applier struct{}
+
+// ApplyOptions looks for PatchTemplates and applies options to the
+// PatchTemplates, returning components with the partially filled out
+// PatchTemplates, but not actually applying them.
+func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
+	return nil, fmt.Errorf("not implemented")
+}
