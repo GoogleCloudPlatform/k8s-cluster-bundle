@@ -102,6 +102,7 @@ spec:
     kind: PatchTemplate
     metadata:
       annotations:
+        build-label-experiment: test
         bundle.gke.io/inline-type: kube-object
     template: |
       apiVersion: v1
