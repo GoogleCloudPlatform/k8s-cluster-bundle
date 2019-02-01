@@ -36,6 +36,8 @@ type PatchTemplate struct {
 	OptionsSchema *apiextensions.JSONSchemaProps
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // PatchTemplateBuilder contains configuration for creating patch templates.
 type PatchTemplateBuilder struct {
 	metav1.TypeMeta   `json:",inline"`
