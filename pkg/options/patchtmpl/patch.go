@@ -20,7 +20,6 @@ import (
 	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	bundleext "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundleext/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
@@ -65,7 +64,7 @@ func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*
 // A parsedPatch has had options applied and has been converted both into raw
 // bytes and unstructured.
 type parsedPatch struct {
-	obj *bundleext.PatchTemplate
+	obj *bundle.PatchTemplate
 	raw []byte
 	uns *unstructured.Unstructured
 }
@@ -87,9 +86,9 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 	objs := filter.NewFilter().Objects(comp.Spec.Objects, tfil)
 
 	// First parse the objects back into go-objects.
-	var pts []*bundleext.PatchTemplate
+	var pts []*bundle.PatchTemplate
 	for _, o := range objs {
-		pto := &bundleext.PatchTemplate{}
+		pto := &bundle.PatchTemplate{}
 		err := converter.FromUnstructured(o).ToObject(pto)
 		if err != nil {
 			return nil, fmt.Errorf("while converting object %v to PatchTemplate: %v", pto, err)
@@ -120,14 +119,14 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			return nil, fmt.Errorf("while converting patch template %d: %v", j, err)
 		}
 
-		rawJson, err := converter.FromObject(uns).ToJSON()
+		rawJSON, err := converter.FromObject(uns).ToJSON()
 		if err != nil {
 			return nil, fmt.Errorf("while converting patch template %d back to json: %v", j, err)
 		}
 
 		patches = append(patches, &parsedPatch{
 			obj: pto,
-			raw: rawJson,
+			raw: rawJSON,
 			uns: uns,
 		})
 	}

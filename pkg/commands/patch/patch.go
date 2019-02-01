@@ -112,7 +112,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		bun.Components = comps
 		bw = wrapper.FromBundle(bun)
 	default:
-		return fmt.Errorf("bundle kind %q not supported for patching.", bw.Kind())
+		return fmt.Errorf("bundle kind %q not supported for patching", bw.Kind())
 	}
 
 	return brw.WriteBundleData(ctx, bw, gopt)
