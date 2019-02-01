@@ -29,7 +29,7 @@ type Filter struct {
 	ChangeInPlace bool
 }
 
-// Filter creates a new Filter.
+// NewFilter creates a new Filter.
 func NewFilter() *Filter {
 	return &Filter{}
 }

@@ -74,7 +74,7 @@ func runModifyImages(ctx context.Context, opts *options, brw cmdlib.BundleReader
 		bw = wrapper.FromBundle(bun)
 	} else if bw.Component() != nil {
 		if len(repl) != 1 {
-			return fmt.Errorf("got %d components, but expected exactly one after component-image transform.", len(repl))
+			return fmt.Errorf("got %d components, but expected exactly one after component-image transform", len(repl))
 		}
 		bw = wrapper.FromComponent(repl[0])
 	}
