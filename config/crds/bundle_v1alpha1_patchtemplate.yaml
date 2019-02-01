@@ -26,6 +26,15 @@ spec:
           type: string
         metadata:
           type: object
+        optionsSchema:
+          description: OptionsSchema is the schema for the parameters meant to be
+            applied to the patch template.
+          type: object
+        template:
+          description: Template is a template that creates a patch for a K8S object.
+            In other words, a templated YAML blob that's meant to be applied via strategic-merge-patch.
+            It's currently assumed to be a YAML go-template.
+          type: string
   version: v1alpha1
 status:
   acceptedNames:

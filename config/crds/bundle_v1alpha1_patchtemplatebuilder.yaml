@@ -19,6 +19,10 @@ spec:
             of an object. Servers should convert recognized schemas to the latest
             internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
+        buildSchema:
+          description: BuildSchema is the schema for the parameters meant to be applied
+            to the patch template.
+          type: object
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
@@ -26,6 +30,15 @@ spec:
           type: string
         metadata:
           type: object
+        targetSchema:
+          description: TargetSchema is the schema for the parameters after the build-phase.
+            This becomes the 'OptionsSchema' field.
+          type: object
+        template:
+          description: Template is a template that creates a patch for a K8S object.
+            In other words, a templated YAML blob that's meant to be applied via strategic-merge-patch.
+            It's currently assumed to be a YAML go-template.
+          type: string
   version: v1alpha1
 status:
   acceptedNames:

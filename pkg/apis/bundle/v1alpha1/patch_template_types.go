@@ -29,11 +29,11 @@ type PatchTemplate struct {
 	// Template is a template that creates a patch for a K8S object. In other
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
-	Template string
+	Template string `json:"template,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the patch template.
-	OptionsSchema *apiextensions.JSONSchemaProps
+	OptionsSchema *apiextensions.JSONSchemaProps `json:"optionsSchema,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -46,13 +46,13 @@ type PatchTemplateBuilder struct {
 	// Template is a template that creates a patch for a K8S object. In other
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
-	Template string
+	Template string `json:"template,omitempty"`
 
 	// BuildSchema is the schema for the parameters meant to be applied to
 	// the patch template.
-	BuildSchema *apiextensions.JSONSchemaProps
+	BuildSchema *apiextensions.JSONSchemaProps `json:"buildSchema,omitempty"`
 
 	// TargetSchema is the schema for the parameters after the build-phase. This
 	// becomes the 'OptionsSchema' field.
-	TargetSchema *apiextensions.JSONSchemaProps
+	TargetSchema *apiextensions.JSONSchemaProps `json:"targetSchema,omitempty"`
 }
