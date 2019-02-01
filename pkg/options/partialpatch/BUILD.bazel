@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "go_default_library",
-    srcs = ["partialpatch.go"],
-    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/partialpatch",
-    visibility = ["//visibility:public"],
-)
