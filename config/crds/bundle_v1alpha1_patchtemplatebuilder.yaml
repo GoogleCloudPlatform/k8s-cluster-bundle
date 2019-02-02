@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: patchtemplates.bundle.gke.io
+  name: patchtemplatebuilders.bundle.gke.io
 spec:
   group: bundle.gke.io
   names:
-    kind: PatchTemplate
-    plural: patchtemplates
+    kind: PatchTemplateBuilder
+    plural: patchtemplatebuilders
   scope: Namespaced
   validation:
     openAPIV3Schema:
@@ -19,6 +19,10 @@ spec:
             of an object. Servers should convert recognized schemas to the latest
             internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
+        buildSchema:
+          description: BuildSchema is the schema for the parameters meant to be applied
+            to the patch template.
+          type: object
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
@@ -26,9 +30,9 @@ spec:
           type: string
         metadata:
           type: object
-        optionsSchema:
-          description: OptionsSchema is the schema for the parameters meant to be
-            applied to the patch template.
+        targetSchema:
+          description: TargetSchema is the schema for the parameters after the build-phase.
+            This becomes the 'OptionsSchema' field.
           type: object
         template:
           description: Template is a template that creates a patch for a K8S object.
