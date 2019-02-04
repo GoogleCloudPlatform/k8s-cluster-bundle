@@ -18,6 +18,14 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -53,6 +61,36 @@
   revision = "c7ce16629ff4cd059ed96ed06419dd3856fd3577"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7fb51688eadf38272411852d7a2b3538c7caff53309abee6c0964a83c00fe69e"
+  name = "github.com/globalsign/mgo"
+  packages = [
+    "bson",
+    "internal/json",
+  ]
+  pruneopts = "UT"
+  revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
+
+[[projects]]
+  digest = "1:8c4be86399428a81749056c2d67feba95c1784b742ccf03ac7527d0b426bf22a"
+  name = "github.com/go-openapi/analysis"
+  packages = [
+    ".",
+    "internal",
+  ]
+  pruneopts = "UT"
+  revision = "e2f3fdbb7ed0e56e070ccbfb6fc75b288a33c014"
+  version = "v0.18.0"
+
+[[projects]]
+  digest = "1:d4a14966fe8f1ec9306792aaa4d135392b04ab5eb5830d485199dbf0ddb1132b"
+  name = "github.com/go-openapi/errors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7a7ff1b7b8020f22574411a32f28b4d168d69237"
+  version = "v0.18.0"
+
+[[projects]]
   digest = "1:953a2628e4c5c72856b53f5470ed5e071c55eccf943d798d42908102af2a610f"
   name = "github.com/go-openapi/jsonpointer"
   packages = ["."]
@@ -69,6 +107,22 @@
   version = "v0.17.2"
 
 [[projects]]
+  digest = "1:208878abf5fc4e435f9c382a06678f46be91270d0efa1f475134543f6ed7784a"
+  name = "github.com/go-openapi/loads"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "74628589c3b94e3526a842d24f46589980f5ab22"
+  version = "v0.18.0"
+
+[[projects]]
+  digest = "1:518c850972986ffa098ac339d9d2204a5bca1c8d9a8b2e957dbb8bc3f30e3402"
+  name = "github.com/go-openapi/runtime"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "41e24cc66d7af6af39eb9b5a6418e901bcdd333c"
+  version = "v0.18.0"
+
+[[projects]]
   digest = "1:394fed5c0425fe01da3a34078adaa1682e4deaea6e5d232dde25c4034004c151"
   name = "github.com/go-openapi/spec"
   packages = ["."]
@@ -77,12 +131,31 @@
   version = "v0.17.2"
 
 [[projects]]
+  digest = "1:ce88cd5bf52c202bbb1cf404fcfec4752d9259daa0fc5913d327f23bf0982677"
+  name = "github.com/go-openapi/strfmt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e471370ae57ac74eaf0afe816a66e4ddd7f1b027"
+  version = "v0.18.0"
+
+[[projects]]
   digest = "1:32f3d2e7f343de7263c550d696fb8a64d3c49d8df16b1ddfc8e80e1e4b3233ce"
   name = "github.com/go-openapi/swag"
   packages = ["."]
   pruneopts = "UT"
   revision = "5899d5c5e619fda5fa86e14795a835f473ca284c"
   version = "v0.17.2"
+
+[[projects]]
+  digest = "1:c311d70998c9bacc7b422caa3e7579a69dba1766ef76a0242f0b4de70597e44c"
+  name = "github.com/go-openapi/validate"
+  packages = [
+    ".",
+    "post",
+  ]
+  pruneopts = "UT"
+  revision = "d2eab7d93009e9215fc85b2faa2c2f2a98c2af48"
+  version = "v0.18.0"
 
 [[projects]]
   digest = "1:34e709f36fd4f868fb00dbaf8a6cab4c1ae685832d392874ba9d7c5dec2429d1"
@@ -191,6 +264,14 @@
   ]
   pruneopts = "UT"
   revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
+
+[[projects]]
+  digest = "1:53bc4cd4914cd7cd52139990d5170d6dc99067ae31c56530621b18b35fc30318"
+  name = "github.com/mitchellh/mapstructure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3536a929edddb9a5b34bd6861dc4a9647cb459fe"
+  version = "v1.1.2"
 
 [[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
@@ -427,10 +508,15 @@
   input-imports = [
     "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
+    "github.com/go-openapi/spec",
+    "github.com/go-openapi/strfmt",
+    "github.com/go-openapi/validate",
+    "github.com/go-openapi/validate/post",
     "github.com/golang/glog",
     "github.com/spf13/cobra",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
