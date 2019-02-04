@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // Inliner inlines data files by reading them from the local or a remote
@@ -109,6 +111,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
 var multiDoc = regexp.MustCompile("---(\n|$)")
+var nonDNS = regexp.MustCompile(`[^-a-z0-9]`)
 
 // ComponentFiles reads file-references for component builder objects.
 // The returned components are copies with the file-references removed.
@@ -176,12 +179,21 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		newObjs = append(newObjs, uns)
 	}
 
+	om := *comp.ObjectMeta.DeepCopy()
+	if om.Name == "" {
+		name := strings.ToLower(comp.ComponentName + `-` + comp.Version)
+		om.Name = nonDNS.ReplaceAllLiteralString(name, `-`)
+	}
+	errs := validation.IsDNS1123Label(om.Name)
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("component name %q is not a valid DNS 1123 label: %v", om.Name, errs)
+	}
 	newComp := &bundle.Component{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "bundle.gke.io/v1alpha1",
 			Kind:       "Component",
 		},
-		ObjectMeta: *comp.ObjectMeta.DeepCopy(),
+		ObjectMeta: om,
 		Spec: bundle.ComponentSpec{
 			ComponentName: comp.ComponentName,
 			Version:       comp.Version,
