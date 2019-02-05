@@ -111,7 +111,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
 var multiDoc = regexp.MustCompile("---(\n|$)")
-var nonDNS = regexp.MustCompile(`[^-a-z0-9]`)
+var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 
 // ComponentFiles reads file-references for component builder objects.
 // The returned components are copies with the file-references removed.
@@ -184,9 +184,10 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		name := strings.ToLower(comp.ComponentName + `-` + comp.Version)
 		om.Name = nonDNS.ReplaceAllLiteralString(name, `-`)
 	}
-	errs := validation.IsDNS1123Label(om.Name)
+	errs := validation.IsDNS1123Subdomain(om.Name)
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("component name %q is not a valid DNS 1123 label: %v", om.Name, errs)
+		return nil, fmt.Errorf("metadata.Name %q is not a valid DNS 1123 label in component %q/%q: %v",
+			om.Name, comp.ComponentName, comp.Version, errs)
 	}
 	newComp := &bundle.Component{
 		TypeMeta: metav1.TypeMeta{
