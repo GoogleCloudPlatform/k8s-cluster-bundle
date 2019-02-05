@@ -166,3 +166,26 @@ func TestConvertComponent(t *testing.T) {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", secondIttObj.APIVersion)
 	}
 }
+
+func TestConverterFormatTypeInversions(t *testing.T) {
+	firstIttObj, err := FromYAMLString(testComponentManifest).ToComponent()
+	if err != nil {
+		t.Fatalf("unexpected error parsing manifest: %v", err)
+	}
+	yamlString, err := FromObject(firstIttObj).ToYAMLString()
+	if err != nil {
+		t.Fatalf("unexpected error serializing manifest: %v", err)
+	}
+	secondIttObj, err := FromYAMLString(yamlString).ToComponent()
+	if err != nil {
+		t.Fatalf("unexpected error parsing manifest: %v", err)
+	}
+	jsonString, err := FromObject(secondIttObj).ToJSONString()
+	if err != nil {
+		t.Fatalf("unexpected error serializing manifest: %v", err)
+	}
+	thirdIttObj, err := FromJSONString(jsonString).ToComponent()
+	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
+		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", thirdIttObj.APIVersion)
+	}
+}
