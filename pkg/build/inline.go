@@ -186,7 +186,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 	}
 	errs := validation.IsDNS1123Subdomain(om.Name)
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("metadata.Name %q is not a valid DNS 1123 label in component %q/%q: %v",
+		return nil, fmt.Errorf("metadata.Name %q is not a valid DNS 1123 subdomain in component %q/%q: %v",
 			om.Name, comp.ComponentName, comp.Version, errs)
 	}
 	newComp := &bundle.Component{
