@@ -99,11 +99,22 @@ func (f *Filter) Components(data []*bundle.Component, o *Options) []*bundle.Comp
 	return notMatched
 }
 
-// Objects kfilters objects based on the ObjectMeta properties of
-// the objects, returning a new cluster bundle with just filtered
-// objects. By default objectsare removed, unless KeepOnly is set, and
+// Objects filters objects based on the ObjectMeta properties of
+// the objects, returning a new list with just filtered
+// objects. By default objects are removed, unless KeepOnly is set, and
 // then the opposite is true.
 func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
+	matched, notMatched := f.PartitionObjects(data, o)
+
+	if o == nil || o.KeepOnly {
+		return matched
+	}
+
+	return notMatched
+}
+
+// PartitionObjects splits the objects into matched and not matched sets.
+func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
 	if !f.ChangeInPlace {
 		var newData []*unstructured.Unstructured
 		for _, oj := range data {
@@ -113,7 +124,7 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 	}
 	// nil options should not imply any change.
 	if o == nil {
-		return data
+		return data, data
 	}
 
 	var matched []*unstructured.Unstructured
@@ -131,10 +142,7 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 			notMatched = append(notMatched, cp)
 		}
 	}
-	if o.KeepOnly {
-		return matched
-	}
-	return notMatched
+	return matched, notMatched
 }
 
 // objectData contains data about the object being filtered.

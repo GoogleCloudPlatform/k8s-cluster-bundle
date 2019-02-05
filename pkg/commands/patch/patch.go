@@ -17,14 +17,12 @@ package patch
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/patchtmpl"
@@ -62,32 +60,17 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	optData := make(map[string]interface{})
+	optFiles := []string{}
 	if o.optionsFile != "" {
-		bytes, err := rw.ReadFile(ctx, o.optionsFile)
-		if err != nil {
-			return err
-		}
-		optData, err = converter.FromFileName(o.optionsFile, bytes).ToJSONMap()
-		if err != nil {
-			return err
-		}
+		optFiles = []string{o.optionsFile}
 	}
 
-	fopts := &filter.Options{}
-	if o.patchAnnotations != "" {
-		// TODO(kashomon): make a helper for this in bundleio
-		m := make(map[string]string)
-		splat := strings.Split(o.patchAnnotations, ";")
-		for _, v := range splat {
-			kv := strings.Split(v, ",")
-			if len(kv) == 2 {
-				m[kv[0]] = kv[1]
-			}
-		}
-		fopts.Annotations = m
+	optData, err := cmdlib.MergeOptions(ctx, rw, optFiles)
+	if err != nil {
+		return err
 	}
 
+	fopts := &filter.Options{Annotations: cmdlib.ParseAnnotations(o.patchAnnotations)}
 	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts)
 
 	switch bw.Kind() {
