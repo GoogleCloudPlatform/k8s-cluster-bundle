@@ -43,14 +43,26 @@ func (m *Demuxer) demux(format ContentType) ([]byte, error) {
 	}
 }
 
-// ToYAML converts an object to YAML
+// ToYAML converts an object to YAML bytes slice
 func (m *Demuxer) ToYAML() ([]byte, error) {
 	return m.demux(YAML)
 }
 
-// ToJSON converts an object to JSON
+// ToYAMLString converts an object to YAML string
+func (m *Demuxer) ToYAMLString() (string, error) {
+	yamlBytes, err := m.demux(YAML)
+	return string(yamlBytes[:]), err
+}
+
+// ToJSON converts an object to JSON bytes slice
 func (m *Demuxer) ToJSON() ([]byte, error) {
 	return m.demux(JSON)
+}
+
+// ToJSONString converts an object to JSON string
+func (m *Demuxer) ToJSONString() (string, error) {
+	jsonBytes, err := m.demux(JSON)
+	return string(jsonBytes[:]), err
 }
 
 // ToContentType converts to a custom content type.
