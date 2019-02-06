@@ -1,9 +1,12 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["validate.go"],
-    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/validate",
+    srcs = [
+        "conversion.go",
+        "validate.go",
+    ],
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi",
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/options:go_default_library",
@@ -12,6 +15,17 @@ go_library(
         "//vendor/github.com/go-openapi/validate:go_default_library",
         "//vendor/github.com/go-openapi/validate/post:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions:go_default_library",
+        "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["validate_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/converter:go_default_library",
+        "//pkg/testutil:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library",
     ],
 )
