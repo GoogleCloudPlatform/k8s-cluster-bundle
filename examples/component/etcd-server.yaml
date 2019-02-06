@@ -78,24 +78,3 @@ spec:
   - hostPath:
       path: /etc/srv/kubernetes
     name: etc
----
-apiVersion: bundle.gke.io/v1alpha1
-kind: PatchTemplate
-template: |
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    namespace:
-      {{.namespace}}
----
-apiVersion: bundle.gke.io/v1alpha1
-kind: PatchTemplate
-metadata:
-  annotations:
-    build-label-experiment: test
-template: |
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    annotations:
-      build-label: {{.buildLabel}}
