@@ -84,8 +84,9 @@ type objCheck struct {
 }
 
 type compRef struct {
-	ref bundle.ComponentReference
-	obj []objCheck
+	name string
+	ref  bundle.ComponentReference
+	obj  []objCheck
 }
 
 func TestInlineBundleFiles(t *testing.T) {
@@ -106,6 +107,7 @@ func TestInlineBundleFiles(t *testing.T) {
 			expBun: bundleRef{setName: "foo-bundle", version: "1.2.3"},
 			expComps: []compRef{
 				{
+					name: "kube-apiserver-1.2.3",
 					ref: bundle.ComponentReference{
 						ComponentName: "kube-apiserver",
 						Version:       "1.2.3",
@@ -133,6 +135,7 @@ componentFiles:
 			expBun: bundleRef{setName: "foo-bundle", version: "1.2.3"},
 			expComps: []compRef{
 				{
+					name: "kube-apiserver-1.2.3",
 					ref: bundle.ComponentReference{
 						ComponentName: "kube-apiserver",
 						Version:       "1.2.3",
@@ -172,6 +175,7 @@ rawTextFiles:
 			expBun: bundleRef{setName: "foo-bundle", version: "1.2.3"},
 			expComps: []compRef{
 				{
+					name: "kube-apiserver-1.2.3",
 					ref: bundle.ComponentReference{
 						ComponentName: "kube-apiserver",
 						Version:       "1.2.3",
@@ -221,6 +225,7 @@ biff: bam`),
 			expBun: bundleRef{setName: "multi-bundle", version: "2.2.3"},
 			expComps: []compRef{
 				{
+					name: "kube-multi-2.3.4",
 					ref: bundle.ComponentReference{
 						ComponentName: "kube-multi",
 						Version:       "2.3.4",
@@ -345,6 +350,7 @@ func TestInlineComponentFiles(t *testing.T) {
 			data:  kubeApiserverComponent,
 			files: defaultFiles,
 			expComp: compRef{
+				name: "kube-apiserver-1.2.3",
 				ref: bundle.ComponentReference{
 					ComponentName: "kube-apiserver",
 					Version:       "1.2.3",
@@ -413,6 +419,31 @@ blar
 			},
 			expErrSubstr: "error converting multi-doc object",
 		},
+		{
+			desc: "error: invalid specified name",
+			data: []byte(`
+kind: ComponentBuilder
+metadata:
+  name: this-
+componentName: kube-apiserver
+version: 1.2.3
+objectFiles:
+- url: '/path/to/kube_apiserver.yaml'`),
+			files:        defaultFiles,
+			expErrSubstr: "DNS-1123",
+		},
+		{
+			desc: "error: invalid generated name",
+			data: []byte(`
+kind: ComponentBuilder
+metadata:
+componentName: kube-apiserver
+version: 1.2.3-
+objectFiles:
+- url: '/path/to/kube_apiserver.yaml'`),
+			files:        defaultFiles,
+			expErrSubstr: "DNS-1123",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -474,6 +505,10 @@ func validateComponents(t *testing.T, comp []*bundle.Component, expComps []compR
 		}
 		if comp == nil {
 			t.Fatalf("got nil component for ref: %v", ref)
+		}
+
+		if comp.GetName() != ec.name {
+			t.Errorf("got component meta.name %q, but expected %q", comp.GetName(), ec.name)
 		}
 
 		// Compare the object data
