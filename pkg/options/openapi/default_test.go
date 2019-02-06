@@ -15,40 +15,38 @@
 package openapi
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
-func TestValidate(t *testing.T) {
+func TestDefault(t *testing.T) {
 	testCases := []struct {
 		desc         string
 		object       string
 		schema       string
+		exp          options.JSONOptions
 		expErrSubstr string
 	}{
 		{
-			desc:   "success",
+			desc:   "success: defaulting",
 			object: "foo: derp",
 			schema: `
 properties:
   foo:
     type: string
-`,
-		},
-		{
-			desc: "success: extra params",
-			object: `
-foo: derp
-bar: dorp
-`,
-			schema: `
-properties:
-  foo:
+  bar:
     type: string
+    default: zed
 `,
+			exp: map[string]interface{}{
+				"foo": "derp",
+				"bar": "zed",
+			},
 		},
 		{
 			desc:   "fail: bad type",
@@ -73,7 +71,7 @@ properties:
 			if err != nil {
 				t.Fatal(err)
 			}
-			res, err := ValidateOptions(obj, schema)
+			res, err := ApplyDefaults(obj, schema)
 
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
@@ -85,6 +83,9 @@ properties:
 
 			if res == nil {
 				t.Error("result was nil in non-error case")
+			}
+			if !reflect.DeepEqual(res, tc.exp) {
+				t.Errorf("Got %v, but expected it to equal %v", res, tc.exp)
 			}
 		})
 	}
