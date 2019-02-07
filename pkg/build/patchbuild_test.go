@@ -84,7 +84,7 @@ spec:
 `,
 		},
 		{
-			desc: "success: patch, build options",
+			desc: "success: patch, build options, no schema",
 			opts: map[string]interface{}{
 				"Namespace": "foo",
 			},
@@ -116,8 +116,161 @@ spec:
     template: |
       kind: Pod
       metadata:
+        namespace: foo
+`,
+		},
+		{
+			desc: "success: patch, build options, passing schema",
+			opts: map[string]interface{}{
+				"Namespace": "foo",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      required:
+        - Namespace
+      properties:
+        Namespace:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    template: |
+      kind: Pod
+      metadata:
+        namespace: foo
+`,
+		},
+		{
+			desc: "success: patch, build options, passing schema, target schema",
+			opts: map[string]interface{}{
+				"Namespace": "foo",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      required:
+        - Namespace
+      properties:
+        Namespace:
+          type: string
+    targetSchema:
+      properties:
+        Something:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    optionsSchema:
+      properties:
+        Something:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: foo
+`,
+		},
+		{
+			desc: "success: patch, build options, defaulted by build schema",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      properties:
+        Namespace:
+          type: string
+          default: foobar
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    template: |
+      kind: Pod
+      metadata:
         namespace: foobar
 `,
+		},
+		{
+			desc: "error: patch, build options, missing required",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      required:
+        - Namespace
+      properties:
+        Namespace:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+`,
+			expErrSubstr: "Namespace in body is required",
 		},
 	}
 
@@ -145,7 +298,7 @@ spec:
 				t.Fatalf("Error converting back to yaml: %v", err)
 			}
 
-			compStr := strings.Trim(string(compBytes)," \n\r")
+			compStr := strings.Trim(string(compBytes), " \n\r")
 			expStr := strings.Trim(tc.output, " \n\r")
 			if expStr != compStr {
 				t.Errorf("expected output yaml to be %#v but got %#v", expStr, compStr)

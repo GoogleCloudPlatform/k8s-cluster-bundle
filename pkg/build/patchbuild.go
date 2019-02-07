@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 	log "github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,17 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	tmpl, err := template.New("ptb").Parse(ptb.Template)
 	if err != nil {
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: error parsing template: %v", name, err)
+	}
+
+	if opts == nil {
+		opts = make(options.JSONOptions)
+	}
+
+	if ptb.BuildSchema != nil {
+		opts, err = openapi.ApplyDefaults(opts, ptb.BuildSchema)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var buf bytes.Buffer
