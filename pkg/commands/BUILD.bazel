@@ -13,7 +13,6 @@ go_library(
         "//pkg/commands/cmdlib:go_default_library",
         "//pkg/commands/filter:go_default_library",
         "//pkg/commands/find:go_default_library",
-        "//pkg/commands/modify:go_default_library",
         "//pkg/commands/patch:go_default_library",
         "//pkg/commands/validate:go_default_library",
         "//vendor/github.com/spf13/cobra:go_default_library",
