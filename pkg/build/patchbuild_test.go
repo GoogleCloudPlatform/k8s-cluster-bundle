@@ -181,13 +181,16 @@ spec:
         Namespace:
           type: string
     targetSchema:
+      required:
+      - PodName
       properties:
-        Something:
+        PodName:
           type: string
     template: |
       kind: Pod
       metadata:
         namespace: {{.Namespace}}
+        name: {{.PodName}}
 `,
 			output: `
 kind: Component
@@ -203,12 +206,15 @@ spec:
       creationTimestamp: null
     optionsSchema:
       properties:
-        Something:
+        PodName:
           type: string
+      required:
+      - PodName
     template: |
       kind: Pod
       metadata:
         namespace: foo
+        name: {{.PodName}}
 `,
 		},
 		{
@@ -301,7 +307,7 @@ spec:
 			compStr := strings.Trim(string(compBytes), " \n\r")
 			expStr := strings.Trim(tc.output, " \n\r")
 			if expStr != compStr {
-				t.Errorf("expected output yaml to be %#v but got %#v", expStr, compStr)
+				t.Errorf("expected output yaml to be %q but got %q", expStr, compStr)
 			}
 			if hasErr {
 				t.Errorf("got yaml contents:\n%s", compStr)

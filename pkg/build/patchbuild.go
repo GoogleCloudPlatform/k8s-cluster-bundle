@@ -53,6 +53,13 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 		}
 	}
 
+	// This is a hack to allow us to pass through runtime templates variables
+	if ptb.TargetSchema != nil && ptb.TargetSchema.Properties != nil {
+		for k := range ptb.TargetSchema.Properties {
+			opts[k] = `{{.` + k + `}}`
+		}
+	}
+
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, opts)
 	if err != nil {

@@ -1,0 +1,7 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+componentName: kube-scheduler
+version: 0.3.0
+objectFiles:
+- url: patch-template-builder.yaml
+- url: kube-scheduler.yaml

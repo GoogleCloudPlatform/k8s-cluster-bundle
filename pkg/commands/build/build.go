@@ -65,6 +65,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
+	//TODO(jbelamaric): allow multiple files
 	// the bundle now contains components which may include PatchTemplateBuilder objects
 	// that we need to build into PatchTemplates
         optFiles := []string{}
