@@ -15,9 +15,8 @@
 package cmdlib
 
 import (
-	"os"
-
 	"context"
+	"os"
 
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
