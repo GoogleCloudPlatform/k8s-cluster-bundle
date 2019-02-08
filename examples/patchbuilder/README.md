@@ -7,12 +7,12 @@ instances of that Component with different options.
 
 In this directory, you'll find the following:
 
-* builder.yaml is the ComponentBuilder that pulls everything together
-* helloweb-deployment.yaml is a manifest for the helloweb deployment
-* helloweb-service-clusterip.yaml a manifest for the helloweb service
-* deployment-patch-builder.yaml is a manifest building the deployment patch
+* `builder.yaml` is the ComponentBuilder that pulls everything together
+* `helloweb-deployment.yaml` is a manifest for the helloweb deployment
+* `helloweb-service-clusterip.yaml` a manifest for the helloweb service
+* `deployment-patch-builder.yaml` is a manifest building the deployment patch
   template, which will include a build-time parameter.
-* service-patch.yaml is the manifest for the service patch template, which
+* `service-patch.yaml` is the manifest for the service patch template, which
   includes only run-time parameters
 
 ```
@@ -52,7 +52,14 @@ $ kubectl get component helloweb-0.1.0 -o yaml \
     | bundlectl patch --options-file deploy-options-2.yaml \
     | bundlectl export \
     | kubectl apply -f -
+I0208 15:03:12.239470  165666 bundleio.go:107] No component data file, reading from stdin
+I0208 15:03:12.243220  165667 bundleio.go:107] No component data file, reading from stdin
+I0208 15:03:12.468814  165666 patch.go:77] Patching component
+deployment.apps "helloweb" created
+service "helloweb" created
 ```
+
+Now, we can see the two different deployment from the same Component source.
 
 ```
 $ kubectl get deploy,svc helloweb
