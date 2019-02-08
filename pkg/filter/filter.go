@@ -113,6 +113,7 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 	return notMatched
 }
 
+// TODO(jhoak): test for this
 // PartitionObjects splits the objects into matched and not matched sets.
 func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
 	if !f.ChangeInPlace {

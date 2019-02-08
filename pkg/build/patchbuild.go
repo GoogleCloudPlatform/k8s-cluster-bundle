@@ -29,8 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ComponentFiles reads file-references for component builder objects.
-// The returned components are copies with the file-references removed.
+// BuildPatchTemplate renders a PatchTemplate from a PatchTemplateBuilder and options.
 func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (*bundle.PatchTemplate, error) {
 	name := ptb.GetName()
 	if ptb.Template == "" {
@@ -54,6 +53,7 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	}
 
 	// This is a hack to allow us to pass through runtime templates variables
+	// It is only one level-deep. TODO(jbelamaric): fix it to support nested schema
 	if ptb.TargetSchema != nil && ptb.TargetSchema.Properties != nil {
 		for k := range ptb.TargetSchema.Properties {
 			opts[k] = `{{.` + k + `}}`
@@ -78,9 +78,9 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	return pt, nil
 }
 
+// BuildComponentPatchTemplates iterates through all PatchTemplateBuilders in a Components Objects,
+// and converts them into PatchTemplates.
 func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, opts options.JSONOptions) (*bundle.Component, error) {
-	log.Info("Building PatchTemplates for component")
-
 	ptbFilter := fopts
 	if ptbFilter == nil {
 		ptbFilter = &filter.Options{}
@@ -118,6 +118,8 @@ func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, op
 	return c, nil
 }
 
+// BuildAllPatchTemplates is a convenience method to build all PatchTemplateBuilders into
+// PatchTemplates for all Components in a Bundle.
 func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, opts options.JSONOptions) (*wrapper.BundleWrapper, error) {
 	switch bw.Kind() {
 	case "Component":
