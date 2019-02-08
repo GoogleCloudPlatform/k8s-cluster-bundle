@@ -35,9 +35,13 @@ type options struct {
 	// Has the form "foo,bar;biff,baz".
 	patchAnnotations string
 
-	// optionsFile contains yaml or json structured data containing options to
+	// optionsFiles contains yaml or json structured data containing options to
 	// apply to PatchTemplates
-	optionsFile string
+	optionsFiles []string
+
+	// If keepTemplates is true, PatchTemplates will not be stripped from
+	// the component objects.
+	keepTemplates bool
 }
 
 // opts is a global options instance for reference via the add commands.
@@ -60,18 +64,13 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	optFiles := []string{}
-	if o.optionsFile != "" {
-		optFiles = []string{o.optionsFile}
-	}
-
-	optData, err := cmdlib.MergeOptions(ctx, rw, optFiles)
+	optData, err := cmdlib.MergeOptions(ctx, rw, o.optionsFiles)
 	if err != nil {
 		return err
 	}
 
 	fopts := &filter.Options{Annotations: cmdlib.ParseAnnotations(o.patchAnnotations)}
-	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts)
+	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts, o.keepTemplates)
 
 	switch bw.Kind() {
 	case "Component":
