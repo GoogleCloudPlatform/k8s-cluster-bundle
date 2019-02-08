@@ -59,13 +59,5 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
 
-	// This is magic hackery I don't unherdstand but somehow this fixes
-	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
-	// https://github.com/kubernetes/kubernetes/issues/17162
-	// rootCmd.SetArgs(args)
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	// pflag.Parse()
-	flag.CommandLine.Parse([]string{})
-
 	return rootCmd
 }
