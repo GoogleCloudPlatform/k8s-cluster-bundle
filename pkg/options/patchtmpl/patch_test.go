@@ -83,6 +83,27 @@ spec:
 			expMatchSubstrs: []string{"namespace: zed"},
 		},
 		{
+			desc: "success: patch, basic options with default",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    optionsSchema:
+      properties:
+        Name:
+          type: string
+          default: zed
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+`,
+			expMatchSubstrs: []string{"namespace: zed"},
+		},
+		{
 			desc: "success: patch, basic options, fall-back to json-patch",
 			opts: map[string]interface{}{
 				"Name": "zed",

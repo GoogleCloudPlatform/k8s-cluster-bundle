@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	jsonpatch "github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -96,6 +97,10 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 		pts = append(pts, pto)
 	}
 
+	if opts == nil {
+		opts = options.JSONOptions{}
+	}
+
 	// Next, de-templatize the templates.
 	var patches []*parsedPatch
 	for j, pto := range pts {
@@ -107,8 +112,16 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 		// TODO(kashomon): Should this be configurable? This seems like the safest option.
 		tmpl = tmpl.Option("missingkey=error")
 
+		newOpts := opts
+		if pto.OptionsSchema != nil {
+			newOpts, err = openapi.ApplyDefaults(opts, pto.OptionsSchema)
+			if err != nil {
+				return nil, fmt.Errorf("applying schema defaults for patch template %d, %s: %v", j, pto.Template, err)
+			}
+		}
+
 		var buf bytes.Buffer
-		err = tmpl.Execute(&buf, opts)
+		err = tmpl.Execute(&buf, newOpts)
 		if err != nil {
 			return nil, fmt.Errorf("while applying options to patch template %d: %v", j, err)
 		}
