@@ -1,0 +1,38 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplateBuilder
+buildSchema:
+  required:
+    - ImageTag
+  properties:
+    ImageTag:
+      description: The image tag to deploy.
+      type: string
+targetSchema:
+  required:
+    - Namespace
+  properties:
+    Namespace:
+      description: The namespace in which to deploy the app.
+      type: string
+    Registry:
+      description: The registry from which the image should be pulled.
+      type: string
+      default: gcr.io/google-samples
+    Port:
+      description: Container port for the helloweb app.
+      type: number
+      default: 8080
+template: |
+  apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    namespace: {{.Namespace}}
+    name: helloweb
+  spec:
+    template:
+      spec:
+        containers:
+          - name: hello-app
+            image: {{ .Registry }}/hello-app:{{ .ImageTag }}
+            ports:
+            - containerPort: {{.Port}}

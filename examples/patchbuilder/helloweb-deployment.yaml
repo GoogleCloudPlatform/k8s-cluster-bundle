@@ -1,0 +1,18 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: helloweb
+  labels:
+    app: hello
+spec:
+  template:
+    metadata:
+      labels:
+        app: hello
+        tier: web
+    spec:
+      containers:
+      - name: hello-app
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080

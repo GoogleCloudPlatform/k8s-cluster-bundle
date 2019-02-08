@@ -1,0 +1,25 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplate
+metadata:
+  name: service-patch
+optionsSchema:
+  required:
+    - Namespace
+  properties:
+    Namespace:
+      description: The namespace in which to deploy the app.
+      type: string
+    Port:
+      description: Container port for the helloweb app.
+      type: number
+      default: 8080
+template: |
+  apiVersion: v1
+  kind: Service
+  metadata:
+    namespace: {{.Namespace}}
+    name: helloweb
+  spec:
+    ports:
+    - port: 80
+      targetPort: {{.Port}}
