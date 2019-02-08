@@ -10,10 +10,9 @@ buildSchema:
 targetSchema:
   properties:
     Registry:
-      description: The registry from which the image should be pulled. Should include
-        the trailing /.
+      description: The registry from which the image should be pulled.
       type: string
-      default: k8s.gcr.io/
+      default: k8s.gcr.io
 template: |
   apiVersion: apps/v1
   kind: Deployment
@@ -24,4 +23,4 @@ template: |
       spec:
         containers:
           - name: kube-scheduler
-            image: '{{ .Registry }}kube-scheduler-amd64:{{ .K8sVersion }}'
+            image: '{{ .Registry }}/kube-scheduler-amd64:{{ .K8sVersion }}'
