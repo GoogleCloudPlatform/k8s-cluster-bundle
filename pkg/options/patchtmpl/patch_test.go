@@ -25,10 +25,10 @@ import (
 
 func TestPatch(t *testing.T) {
 	testCases := []struct {
-		desc         string
-		component    string
-		opts         map[string]interface{}
-		customFilter *filter.Options
+		desc            string
+		component       string
+		opts            map[string]interface{}
+		customFilter    *filter.Options
 		removeTemplates bool
 
 		expMatchSubstrs   []string
@@ -92,8 +92,8 @@ spec:
       metadata:
         namespace: foo
 `,
-			removeTemplates: true,
-			expMatchSubstrs: []string{"metadata:\n      namespace: foo"},
+			removeTemplates:   true,
+			expMatchSubstrs:   []string{"metadata:\n      namespace: foo"},
 			expNoMatchSubstrs: []string{"PatchTemplate"},
 		},
 		{

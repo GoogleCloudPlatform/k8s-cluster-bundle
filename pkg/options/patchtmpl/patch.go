@@ -47,8 +47,8 @@ type applier struct {
 // keep-only options for what subsets of patches to look for.
 func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool) options.Applier {
 	return &applier{
-		scheme:     pt,
-		tmplFilter: opts,
+		scheme:           pt,
+		tmplFilter:       opts,
 		includeTemplates: includeTemplates,
 	}
 }
