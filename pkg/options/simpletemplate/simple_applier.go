@@ -35,7 +35,10 @@ type applier struct{}
 // ApplyOptions treats objects in the components as go templates, applying the
 // options, and then returning the completed objects.
 func (m *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
-	return options.ApplyCommon(comp, p, applyOptions)
+	comp = comp.DeepCopy()
+	newObjs, err := options.ApplyCommon(comp.ComponentReference(), comp.Spec.Objects, p, applyOptions)
+	comp.Spec.Objects = newObjs
+	return comp, err
 }
 
 // NewApplier creates a new options applier instance.

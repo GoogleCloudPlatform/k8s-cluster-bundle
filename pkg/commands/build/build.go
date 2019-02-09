@@ -20,12 +20,22 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
 // options represents options flags for the build command.
-type options struct{}
+type options struct {
+	// annotations selects a subset of patch templates on which to apply options
+	// Has the form "foo,bar;biff,baz".
+	annotations string
+
+	// optionsFile contains yaml or json structured data containing options to
+	// apply to PatchTemplates
+	// TODO(jbelamaric): Make this a list of files
+	optionsFile string
+}
 
 // opts is a global options instance for reference via the add commands.
 var opts = &options{}
@@ -33,18 +43,36 @@ var opts = &options{}
 func action(ctx context.Context, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
 	gopt.Inline = true
+	rw := &files.LocalFileSystemReaderWriter{}
 	brw := cmdlib.NewBundleReaderWriter(
-		&files.LocalFileSystemReaderWriter{},
+		rw,
 		&cmdlib.RealStdioReaderWriter{})
-	if err := run(ctx, opts, brw, gopt); err != nil {
+	if err := run(ctx, opts, brw, rw, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
+	}
+
+	// the bundle now contains components which may include PatchTemplateBuilder objects
+	// that we need to build into PatchTemplates
+	optFiles := []string{}
+	if o.optionsFile != "" {
+		optFiles = []string{o.optionsFile}
+	}
+
+	buildOpts, err := cmdlib.MergeOptions(ctx, rw, optFiles)
+	if err != nil {
+		return err
+	}
+
+	bw, err = build.BuildAllPatchTemplates(bw, &filter.Options{}, buildOpts)
+	if err != nil {
+		return err
 	}
 
 	return brw.WriteBundleData(ctx, bw, gopt)
