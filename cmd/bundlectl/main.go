@@ -26,11 +26,6 @@ import (
 func main() {
 	flag.Lookup("logtostderr").Value.Set("true")
 
-	// Hacky: fixes errors of the form 'ERROR: logging before flag.Parse'.
-	// See https://github.com/kubernetes/kubernetes/issues/17162
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	flag.CommandLine.Parse([]string{})
-
 	root := commands.AddCommands(context.Background(), os.Args[1:])
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

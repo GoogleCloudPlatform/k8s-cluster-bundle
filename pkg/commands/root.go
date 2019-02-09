@@ -17,7 +17,7 @@ package commands
 import (
 	"context"
 	"flag"
-
+	
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
@@ -59,5 +59,11 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
 
+
+	// Hacky: fixes errors of the form 'ERROR: logging before flag.Parse'.
+	// See https://github.com/kubernetes/kubernetes/issues/17162
+	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+	flag.CommandLine.Parse([]string{})
+	
 	return rootCmd
 }
