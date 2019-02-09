@@ -1,7 +1,9 @@
 apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentBuilder
-componentName: kube-scheduler
-version: 0.3.0
+componentName: helloweb
+version: 0.1.0
 objectFiles:
-- url: patch-template-builder.yaml
-- url: kube-scheduler.yaml
+- url: deployment-patch-builder.yaml
+- url: service-patch.yaml
+- url: helloweb-deployment.yaml
+- url: helloweb-service-clusterip.yaml

@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//pkg/commands/build:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",
+        "//pkg/commands/export:go_default_library",
         "//pkg/commands/filter:go_default_library",
         "//pkg/commands/find:go_default_library",
         "//pkg/commands/patch:go_default_library",

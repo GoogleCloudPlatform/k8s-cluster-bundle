@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
@@ -52,6 +53,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline files before processing")
 
 	build.AddCommandsTo(ctx, rootCmd)
+	export.AddCommandsTo(ctx, rootCmd)
 	filter.AddCommandsTo(ctx, rootCmd)
 	find.AddCommandsTo(ctx, rootCmd)
 	patch.AddCommandsTo(ctx, rootCmd)
