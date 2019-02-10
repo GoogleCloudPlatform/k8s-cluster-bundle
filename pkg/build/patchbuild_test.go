@@ -218,6 +218,82 @@ spec:
 `,
 		},
 		{
+			desc: "success: patch, build options, passing schema, target schema + nesting",
+			opts: map[string]interface{}{
+				"Namespace": "foo",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      required:
+        - Namespace
+      properties:
+        Namespace:
+          type: string
+    targetSchema:
+      required:
+      - PodName
+      - Annotations
+      properties:
+        Annotations:
+          type: object
+          properties:
+            Key:
+              type: string
+            Value:
+              type: string
+        PodName:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+        name: {{.PodName}}
+        annotations:
+          {{.Annotations.Key}}: {{.Annotations.Value}}
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    optionsSchema:
+      properties:
+        Annotations:
+          properties:
+            Key:
+              type: string
+            Value:
+              type: string
+          type: object
+        PodName:
+          type: string
+      required:
+      - PodName
+      - Annotations
+    template: |
+      kind: Pod
+      metadata:
+        namespace: foo
+        name: {{.PodName}}
+        annotations:
+          {{.Annotations.Key}}: {{.Annotations.Value}}
+`,
+		},
+		{
 			desc: "success: patch, build options, defaulted by build schema",
 			component: `
 kind: Component
@@ -287,11 +363,9 @@ spec:
 				t.Fatalf("Error converting component %s: %v", tc.component, err)
 			}
 
-			hasErr := false
 			newComp, err := BuildComponentPatchTemplates(c, tc.customFilter, tc.opts)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
-				hasErr = true
 				t.Error(cerr)
 			}
 			if err != nil {
@@ -307,10 +381,7 @@ spec:
 			compStr := strings.Trim(string(compBytes), " \n\r")
 			expStr := strings.Trim(tc.output, " \n\r")
 			if expStr != compStr {
-				t.Errorf("expected output yaml to be %q but got %q", expStr, compStr)
-			}
-			if hasErr {
-				t.Errorf("got yaml contents:\n%s", compStr)
+				t.Errorf("got yaml\n%s\n\nbut expected output yaml to be\n%s", compStr, expStr)
 			}
 		})
 	}
