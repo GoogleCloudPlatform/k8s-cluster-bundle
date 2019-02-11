@@ -14,8 +14,8 @@ changes until the API settles down.
 
 ## Installation
 
-Most users will interact with Cluster Bundle objects via command line interface
-`bundlectl`.
+Most users will interact with Cluster Bundle objects via the command line
+interface `bundlectl`.
 
 To install, run:
 
