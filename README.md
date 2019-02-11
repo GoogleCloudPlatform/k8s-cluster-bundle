@@ -28,10 +28,10 @@ go install github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl
 Packaging in Cluster Bundle revolves around a new type, called the `Component`:
 
 * **Component**: A versioned collection of Kubernetes objects. This should
-  correspond to a logical application. For example, we might imagine a
-  Components for each of Etcd, Istio, KubeProxy, and CoreDNS.
+  correspond to a logical application. For example, we might imagine
+  components for each of Etcd, Istio, KubeProxy, and CoreDNS.
 * **ComponentBuilder**: An intermediate type that allows for easier creation of
-  Component objects.
+  component objects.
 * **ComponentSet**: A set of references to components.
 
 The Cluster Bundle APIs are minimal and focused on the problem of packaging
@@ -140,8 +140,7 @@ template: |
   apiVersion: v1
   kind: Pod
   metadata:
-    namespace:
-      {{.namespace}}
+    namespace: {{.namespace}}
 ```
 
 and the following Kubernetes object:
@@ -161,7 +160,7 @@ spec:
   # etc...
 ```
 
-and the following options:
+and the following options YAML file:
 
 ```yaml
 namespace: foo-namespace
@@ -208,14 +207,15 @@ bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap --ke
 
 ## Public APIs and Compatibility.
 
-During pre-Alpha and Alpha, breaking changes may happen in any of the Types in
-`pkg/apis`, the `bundlectl` CLI, or the Go APIs. During Beta, backwards
-incompatible breaking changes in the `bundlectl` and the `pkg/apis` directory
-will only happy during Major version boundaries.
+During pre-Alpha and Alpha, breaking changes may happen in any of the types in
+`pkg/apis`, the `bundlectl` CLI, or the Go APIs (methods, structs, interfaces
+not in `pkg/apis`).
 
-The Go APIs (methods, structs, interfaces not in `pkg/apis`) are not covered by
-any compatibility guarantee and can break in backwards incompatible ways during
-any release.
+During Beta, backwards incompatible breaking changes in the `bundlectl` and the
+`pkg/apis` directory will only happy during Major version boundaries.
+
+The Go APIs are not covered by any compatibility guarantee and can break in
+backwards incompatible ways during any release.
 
 ## Development
 
@@ -225,9 +225,9 @@ This directory follows a layout similar to other Kubernetes projects.
 
 *   `pkg/`: Library code.
 *   `pkg/apis`: APIs and schema for the Cluster Bundle.
-*   `pkg/client`: Generated client for the Kubernetes types.
-*   `config/crds`: Generated CRDs for the Kubernetes types.
-*   `examples/`: Examples of components and component packages.
+*   `pkg/client`: Generated client for the Cluster Bundle types.
+*   `config/crds`: Generated CRDs for the ClusterBundle types.
+*   `examples/`: Examples of components
 *   `cmd/`: Binaries. This contains the `bundlectl` CLI tool.
 
 ### Building and Testing
