@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 	log "github.com/golang/glog"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,11 +56,10 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	// This is a hack to allow us to pass through runtime templates variables
 	// It is only one level-deep. TODO(jbelamaric): fix it to support nested schema
 	if ptb.TargetSchema != nil && ptb.TargetSchema.Properties != nil {
-		for k := range ptb.TargetSchema.Properties {
-			opts[k] = `{{.` + k + `}}`
-		}
+		addParamDefaults("", ptb.TargetSchema.Properties, opts)
 	}
 
+	tmpl = tmpl.Option("missingkey=error")
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, opts)
 	if err != nil {
@@ -146,4 +146,37 @@ func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, op
 	}
 
 	return bw, nil
+}
+
+// addParamDefaults is a hack to allow us to pass through runtime templates
+// variables, which works by looking at the properties in the target schema in
+// a PatchTemplateBuilder. It only works for templates that only use simple
+// template variables.
+func addParamDefaults(prefix string, props map[string]apiextensions.JSONSchemaProps, op options.JSONOptions) error {
+	for k, val := range props {
+		tmplKey := prefix + "." + k
+
+		if val.Properties != nil {
+			// The schema indicates that the this key-value pair has an object
+			// substructure, and so we have to recurse into this structure.
+			var nestedOpts options.JSONOptions
+			optVal, hasVal := op[k]
+			if hasVal && optVal != nil {
+				nopt, ok := optVal.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("Option value with key %q was expected to be an object-type, but was %v", tmplKey, optVal)
+				}
+				nestedOpts = nopt
+			} else {
+				nestedOpts = make(options.JSONOptions)
+				op[k] = nestedOpts
+			}
+			// This property contains nested properties. Recurse into these
+			// properties and modify the prefix
+			addParamDefaults(tmplKey, val.Properties, nestedOpts)
+		} else {
+			op[k] = `{{` + tmplKey + `}}`
+		}
+	}
+	return nil
 }
