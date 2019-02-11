@@ -149,15 +149,16 @@ func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, op
 }
 
 // addParamDefaults is a hack to allow us to pass through runtime templates
-// variables. Looks at the properties in a schema.
-// It only works for templates that only have simple variable
-// expansions.
+// variables, which works by looking at the properties in the target schema in
+// a PatchTemplateBuilder. It only works for templates that only use simple
+// template variables.
 func addParamDefaults(prefix string, props map[string]apiextensions.JSONSchemaProps, op options.JSONOptions) error {
 	for k, val := range props {
 		tmplKey := prefix + "." + k
 
 		if val.Properties != nil {
-			// The schema indicates that the this key-value pair has an object substructure.
+			// The schema indicates that the this key-value pair has an object
+			// substructure, and so we have to recurse into this structure.
 			var nestedOpts options.JSONOptions
 			optVal, hasVal := op[k]
 			if hasVal && optVal != nil {
