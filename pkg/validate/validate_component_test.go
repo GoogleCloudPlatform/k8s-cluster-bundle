@@ -330,11 +330,11 @@ components:
 		t.Run(tc.desc, func(t *testing.T) {
 			set, err := converter.FromYAMLString(tc.set).ToComponentSet()
 			if err != nil {
-				t.Fatalf("error converting component set: %v", err)
+				t.Fatal(err)
 			}
 			comp, err := converter.FromYAMLString(tc.components).ToBundle()
 			if err != nil {
-				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
+				t.Fatal(err)
 			}
 			if err = checkErrCases(All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
 				t.Errorf(err.Error())
@@ -405,11 +405,11 @@ components:
 		t.Run(tc.desc, func(t *testing.T) {
 			set, err := converter.FromYAMLString(tc.set).ToComponentSet()
 			if err != nil {
-				t.Fatalf("error converting component set: %v", err)
+				t.Fatal(err)
 			}
 			comp, err := converter.FromYAMLString(tc.components).ToBundle()
 			if err != nil {
-				t.Fatalf("error converting component data: %v. was:\n%s", err, tc.components)
+				t.Fatal(err)
 			}
 			if errs := All(comp.Components, set); len(errs) != tc.numErrors {
 				t.Errorf("got %d errors. expected exactly %d. errors were: %v", len(errs), tc.numErrors, errs)

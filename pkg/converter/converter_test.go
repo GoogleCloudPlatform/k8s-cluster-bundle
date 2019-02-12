@@ -84,7 +84,7 @@ spec:
 func TestConvertUnstructured(t *testing.T) {
 	firstIttObj, err := FromYAMLString(reschedulerManifest).ToUnstructured()
 	if err != nil {
-		t.Fatalf("unexpected error parsing manifest: %v", err)
+		t.Fatal(err)
 	}
 	// Check if one of the original YAML keys are reachable and value match
 	apiversionCheck, ok := firstIttObj.Object["apiVersion"].(string)
@@ -105,6 +105,9 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 	// Convert YAML to Object one more time
 	secondIttObj, err := FromYAMLString(str).ToUnstructured()
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiversionCheck, ok = secondIttObj.Object["apiVersion"].(string)
 	if !ok || apiversionCheck != "v1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", apiversionCheck)
@@ -114,7 +117,7 @@ func TestConvertUnstructured(t *testing.T) {
 func TestConvertBundle(t *testing.T) {
 	firstIttObj, err := FromYAMLString(testBundleManifest).ToBundle()
 	if err != nil {
-		t.Fatalf("unexpected error parsing manifest: %v", err)
+		t.Fatal(err)
 	}
 	// Check if one of the original YAML keys are reachable and value match
 	if firstIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
@@ -134,6 +137,9 @@ func TestConvertBundle(t *testing.T) {
 	}
 	// Convert YAML to Object one more time
 	secondIttObj, err := FromYAMLString(str).ToBundle()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", firstIttObj.APIVersion)
 	}
@@ -162,6 +168,9 @@ func TestConvertComponent(t *testing.T) {
 	}
 	// Convert YAML to Object one more time
 	secondIttObj, err := FromYAMLString(str).ToComponent()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", secondIttObj.APIVersion)
 	}
@@ -185,6 +194,9 @@ func TestConverterFormatTypeInversions(t *testing.T) {
 		t.Fatalf("unexpected error serializing manifest: %v", err)
 	}
 	thirdIttObj, err := FromJSONString(jsonString).ToComponent()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", thirdIttObj.APIVersion)
 	}

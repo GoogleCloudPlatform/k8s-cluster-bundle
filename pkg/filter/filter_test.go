@@ -195,7 +195,7 @@ func TestFilterObjects(t *testing.T) {
 
 	data, err := converter.FromYAMLString(example).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -366,7 +366,7 @@ func TestFilterComponents(t *testing.T) {
 
 	data, err := converter.FromYAMLString(componentExample).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting bundle: %v", err)
+		t.Fatal(err)
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {

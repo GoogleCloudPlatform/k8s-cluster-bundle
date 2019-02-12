@@ -28,7 +28,7 @@ func TestRealisticDataParse_BundleBuilder(t *testing.T) {
 
 	dataFiles, err := FromYAML(b).ToBundleBuilder()
 	if err != nil {
-		t.Fatalf("Error calling ToBundle(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(dataFiles.ComponentFiles); l == 0 {
@@ -44,7 +44,7 @@ func TestRealisticDataParse_ComponentSet(t *testing.T) {
 
 	cset, err := FromYAML(b).ToComponentSet()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentSet(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(cset.Spec.Components); l == 0 {
@@ -60,7 +60,7 @@ func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
 
 	comp, err := FromYAML(b).ToComponentBuilder()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(comp.ObjectFiles); l == 0 {
@@ -76,7 +76,7 @@ func TestRealisticDataParse_Component(t *testing.T) {
 
 	comp, err := FromYAML(b).ToComponent()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(comp.Spec.Objects); l == 0 {

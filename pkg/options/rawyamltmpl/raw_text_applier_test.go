@@ -65,7 +65,7 @@ spec:
 func TestRawStringApplier_MultiItems(t *testing.T) {
 	comp, err := converter.FromYAMLString(dataComponent).ToComponent()
 	if err != nil {
-		t.Fatalf("Error converting component to yaml: %v", err)
+		t.Fatal(err)
 	}
 
 	usedParams := map[string]interface{}{
