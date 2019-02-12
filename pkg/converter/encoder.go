@@ -22,7 +22,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// FromObject creates a converting demuxer from an object.
+// FromObject creates a converting encodeer from an object.
 func FromObject(obj interface{}) *Encoder {
 	return &Encoder{obj}
 }
@@ -32,7 +32,7 @@ type Encoder struct {
 	obj interface{}
 }
 
-func (m *Encoder) demux(format ContentType) ([]byte, error) {
+func (m *Encoder) encode(format ContentType) ([]byte, error) {
 	switch format {
 	case YAML:
 		return yaml.Marshal(m.obj)
@@ -45,28 +45,28 @@ func (m *Encoder) demux(format ContentType) ([]byte, error) {
 
 // ToYAML converts an object to YAML bytes slice
 func (m *Encoder) ToYAML() ([]byte, error) {
-	return m.demux(YAML)
+	return m.encode(YAML)
 }
 
 // ToYAMLString converts an object to YAML string
 func (m *Encoder) ToYAMLString() (string, error) {
-	yamlBytes, err := m.demux(YAML)
+	yamlBytes, err := m.encode(YAML)
 	return string(yamlBytes[:]), err
 }
 
 // ToJSON converts an object to JSON bytes slice
 func (m *Encoder) ToJSON() ([]byte, error) {
-	return m.demux(JSON)
+	return m.encode(JSON)
 }
 
 // ToJSONString converts an object to JSON string
 func (m *Encoder) ToJSONString() (string, error) {
-	jsonBytes, err := m.demux(JSON)
+	jsonBytes, err := m.encode(JSON)
 	return string(jsonBytes[:]), err
 }
 
 // ToContentType converts to a custom content type.
 func (m *Encoder) ToContentType(ctype string) ([]byte, error) {
 	lower := strings.ToLower(ctype)
-	return m.demux(ContentType(lower))
+	return m.encode(ContentType(lower))
 }

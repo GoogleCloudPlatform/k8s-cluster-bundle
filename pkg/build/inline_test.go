@@ -50,23 +50,23 @@ version: 1.2.3
 componentFiles:
 - url: /path/to/apiserver-component.yaml`
 
-var kubeApiserverComponent = []byte(`
+var kubeApiserverComponent = `
 kind: ComponentBuilder
 componentName: kube-apiserver
 version: 1.2.3
 objectFiles:
-- url: '/path/to/kube_apiserver.yaml'`)
+- url: '/path/to/kube_apiserver.yaml'`
 
-var kubeApiserver = []byte(`
+var kubeApiserver = `
 apiVersion: v1
 kind: Zork
 metadata:
   name: biffbam
-biff: bam`)
+biff: bam`
 
 var defaultFiles = map[string][]byte{
-	"/path/to/apiserver-component.yaml": kubeApiserverComponent,
-	"/path/to/kube_apiserver.yaml":      kubeApiserver,
+	"/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
+	"/path/to/kube_apiserver.yaml":      []byte(kubeApiserver),
 }
 
 type bundleRef struct {
@@ -307,7 +307,7 @@ objectFiles:
 		t.Run(tc.desc, func(t *testing.T) {
 			data, err := converter.FromYAMLString(tc.data).ToBundleBuilder()
 			if err != nil {
-				t.Fatalf("Error converting bundle: %v", err)
+				t.Fatal(err)
 			}
 
 			inliner := NewInlinerWithScheme(files.FileScheme, &fakeLocalReader{tc.files})
@@ -340,7 +340,7 @@ func TestInlineComponentFiles(t *testing.T) {
 
 	testCases := []struct {
 		desc         string
-		data         []byte
+		data         string
 		files        map[string][]byte
 		expErrSubstr string
 		expComp      compRef
@@ -374,7 +374,7 @@ func TestInlineComponentFiles(t *testing.T) {
 		},
 		{
 			desc: "fail: can't read raw text file",
-			data: []byte(`
+			data: `
 kind: ComponentBuilder
 componentName: kube-apiserver
 version: 1.2.3
@@ -382,20 +382,20 @@ rawTextFiles:
 - name: foo-group
   files:
   - url: '/path/to/raw-text.yaml'
-  - url: '/path/to/rawer-text.yaml'`),
+  - url: '/path/to/rawer-text.yaml'`,
 			files:        make(map[string][]byte),
 			expErrSubstr: "error reading raw text file for",
 		},
 		{
 			desc: "fail: can't read raw text file group: no name",
-			data: []byte(`
+			data: `
 kind: ComponentBuilder
 componentName: kube-apiserver
 version: 1.2.3
 rawTextFiles:
 - files:
   - url: '/path/to/raw-text.yaml'
-  - url: '/path/to/rawer-text.yaml'`),
+  - url: '/path/to/rawer-text.yaml'`,
 			files:        make(map[string][]byte),
 			expErrSubstr: "error reading raw text file group",
 		},
@@ -405,7 +405,7 @@ rawTextFiles:
 			files: map[string][]byte{
 				"/path/to/kube_apiserver.yaml": []byte("blah"),
 			},
-			expErrSubstr: "error converting object to unstructured",
+			expErrSubstr: "while converting to Unstructured",
 		},
 		{
 			desc: "fail: can't converting multi-doc object to unstructured",
@@ -417,37 +417,37 @@ blah
 blar
 `),
 			},
-			expErrSubstr: "error converting multi-doc object",
+			expErrSubstr: "converting multi-doc object",
 		},
 		{
 			desc: "error: invalid specified name",
-			data: []byte(`
+			data: `
 kind: ComponentBuilder
 metadata:
   name: this-
 componentName: kube-apiserver
 version: 1.2.3
 objectFiles:
-- url: '/path/to/kube_apiserver.yaml'`),
+- url: '/path/to/kube_apiserver.yaml'`,
 			files:        defaultFiles,
 			expErrSubstr: "DNS-1123",
 		},
 		{
 			desc: "error: invalid generated name",
-			data: []byte(`
+			data: `
 kind: ComponentBuilder
 metadata:
 componentName: kube-apiserver
 version: 1.2.3-
 objectFiles:
-- url: '/path/to/kube_apiserver.yaml'`),
+- url: '/path/to/kube_apiserver.yaml'`,
 			files:        defaultFiles,
 			expErrSubstr: "DNS-1123",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			data, err := converter.FromYAML(tc.data).ToComponentBuilder()
+			data, err := converter.FromYAMLString(tc.data).ToComponentBuilder()
 			if err != nil {
 				t.Fatalf("Error converting component: %v", err)
 			}

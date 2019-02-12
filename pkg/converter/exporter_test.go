@@ -40,7 +40,7 @@ func TestExporterMulti(t *testing.T) {
 	for _, o := range objForExport {
 		un, err := FromYAMLString(o).ToUnstructured()
 		if err != nil {
-			t.Fatalf("Failed to parse yaml:%v \n%s", err, o)
+			t.Fatal(err)
 		}
 		obj = append(obj, un)
 	}
@@ -60,7 +60,7 @@ func TestExporterSingle(t *testing.T) {
 	for _, o := range objForExport {
 		un, err := FromYAMLString(o).ToUnstructured()
 		if err != nil {
-			t.Fatalf("Failed to parse yaml:%v \n%s", err, o)
+			t.Fatal(err)
 		}
 		obj = append(obj, un)
 	}

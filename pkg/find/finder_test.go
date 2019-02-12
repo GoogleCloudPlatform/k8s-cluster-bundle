@@ -51,7 +51,7 @@ components:
 func TestBundleFinder(t *testing.T) {
 	b, err := converter.FromYAMLString(validComponentExample).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting bundle: %v", err)
+		t.Fatal(err)
 	}
 	finder := NewComponentFinder(b.Components)
 	if err != nil {
@@ -145,7 +145,7 @@ spec:
 func TestComponentFinder_PartialLookup(t *testing.T) {
 	c, err := converter.FromYAMLString(validComponent).ToComponent()
 	if err != nil {
-		t.Fatalf("error converting componente: %v", err)
+		t.Fatal(err)
 	}
 	finder := NewObjectFinder(c)
 

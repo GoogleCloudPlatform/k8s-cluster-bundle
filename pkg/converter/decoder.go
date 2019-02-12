@@ -57,15 +57,18 @@ func FromJSON(b []byte) *Decoder {
 // extension.
 func FromFileName(fname string, contents []byte) *Decoder {
 	ext := filepath.Ext(fname)
+	var d *Decoder
 	switch ext {
 	case ".yaml", ".yml":
-		return FromYAML(contents)
+		d = FromYAML(contents)
 	case ".json":
-		return FromJSON(contents)
+		d = FromJSON(contents)
 	default:
 		// This will be an error during conversion
-		return &Decoder{format: UnknownContent}
+		d = &Decoder{format: UnknownContent}
 	}
+	d.fname = fname
+	return d
 }
 
 // FromContentType takes an explicit content type to use for creating a
@@ -81,6 +84,10 @@ type Decoder struct {
 	data               []byte
 	format             ContentType
 	allowUnknownFields bool
+
+	// If the content came from FromFileName, store the filename and report in
+	// errors for debugging.
+	fname string
 }
 
 // AllowUnknownFields indicates whether to allow unknown fields during decoding.
@@ -92,7 +99,8 @@ func (m *Decoder) AllowUnknownFields(allow bool) *Decoder {
 	}
 }
 
-func (m *Decoder) mux(f interface{}) error {
+func (m *Decoder) decode(f interface{}) error {
+	var err error
 	switch m.format {
 	case YAML:
 		var mod yaml.JSONOpt = func(d *json.Decoder) *json.Decoder {
@@ -101,23 +109,27 @@ func (m *Decoder) mux(f interface{}) error {
 			}
 			return d
 		}
-		return yaml.Unmarshal(m.data, f, mod)
+		err = yaml.Unmarshal(m.data, f, mod)
 	case JSON:
 		jsonDecoder := json.NewDecoder(bytes.NewReader(m.data))
 		if !m.allowUnknownFields {
 			jsonDecoder.DisallowUnknownFields()
 		}
-		return jsonDecoder.Decode(f)
+		err = jsonDecoder.Decode(f)
 	default:
-		return fmt.Errorf("unknown content type: %q", m.format)
+		err = fmt.Errorf("unknown content type: %q", m.format)
 	}
+	if err != nil && m.fname != "" {
+		return fmt.Errorf("while decoding contents from file %v, %v", m.fname, err)
+	}
+	return err
 }
 
 // ToBundle converts input data to the Bundle type.
 func (m *Decoder) ToBundle() (*bundle.Bundle, error) {
 	d := &bundle.Bundle{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to Bundle, %v", err)
 	}
 	return d, nil
 }
@@ -125,8 +137,8 @@ func (m *Decoder) ToBundle() (*bundle.Bundle, error) {
 // ToBundleBuilder converts input data to the BundleBuilder type.
 func (m *Decoder) ToBundleBuilder() (*bundle.BundleBuilder, error) {
 	d := &bundle.BundleBuilder{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to BundleBuilder, %v", err)
 	}
 	return d, nil
 }
@@ -134,8 +146,8 @@ func (m *Decoder) ToBundleBuilder() (*bundle.BundleBuilder, error) {
 // ToComponent converts input data to the Component type.
 func (m *Decoder) ToComponent() (*bundle.Component, error) {
 	d := &bundle.Component{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to Component, %v", err)
 	}
 	return d, nil
 }
@@ -143,8 +155,8 @@ func (m *Decoder) ToComponent() (*bundle.Component, error) {
 // ToComponentBuilder converts input data to the ComponentBuilder type.
 func (m *Decoder) ToComponentBuilder() (*bundle.ComponentBuilder, error) {
 	d := &bundle.ComponentBuilder{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to ComponentBuilder, %v", err)
 	}
 	return d, nil
 }
@@ -152,8 +164,8 @@ func (m *Decoder) ToComponentBuilder() (*bundle.ComponentBuilder, error) {
 // ToComponentSet converts input data to the ComponentSet type.
 func (m *Decoder) ToComponentSet() (*bundle.ComponentSet, error) {
 	d := &bundle.ComponentSet{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to ComponentSet, %v", err)
 	}
 	return d, nil
 }
@@ -161,8 +173,8 @@ func (m *Decoder) ToComponentSet() (*bundle.ComponentSet, error) {
 // ToUnstructured converts input data to the Unstructured type.
 func (m *Decoder) ToUnstructured() (*unstructured.Unstructured, error) {
 	d := &unstructured.Unstructured{}
-	if err := m.mux(d); err != nil {
-		return nil, err
+	if err := m.decode(d); err != nil {
+		return nil, fmt.Errorf("while converting to Unstructured, %v", err)
 	}
 	return d, nil
 }
@@ -170,8 +182,8 @@ func (m *Decoder) ToUnstructured() (*unstructured.Unstructured, error) {
 // ToJSONMap converts from json/yaml data to a map of string-to-interface.
 func (m *Decoder) ToJSONMap() (map[string]interface{}, error) {
 	d := make(map[string]interface{})
-	if err := m.mux(&d); err != nil {
-		return nil, err
+	if err := m.decode(&d); err != nil {
+		return nil, fmt.Errorf("while converting to JSON Map, %v", err)
 	}
 	return d, nil
 }
@@ -179,5 +191,5 @@ func (m *Decoder) ToJSONMap() (map[string]interface{}, error) {
 // ToObject converts to an arbitrary object via standard YAML / JSON
 // serialization.
 func (m *Decoder) ToObject(obj interface{}) error {
-	return m.mux(obj)
+	return m.decode(obj)
 }

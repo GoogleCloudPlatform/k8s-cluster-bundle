@@ -32,7 +32,7 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 
 	dataFiles, err := converter.FromYAML(b).ToBundleBuilder()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(dataFiles.ComponentFiles); l == 0 {
@@ -69,7 +69,7 @@ func TestRealisticDataParseAndInline_Component(t *testing.T) {
 
 	cb, err := converter.FromYAML(b).ToComponentBuilder()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(cb.ObjectFiles); l == 0 {
