@@ -19,6 +19,7 @@ import (
 	"net/url"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateName creates a name string to be used for ObjectMeta.Name. It
@@ -86,6 +87,10 @@ func (c *ComponentBuilder) ComponentReference() ComponentReference {
 // creation.
 func (b *Bundle) ComponentSet() *ComponentSet {
 	cset := &ComponentSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "bundle.gke.io/v1alpha1",
+			Kind:       "ComponentSet",
+		},
 		Spec: ComponentSetSpec{
 			SetName: b.SetName,
 			Version: b.Version,
@@ -94,6 +99,7 @@ func (b *Bundle) ComponentSet() *ComponentSet {
 	for _, comp := range b.Components {
 		cset.Spec.Components = append(cset.Spec.Components, comp.ComponentReference())
 	}
+	cset.MakeAndSetName()
 	return cset
 }
 
