@@ -58,8 +58,9 @@ func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.Compo
 	return f.keyCompLookup[ref]
 }
 
-// ComponentsFromName returns the components that matches a string-name.
-func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.Component {
+// ComponentVersions returns the all the component versions for a given
+// component name.
+func (f *ComponentFinder) ComponentVersions(name string) []*bundle.Component {
 	return f.nameCompLookup[name]
 }
 
@@ -67,7 +68,7 @@ func (f *ComponentFinder) ComponentsFromName(name string) []*bundle.Component {
 // string-name. If no component is found, nil is returned. If there are two
 // components that match the name, the method returns an error.
 func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.Component, error) {
-	comps := f.ComponentsFromName(name)
+	comps := f.ComponentVersions(name)
 	if len(comps) == 0 {
 		return nil, nil
 	} else if len(comps) > 1 {
