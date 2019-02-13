@@ -31,11 +31,9 @@ type options struct {
 
 var opts = &options{}
 
-func findAction(ctx context.Context, cmd *cobra.Command, _ []string) {
+func findAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	brw := cmdlib.NewBundleReaderWriter(
-		&files.LocalFileSystemReaderWriter{},
-		&cmdlib.RealStdioReaderWriter{})
+	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := runFindImages(ctx, opts, brw, gopt); err != nil {
 		log.Exitf("error in runFindImages: %v", err)
 	}

@@ -18,16 +18,17 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Exports all of the objects",
 		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
-		Run:   cmdlib.ContextAction(ctx, action),
+		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
 	}
 
 	root.AddCommand(cmd)

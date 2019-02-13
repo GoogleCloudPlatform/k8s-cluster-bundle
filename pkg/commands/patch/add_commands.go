@@ -18,17 +18,18 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "patch",
 		Short: "Apply patch templates to component objects",
 		Long: "Apply patch templates to component objects. " +
 			"Options are usually applied to the templates before application.",
-		Run: cmdlib.ContextAction(ctx, action),
+		Run: cmdlib.ContextAction(ctx, fio, sio, action),
 	}
 
 	// Optional flags

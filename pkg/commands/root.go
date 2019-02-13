@@ -25,11 +25,23 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommands adds all subcommands to the root command.
 func AddCommands(ctx context.Context, args []string) *cobra.Command {
+	fio := &files.LocalFileSystemReaderWriter{}
+	sio := &cmdlib.RealStdioReaderWriter{}
+	return AddCommandsInternal(ctx, fio, sio, args)
+}
+
+// AddCommandsInternal is an internal command that allows for dependency
+// injection into sub-commands.
+//
+// Note: This method is only public to allow for sub-commands to define
+// integration tests.
+func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "bundlectl",
 		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
@@ -52,12 +64,12 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(
 		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline files before processing")
 
-	build.AddCommandsTo(ctx, rootCmd)
-	export.AddCommandsTo(ctx, rootCmd)
-	filter.AddCommandsTo(ctx, rootCmd)
-	find.AddCommandsTo(ctx, rootCmd)
-	patch.AddCommandsTo(ctx, rootCmd)
-	validate.AddCommandsTo(ctx, rootCmd)
+	build.AddCommandsTo(ctx, fio, sio, rootCmd)
+	export.AddCommandsTo(ctx, fio, sio, rootCmd)
+	filter.AddCommandsTo(ctx, fio, sio, rootCmd)
+	find.AddCommandsTo(ctx, fio, sio, rootCmd)
+	patch.AddCommandsTo(ctx, fio, sio, rootCmd)
+	validate.AddCommandsTo(ctx, fio, sio, rootCmd)
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
