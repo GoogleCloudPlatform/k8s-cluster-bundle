@@ -47,16 +47,6 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
-// All validates components and components sets, providing as many errors as it can.
-func All(cp []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
-	errs := field.ErrorList{}
-	errs = append(errs, ComponentSet(cs)...)
-	errs = append(errs, AllComponents(cp)...)
-	errs = append(errs, ComponentsAndComponentSet(cp, cs)...)
-	errs = append(errs, AllComponentObjects(cp)...)
-	return errs
-}
-
 func cPath(ref bundle.ComponentReference) *field.Path {
 	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
 }
@@ -119,6 +109,11 @@ func Component(c *bundle.Component) field.ErrorList {
 	if c.Spec.AppVersion != "" && !appVersionPattern.MatchString(c.Spec.AppVersion) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
+
+	if err := ComponentObjects(c); err != nil {
+		errs = append(err)
+	}
+
 	return errs
 }
 
@@ -161,28 +156,6 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 
 	if !versionPattern.MatchString(ver) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, `must be of the form X.Y.Z`))
-	}
-
-	return errs
-}
-
-// ComponentsAndComponentSet validates components in the context of a component set.
-func ComponentsAndComponentSet(components []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
-	errs := field.ErrorList{}
-
-	compMap := make(map[bundle.ComponentReference]*bundle.Component)
-	for _, c := range components {
-		compMap[c.ComponentReference()] = c
-	}
-
-	p := field.NewPath("ComponentSet")
-	// It is possible for there to be components that the component set does not
-	// know about, but all components in the component set must be in the
-	// components list
-	for _, ref := range cs.Spec.Components {
-		if _, ok := compMap[ref]; !ok {
-			errs = append(errs, field.NotFound(p.Child("Spec", "Components").Key(fmt.Sprintf("%v", ref)), "component reference from set not found in component list"))
-		}
 	}
 
 	return errs
