@@ -150,6 +150,8 @@ func (bw *BundleWrapper) AllComponents() []*bundle.Component {
 	return nil
 }
 
+// ExportAsObjects will export a Bundle as a ComponentSet and Components,
+// or a Component as unstructured Objects.
 func (bw *BundleWrapper) ExportAsObjects() ([]*unstructured.Unstructured, error) {
 	switch bw.Kind() {
 	case "Component":

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCreateName(t *testing.T) {
@@ -152,6 +153,13 @@ func TestMakeComponentSet(t *testing.T) {
 
 	got := b.ComponentSet()
 	exp := &ComponentSet{
+                TypeMeta: metav1.TypeMeta{
+                        APIVersion: "bundle.gke.io/v1alpha1",
+                        Kind:       "ComponentSet",
+                },
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "zorp-0.1.0",
+		},
 		Spec: ComponentSetSpec{
 			SetName: "zorp",
 			Version: "0.1.0",

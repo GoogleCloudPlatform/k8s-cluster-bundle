@@ -84,7 +84,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 			if err != nil {
 				return nil, fmt.Errorf("error converting file %q to a component builder: %v", f.URL, err)
 			}
-			if c.GetName() == "" {
+			if c.GetName() == "" && data.ComponentNamePolicy == "SetAndComponent" {
 				c.ObjectMeta.Name = strings.Join([]string{data.SetName, data.Version, c.ComponentName, c.Version}, "-")
 			}
 			compbs = append(compbs, c)
