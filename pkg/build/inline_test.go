@@ -152,6 +152,35 @@ componentFiles:
 		},
 
 		{
+			desc: "success: inline basic bundle + file prefix + SetAndComponent policy",
+			data: `
+kind: BundleBuilder
+setName: foo-bundle
+version: 1.2.3
+componentNamePolicy: SetAndComponent
+componentFiles:
+- url: file:///path/to/apiserver-component.yaml`,
+			files:  defaultFiles,
+			expBun: bundleRef{setName: "foo-bundle", version: "1.2.3"},
+			expComps: []compRef{
+				{
+					name: "foo-bundle-1.2.3-kube-apiserver-1.2.3",
+					ref: bundle.ComponentReference{
+						ComponentName: "kube-apiserver",
+						Version:       "1.2.3",
+					},
+					obj: []objCheck{
+						{
+							name:     "biffbam",
+							annotKey: string(bundle.InlineTypeIdentifier),
+							annotVal: string(bundle.KubeObjectInline),
+						},
+					},
+				},
+			},
+		},
+
+		{
 			desc: "success: inline bundle with raw text",
 			data: `
 kind: BundleBuilder

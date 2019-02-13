@@ -34,6 +34,13 @@ type BundleBuilder struct {
 	// details. The version is optional for the ComponentBuilder
 	Version string `json:"version,omitempty"`
 
+	// ComponentNamePolicy defines how to generate the metadata.name
+	// for a Component or ComponentBuilder that does not already have one.
+	//  - SetAndComponent generates a name from the set name and version and
+	//    component name and version.
+	//  - Component (default) generates a name from the component name and version
+	ComponentNamePolicy string `json:"componentNamePolicy,omitempty"`
+
 	// ComponentFiles represent ComponentBuilder or Component types that are
 	// referenced via file urls.
 	ComponentFiles []File `json:"componentFiles,omitempty"`

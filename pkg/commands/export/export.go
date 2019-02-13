@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // options represents options flags for the export command.
@@ -50,15 +49,11 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, stdio c
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	comps := bw.AllComponents()
-	if len(comps) == 0 {
-		return nil
+	objs, err := bw.ExportAsObjects()
+	if err != nil {
+		return err
 	}
 
-	var objs []*unstructured.Unstructured
-	for _, c := range comps {
-		objs = append(objs, c.Spec.Objects...)
-	}
 	exporter := converter.ObjectExporter{Objects: objs}
 	s, err := exporter.ExportAsYAML()
 	if err != nil {

@@ -84,6 +84,9 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 			if err != nil {
 				return nil, err
 			}
+			if c.GetName() == "" && data.ComponentNamePolicy == "SetAndComponent" {
+				c.ObjectMeta.Name = strings.Join([]string{data.SetName, data.Version, c.ComponentName, c.Version}, "-")
+			}
 			compbs = append(compbs, c)
 		default:
 			return nil, fmt.Errorf("unsupported kind for component: %q; only supported kinds are Component and ComponentBuilder", kind)
