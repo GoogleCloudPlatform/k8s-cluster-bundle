@@ -21,7 +21,7 @@ Alternatively, a subset of patches can be applied with:
 go run ../../cmd/bundlectl/main.go patch \
   --input-file=etcd-component.yaml \
   --options-file=options.yaml \
-  --patch-annotations=build-label-experiment,test
+  --patch-annotations=build-label-experiment=test
 ```
 
 ## Patch Templates

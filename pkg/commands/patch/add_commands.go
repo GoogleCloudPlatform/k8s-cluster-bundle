@@ -39,7 +39,7 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 		"File containing options to apply to patch templates. May be repeated, later values override earlier ones.")
 
 	cmd.Flags().StringVar(&opts.patchAnnotations, "patch-annotations", "",
-		"Select a subset of patches to apply based on a list of annotations of the form \"key1,val1;key2,val2;\"")
+		"Select a subset of patches to apply based on a list of annotations of the form \"key1=val1,key2=val2\"")
 
 	cmd.Flags().BoolVar(&opts.keepTemplates, "keep-templates", false,
 		"Do not remove templates that have been applied from the component.")

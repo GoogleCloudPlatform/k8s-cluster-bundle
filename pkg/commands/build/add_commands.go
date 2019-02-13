@@ -37,8 +37,5 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "",
 		"File containing options to apply to patch templates")
 
-	cmd.Flags().StringVarP(&opts.annotations, "annotations", "", "",
-		"Select a subset of patch templates to build to apply based on a list of annotations of the form \"key1,val1;key2,val2;\"")
-
 	root.AddCommand(cmd)
 }
