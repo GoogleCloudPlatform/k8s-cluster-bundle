@@ -23,6 +23,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "bazel_init_test.go",
         "converter_integration_test.go",
         "converter_test.go",
         "decoder_test.go",
@@ -31,7 +32,7 @@ go_test(
         "name_test.go",
     ],
     data = [
-        "//examples:component_testdata",
+        "//examples:testdata",
     ],
     embed = [":go_default_library"],
     deps = [

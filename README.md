@@ -269,3 +269,11 @@ hacke/update-codegen.sh
 ```
 
 If new files are added, will to re-run Gazelle (see above).
+
+### Prow
+
+If the prow-jobs need to be updated, see:
+
+* Cluster Bundle Prow Jobs
+  * [historical, pinned](https://github.com/kubernetes/test-infra/blob/1f003d3e1d7aecad6e16fd08e9d0253df9033f20/config/jobs/GoogleCloudPlatform/k8s-cluster-bundle/k8s-cluster-bundle.yaml)
+  * [master](https://github.com/kubernetes/test-infra/blob/master/config/jobs/GoogleCloudPlatform/k8s-cluster-bundle/k8s-cluster-bundle.yaml)
