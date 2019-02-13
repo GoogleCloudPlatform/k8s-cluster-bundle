@@ -47,11 +47,6 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
-func cPath(ref bundle.ComponentReference) *field.Path {
-	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
-}
-
-// AllComponents validates a list of components.
 func AllComponents(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	objCollect := make(map[bundle.ComponentReference]bool)
@@ -59,9 +54,8 @@ func AllComponents(components []*bundle.Component) field.ErrorList {
 		errs = append(errs, Component(c)...)
 
 		ref := c.ComponentReference()
-		p := cPath(ref)
 		if _, ok := objCollect[ref]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("component reference %v", ref)))
+			errs = append(errs, field.Duplicate(cPath(ref), fmt.Sprintf("component reference %v", ref)))
 			continue
 		}
 		objCollect[ref] = true
@@ -110,7 +104,7 @@ func Component(c *bundle.Component) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
 
-	if err := ComponentObjects(c); err != nil {
+	if err := componentObjects(c); err != nil {
 		errs = append(err)
 	}
 
@@ -161,17 +155,8 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	return errs
 }
 
-// AllComponentObjects validates all objects in all componenst
-func AllComponentObjects(components []*bundle.Component) field.ErrorList {
-	errs := field.ErrorList{}
-	for _, ca := range components {
-		errs = append(errs, ComponentObjects(ca)...)
-	}
-	return errs
-}
-
 // ComponentObjects validates objects in a componenst.
-func ComponentObjects(cp *bundle.Component) field.ErrorList {
+func componentObjects(cp *bundle.Component) field.ErrorList {
 	// Map to catch duplicate objects.
 	compObjects := make(map[core.ObjectRef]bool)
 
@@ -199,4 +184,8 @@ func ComponentObjects(cp *bundle.Component) field.ErrorList {
 		compObjects[oref] = true
 	}
 	return errs
+}
+
+func cPath(ref bundle.ComponentReference) *field.Path {
+	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
 }
