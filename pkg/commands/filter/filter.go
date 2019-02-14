@@ -42,11 +42,11 @@ type options struct {
 	namespaces string
 
 	// Comma + semicolon separated annotations to filter
-	// Example: foo,bar;biff,bam
+	// Example: foo=bar,biff=bam
 	annotations string
 
 	// Comma + semicolon separated annotations to filter
-	// Example: foo,bar;biff,bam
+	// Example: foo=bar,biff=bam
 	labels string
 
 	// Whether to keep matches rather then remove them.
@@ -81,26 +81,10 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *c
 		fopts.Namespaces = strings.Split(o.namespaces, ",")
 	}
 	if o.annotations != "" {
-		m := make(map[string]string)
-		splat := strings.Split(o.annotations, ";")
-		for _, v := range splat {
-			kv := strings.Split(v, ",")
-			if len(kv) == 2 {
-				m[kv[0]] = kv[1]
-			}
-		}
-		fopts.Annotations = m
+		fopts.Annotations = cmdlib.ParseStringMap(o.annotations)
 	}
 	if o.labels != "" {
-		m := make(map[string]string)
-		splat := strings.Split(o.labels, ";")
-		for _, v := range splat {
-			kv := strings.Split(v, ",")
-			if len(kv) == 2 {
-				m[kv[0]] = kv[1]
-			}
-		}
-		fopts.Labels = m
+		fopts.Labels = cmdlib.ParseStringMap(o.labels)
 	}
 	fopts.KeepOnly = o.keepOnly
 

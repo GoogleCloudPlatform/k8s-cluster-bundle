@@ -32,7 +32,7 @@ import (
 // options represents options flags for the filter command.
 type options struct {
 	// patchAnnotations selects a subset of patch templates to apply via annotations.
-	// Has the form "foo,bar;biff,baz".
+	// Has the form "foo=bar,biff=baz".
 	patchAnnotations string
 
 	// optionsFiles contains yaml or json structured data containing options to
@@ -66,7 +66,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return err
 	}
 
-	fopts := &filter.Options{Annotations: cmdlib.ParseAnnotations(o.patchAnnotations)}
+	fopts := &filter.Options{Annotations: cmdlib.ParseStringMap(o.patchAnnotations)}
 	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts, o.keepTemplates)
 
 	switch bw.Kind() {

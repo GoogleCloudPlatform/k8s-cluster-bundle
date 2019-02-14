@@ -28,10 +28,6 @@ import (
 
 // options represents options flags for the build command.
 type options struct {
-	// annotations selects a subset of patch templates on which to apply options
-	// Has the form "foo,bar;biff,baz".
-	annotations string
-
 	// optionsFile contains yaml or json structured data containing options to
 	// apply to PatchTemplates
 	// TODO(jbelamaric): Make this a list of files

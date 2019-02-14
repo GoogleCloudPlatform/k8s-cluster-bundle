@@ -41,9 +41,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 	cmd.Flags().StringVarP(&opts.namespaces, "namespaces", "", "",
 		"Comma separated namespaces to filter on")
 	cmd.Flags().StringVarP(&opts.annotations, "annotations", "", "",
-		"Comma + semicolon separated annotations to filter on. Ex: 'foo,bar;biff,bam'")
+		"Comma + semicolon separated annotations to filter on. Ex: 'foo=bar,biff=bam'")
 	cmd.Flags().StringVarP(&opts.labels, "labels", "", "",
-		"Comma + semicolon separated labelsto filter on. Ex: 'foo,bar;biff,bam'")
+		"Comma + semicolon separated labelsto filter on. Ex: 'foo=bar,biff=bam'")
 	cmd.Flags().BoolVarP(&opts.keepOnly, "keep-only", "", false,
 		"Whether to keep options instead of filtering them")
 

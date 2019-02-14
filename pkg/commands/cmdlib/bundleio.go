@@ -205,16 +205,17 @@ func formatFromFile(path string) string {
 	return ""
 }
 
-// ParseAnnotations parses CLI flag format for annotations
-func ParseAnnotations(p string) map[string]string {
+// ParseStringMap parses a CLI flag value into a map of string to string. It
+// expects the raw flag value to have the form "key1=value1,key2=value2,etc".
+func ParseStringMap(p string) map[string]string {
 	if p == "" {
 		return nil
 	}
 
 	m := make(map[string]string)
-	splat := strings.Split(p, ";")
+	splat := strings.Split(p, ",")
 	for _, v := range splat {
-		kv := strings.Split(v, ",")
+		kv := strings.Split(v, "=")
 		if len(kv) == 2 {
 			m[kv[0]] = kv[1]
 		}
