@@ -68,17 +68,32 @@ type Apply struct {
 
 // Expect contains expectations that should be filled.
 type Expect struct {
-	// Substrs contains a mapping from "<kind>-<objectname>" key to a list of substrings
-	// expected to be contained in the rendered object.
-	FindSubstrs map[string][]string `json:findSubstrs`
+	// Objects contains expectations for objects.
+	Objects []ObjectCheck `json:objects`
 
-	// NotFindSubstrs contains a mapping from "<kind>-<objectname>" to list of
-	// substrings that are not expected.
-	NotFindSubstrs map[string][]string `json:notFindSubstrs`
-
-	// BuildErrSubstr indicates a substring that's expected to be in an error in the build-process.
+	// BuildErrSubstr indicates a substring that's expected to be in an error in
+	// the build-process.
 	BuildErrSubstr string `json:buildErrSubstr`
 
-	// ApplyErrSubstr indicates a substring that's expected to be in an error in the apply-process.
+	// ApplyErrSubstr indicates a substring that's expected to be in an error in
+	// the apply-process.
 	ApplyErrSubstr string `json:applyErrSubstr`
+}
+
+// ObjectCheck contains checks for an objects. Kind, and Name are used to find
+// objects. Expects exactly one object to match.
+type ObjectCheck struct {
+	// Kind of the objects (required).
+	Kind string `json:kind`
+
+	// Name of the objects (required).
+	Name string `json:name`
+
+	// FindSubstrs contains a list of substrings that are expecetd to be found in
+	// the object.
+	FindSubstrs []string `json:findSubstrs`
+
+	// NotFindSubstrs contains a list of substrings that are not expecetd to be
+	// found in the object
+	NotFindSubstrs []string `json:notFindSubstrs`
 }

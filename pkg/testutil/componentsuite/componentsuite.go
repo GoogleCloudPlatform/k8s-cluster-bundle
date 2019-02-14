@@ -17,6 +17,7 @@ package componentsuite
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -136,18 +137,33 @@ func runApply(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Compon
 	return comp
 }
 
+type objKey struct {
+	name string
+	kind string
+}
+
+func (ok objKey) String() string {
+	return fmt.Sprintf("{name: %q, kind: %q}", ok.name, ok.kind)
+}
+
 func runValidate(t *testing.T, comp *bundle.Component, tc *TestCase) {
 	if errList := validate.Component(comp); len(errList) > 0 {
 		t.Errorf("There were errors validating component:\n%v", errList.ToAggregate())
 	}
-	objMap := make(map[string]string)
+
+	objCheckMap := make(map[objKey]ObjectCheck)
+	for _, oc := range tc.Expect.Objects {
+		objCheckMap[objKey{
+			name: oc.Name,
+			kind: oc.Kind,
+		}] = oc
+	}
+
+	objMap := make(map[objKey]string)
 	for _, obj := range comp.Spec.Objects {
 		matchFail := false
-		key := obj.GetKind()
-		if name := obj.GetName(); name != "" {
-			key = key + "-" + name
-		}
 
+		key := objKey{name: obj.GetName(), kind: obj.GetKind()}
 		objStr, err := converter.FromObject(obj).ToYAMLString()
 		if err != nil {
 			// This is a very unlikely error.
@@ -155,42 +171,37 @@ func runValidate(t *testing.T, comp *bundle.Component, tc *TestCase) {
 		}
 		objMap[key] = objStr
 
-		if tc.Expect.FindSubstrs != nil {
-			matchSubstrs := tc.Expect.FindSubstrs[key]
-			for _, expStr := range matchSubstrs {
-				if !strings.Contains(objStr, expStr) {
-					t.Errorf("Did not find %q in object %q, but expected to", expStr, key)
-					matchFail = true
-				}
+		check := objCheckMap[key]
+		for _, expStr := range check.FindSubstrs {
+			if !strings.Contains(objStr, expStr) {
+				t.Errorf("Did not find %q in object %v, but expected to", expStr, key)
+				matchFail = true
 			}
 		}
 
-		if tc.Expect.FindSubstrs != nil {
-			notMatchSubstrs := tc.Expect.NotFindSubstrs[key]
-			for _, noExpStr := range notMatchSubstrs {
-				if strings.Contains(objStr, noExpStr) {
-					t.Errorf("Found %q in object %q, but did not expect to", noExpStr, key)
-					matchFail = true
-				}
+		for _, noExpStr := range check.NotFindSubstrs {
+			if strings.Contains(objStr, noExpStr) {
+				t.Errorf("Found %q in object %v, but did not expect to", noExpStr, key)
+				matchFail = true
 			}
 		}
 
 		if matchFail {
-			t.Errorf("Contents for object that didn't meet expectations %q:\n%s", key, objStr)
+			t.Errorf("Contents for object that didn't meet expectations %v:\n%s", key, objStr)
 		}
 	}
 
-	for key := range tc.Expect.FindSubstrs {
+	for key := range objCheckMap {
 		if _, ok := objMap[key]; !ok {
-			t.Errorf("Got object-keys %q, but expected to find object %q", stringMapKeys(objMap), key)
+			t.Errorf("Got object-keys %q, but expected to find object %v", stringMapKeys(objMap), key)
 		}
 	}
 }
 
-func stringMapKeys(m map[string]string) []string {
+func stringMapKeys(m map[objKey]string) []string {
 	var out []string
 	for k := range m {
-		out = append(out, k)
+		out = append(out, k.String())
 	}
 	return out
 }

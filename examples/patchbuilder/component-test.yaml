@@ -9,11 +9,17 @@ testCases:
     options:
       Namespace: default
   expect:
-    findSubstrs:
-      Deployment-helloweb:
+    objects:
+    - kind: Deployment
+      name: helloweb
+      findSubstrs:
       - 'namespace: default'
       - 'image: gcr.io/google-samples/hello-app:2.0'
-      Service-helloweb:
+      notFindSubstrs:
+      - 'image: gcr.io/google-samples/hello-app:1.0'
+    - kind: Service
+      name: helloweb
+      findSubstrs:
       - 'targetPort: 8080'
 
 - description: 'Success: change port'
@@ -25,11 +31,15 @@ testCases:
       Namespace: default
       Port: 8888
   expect:
-    findSubstrs:
-      Deployment-helloweb:
+    objects:
+    - kind: Deployment
+      name: helloweb
+      findSubstrs:
       - 'namespace: default'
       - 'image: gcr.io/google-samples/hello-app:2.0'
-      Service-helloweb:
+    - kind: Service
+      name: helloweb
+      findSubstrs:
       - 'targetPort: 8888'
 
 - description: 'Error: no image Tag'
