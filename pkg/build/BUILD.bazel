@@ -36,7 +36,7 @@ go_test(
         "inline_test.go",
         "patchbuild_test.go",
     ],
-    data = ["//examples:component_testdata"],
+    data = ["//examples:testdata"],
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",

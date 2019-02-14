@@ -78,8 +78,8 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	return pt, nil
 }
 
-// BuildComponentPatchTemplates iterates through all PatchTemplateBuilders in a Components Objects,
-// and converts them into PatchTemplates.
+// BuildComponentPatchTemplates iterates through all PatchTemplateBuilders in a
+// Components Objects, and converts them into PatchTemplates.
 func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, opts options.JSONOptions) (*bundle.Component, error) {
 	ptbFilter := fopts
 	if ptbFilter == nil {
