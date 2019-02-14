@@ -30,6 +30,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "bazel_init_test.go",
         "config_map_maker_test.go",
         "inline_integration_test.go",
         "inline_test.go",
