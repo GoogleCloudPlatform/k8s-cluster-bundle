@@ -16,16 +16,16 @@ package build
 
 import (
 	"context"
+	"io/ioutil"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
 )
 
 func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 	ctx := context.Background()
-	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
+	b, err := ioutil.ReadFile("../../examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -39,8 +39,7 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 		t.Fatalf("found zero files, but expected some")
 	}
 
-	pathPrefix := testutil.TestPathPrefix("../../", "examples/cluster/bundle-builder-example.yaml")
-	inliner := NewLocalInliner(pathPrefix)
+	inliner := NewLocalInliner("../../examples/cluster/")
 
 	moreInlined, err := inliner.BundleFiles(ctx, dataFiles)
 	if err != nil {
@@ -62,7 +61,7 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 
 func TestRealisticDataParseAndInline_Component(t *testing.T) {
 	ctx := context.Background()
-	b, err := testutil.ReadData("../../", "examples/component/etcd-component-builder.yaml")
+	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -76,8 +75,7 @@ func TestRealisticDataParseAndInline_Component(t *testing.T) {
 		t.Fatalf("found zero files, but expected some")
 	}
 
-	pathPrefix := testutil.TestPathPrefix("../../", "examples/component/etcd-component-builder.yaml")
-	inliner := NewLocalInliner(pathPrefix)
+	inliner := NewLocalInliner("../../examples/component/")
 
 	component, err := inliner.ComponentFiles(ctx, cb)
 	if err != nil {
