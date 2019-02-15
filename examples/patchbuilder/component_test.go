@@ -21,5 +21,5 @@ import (
 )
 
 func TestComponentSuite(t *testing.T) {
-	componentsuite.Run(t, "component-test.yaml")
+	componentsuite.Run(t, "test-suite.yaml")
 }

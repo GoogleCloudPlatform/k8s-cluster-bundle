@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package patchbuilder
+package component
 
 import (
 	"testing"
@@ -21,5 +21,5 @@ import (
 )
 
 func TestComponentSuite(t *testing.T) {
-	componentsuite.Run(t, "etcd-component-test.yaml")
+	componentsuite.Run(t, "test-suite.yaml")
 }
