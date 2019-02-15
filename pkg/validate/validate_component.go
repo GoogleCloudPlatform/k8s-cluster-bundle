@@ -47,22 +47,6 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
-func AllComponents(components []*bundle.Component) field.ErrorList {
-	errs := field.ErrorList{}
-	objCollect := make(map[bundle.ComponentReference]bool)
-	for _, c := range components {
-		errs = append(errs, Component(c)...)
-
-		ref := c.ComponentReference()
-		if _, ok := objCollect[ref]; ok {
-			errs = append(errs, field.Duplicate(cPath(ref), fmt.Sprintf("component reference %v", ref)))
-			continue
-		}
-		objCollect[ref] = true
-	}
-	return errs
-}
-
 // Component validates a single component.
 func Component(c *bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
@@ -110,6 +94,36 @@ func Component(c *bundle.Component) field.ErrorList {
 
 	return errs
 }
+// ComponentObjects validates objects in a componenst.
+func componentObjects(cp *bundle.Component) field.ErrorList {
+	// Map to catch duplicate objects.
+	compObjects := make(map[core.ObjectRef]bool)
+
+	errs := field.ErrorList{}
+
+	ref := cp.ComponentReference()
+	basep := cPath(ref)
+	for i, obj := range cp.Spec.Objects {
+		n := obj.GetName()
+		if n == "" {
+			errs = append(errs, field.Required(basep.Child("Spec", "Objects").Index(i).Child("Metadata", "Name"),
+				""))
+			continue
+		}
+		p := basep.Child("Spec", "Objects").Key(n)
+
+		if nameErrs := validateName(p, n); len(nameErrs) > 0 {
+			errs = append(errs, nameErrs...)
+		}
+
+		oref := core.ObjectRefFromUnstructured(obj)
+		if _, ok := compObjects[oref]; ok {
+			errs = append(errs, field.Duplicate(p, fmt.Sprintf("object reference: %s", oref)))
+		}
+		compObjects[oref] = true
+	}
+	return errs
+}
 
 // ComponentSet validates a component.
 func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
@@ -155,36 +169,6 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	return errs
 }
 
-// ComponentObjects validates objects in a componenst.
-func componentObjects(cp *bundle.Component) field.ErrorList {
-	// Map to catch duplicate objects.
-	compObjects := make(map[core.ObjectRef]bool)
-
-	errs := field.ErrorList{}
-
-	ref := cp.ComponentReference()
-	basep := cPath(ref)
-	for i, obj := range cp.Spec.Objects {
-		n := obj.GetName()
-		if n == "" {
-			errs = append(errs, field.Required(basep.Child("Spec", "Objects").Index(i).Child("Metadata", "Name"),
-				""))
-			continue
-		}
-		p := basep.Child("Spec", "Objects").Key(n)
-
-		if nameErrs := validateName(p, n); len(nameErrs) > 0 {
-			errs = append(errs, nameErrs...)
-		}
-
-		oref := core.ObjectRefFromUnstructured(obj)
-		if _, ok := compObjects[oref]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("object reference: %s", oref)))
-		}
-		compObjects[oref] = true
-	}
-	return errs
-}
 
 func cPath(ref bundle.ComponentReference) *field.Path {
 	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
