@@ -21,7 +21,10 @@ import (
 
 // COMPONENT TESTS
 func assertValidateComponent(componentString string, numErrors int, t *testing.T) {
-	component, _ := converter.FromYAMLString(componentString).ToComponent()
+	component, errParse := converter.FromYAMLString(componentString).ToComponent()
+  if errParse != nil {
+    t.Fatalf("parse error: %v", errParse)
+  }
 	errs := Component(component)
 	numErrorsActual := len(errs)
 	if numErrorsActual != numErrors {
@@ -30,7 +33,7 @@ func assertValidateComponent(componentString string, numErrors int, t *testing.T
 }
 
 func TestComponent(t *testing.T) {
-	defaultComponent := `
+	component := `
     apiVersion: bundle.gke.io/v1alpha1
     kind: Component
     metadata:
@@ -43,7 +46,7 @@ func TestComponent(t *testing.T) {
 
 }
 func TestComponentNoRefs(t *testing.T) {
-	defaultComponentNoRefs := `
+	component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -176,7 +179,7 @@ func assertValidateComponentSet(componentSetString string, numErrors int, t *tes
 }
 
 func TestComponentSet(t *testing.T) {
-	var defaultComponentSet = `
+	defaultComponentSet := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: ComponentSet
     spec:
