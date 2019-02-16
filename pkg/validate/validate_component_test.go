@@ -15,25 +15,25 @@
 package validate
 
 import (
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"testing"
+  "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+  "testing"
 )
 
 // COMPONENT TESTS
 func assertValidateComponent(componentString string, numErrors int, t *testing.T) {
-	component, errParse := converter.FromYAMLString(componentString).ToComponent()
-	if errParse != nil {
-		t.Fatalf("parse error: %v", errParse)
-	}
-	errs := Component(component)
-	numErrorsActual := len(errs)
-	if numErrorsActual != numErrors {
-		t.Fatalf("expected %v errors got %v", numErrors, numErrorsActual)
-	}
+  component, errParse := converter.FromYAMLString(componentString).ToComponent()
+  if errParse != nil {
+    t.Fatalf("parse error: %v", errParse)
+  }
+  errs := Component(component)
+  numErrorsActual := len(errs)
+  if numErrorsActual != numErrors {
+    t.Fatalf("expected %v errors got %v", numErrors, numErrorsActual)
+  }
 }
 
 func TestComponent(t *testing.T) {
-	component := `
+  component := `
     apiVersion: bundle.gke.io/v1alpha1
     kind: Component
     metadata:
@@ -42,11 +42,11 @@ func TestComponent(t *testing.T) {
       version: 30.0.2
       componentName: etcd-component`
 
-	assertValidateComponent(defaultComponent, 0, t)
+  assertValidateComponent(defaultComponent, 0, t)
 
 }
 func TestComponentNoRefs(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -56,10 +56,10 @@ func TestComponentNoRefs(t *testing.T) {
       version: 2.10.1
       appVersion: 3.10.1`
 
-	assertValidateComponent(defaultComponentNoRefs, 0, t)
+  assertValidateComponent(defaultComponentNoRefs, 0, t)
 }
 func TestComponentVersionDotNotationAppVersion(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -69,11 +69,11 @@ func TestComponentVersionDotNotationAppVersion(t *testing.T) {
       version: 2.10.1
       appVersion: 3.10`
 
-	assertValidateComponent(component, 0, t)
+  assertValidateComponent(component, 0, t)
 }
 
 func TestComponentRequiresKind(t *testing.T) {
-	component := `     // no kind field
+  component := `     // no kind field
   apiVersion: 'bundle.gke.io/v1alpha1'
   metadata:
     name: foo-comp-1.0.2
@@ -81,10 +81,10 @@ func TestComponentRequiresKind(t *testing.T) {
     componentName: foo-comp
     version: 1.0.2`
 
-	assertValidateComponent(component, 1, t)
+  assertValidateComponent(component, 1, t)
 }
 func TestComponentXYZAppVersion(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -94,10 +94,10 @@ func TestComponentXYZAppVersion(t *testing.T) {
       version: 2.10.1
       appVersion: 3.10.32-blah.0` // invalid
 
-	assertValidateComponent(component, 0, t)
+  assertValidateComponent(component, 0, t)
 }
 func TestComponentSetInvalidVersion3(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'       
     kind: Component
     metadata:
@@ -106,10 +106,10 @@ func TestComponentSetInvalidVersion3(t *testing.T) {
       componentName: foo-comp
       version: 2.010.1` // invalid
 
-	assertValidateComponent(component, 1, t)
+  assertValidateComponent(component, 1, t)
 }
 func TestComponentAppVersion(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -119,10 +119,10 @@ func TestComponentAppVersion(t *testing.T) {
       version: 2.10.1,
       appVersion: 2.010.1` // must be of the form X.Y.Z
 
-	assertValidateComponent(component, 1, t)
+  assertValidateComponent(component, 1, t)
 }
 func TestValidComponent(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -136,10 +136,10 @@ func TestValidComponent(t *testing.T) {
         metadata:
           name: foo-pod`
 
-	assertValidateComponent(component, 0, t)
+  assertValidateComponent(component, 0, t)
 }
 func TestComponentVersionMissing(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -147,10 +147,10 @@ func TestComponentVersionMissing(t *testing.T) {
     spec:
       componentName: foo-comp` // missing version: X.Y.Z in spec
 
-	assertValidateComponent(component, 1, t)
+  assertValidateComponent(component, 1, t)
 }
 func TestComponentMissingName(t *testing.T) {
-	component := `
+  component := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: Component
     metadata:
@@ -162,24 +162,24 @@ func TestComponentMissingName(t *testing.T) {
       - apiVersion: v1
         kind: Pod`
 
-	assertValidateComponent(component, 1, t)
+  assertValidateComponent(component, 1, t)
 }
 
 // Component Set Tests
 func assertValidateComponentSet(componentSetString string, numErrors int, t *testing.T) {
-	componentSet, errParse := converter.FromYAMLString(componentSetString).ToComponentSet()
-	if errParse != nil {
-		t.Fatalf("parse error: %v", errParse)
-	}
-	errs := ComponentSet(componentSet)
-	numErrorsActual := len(errs)
-	if numErrorsActual != numErrors {
-		t.Fatalf("expected %v errors got %v:  %v", numErrors, numErrorsActual, errs)
-	}
+  componentSet, errParse := converter.FromYAMLString(componentSetString).ToComponentSet()
+  if errParse != nil {
+    t.Fatalf("parse error: %v", errParse)
+  }
+  errs := ComponentSet(componentSet)
+  numErrorsActual := len(errs)
+  if numErrorsActual != numErrors {
+    t.Fatalf("expected %v errors got %v:  %v", numErrors, numErrorsActual, errs)
+  }
 }
 
 func TestComponentSet(t *testing.T) {
-	defaultComponentSet := `
+  defaultComponentSet := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: ComponentSet
     spec:
@@ -189,10 +189,10 @@ func TestComponentSet(t *testing.T) {
       - componentName: foo-comp
         version: 1.0.2
         `
-	assertValidateComponentSet(defaultComponentSet, 0, t)
+  assertValidateComponentSet(defaultComponentSet, 0, t)
 }
 func TestComponentSetInvalidVersion(t *testing.T) {
-	invalidApiVersionComponentSet := `
+  invalidApiVersionComponentSet := `
     apiVersion: 'zork.gke.io/v1alpha1'         // this should be bundle.gke.io/<version>
     kind: ComponentSet
     spec:
@@ -202,10 +202,10 @@ func TestComponentSetInvalidVersion(t *testing.T) {
       - componentName: foo-comp
         version: 1.0.2`
 
-	assertValidateComponentSet(invalidApiVersionComponentSet, 1, t)
+  assertValidateComponentSet(invalidApiVersionComponentSet, 1, t)
 }
 func TestComponentSetInvalidVersion2(t *testing.T) {
-	invalidVersionComponentSet := `
+  invalidVersionComponentSet := `
     apiVersion: 'bundle.gke.io/v1alpha1'
     kind: ComponentSet
     spec:
@@ -215,10 +215,10 @@ func TestComponentSetInvalidVersion2(t *testing.T) {
       - componentName: foo-comp
         version: 1.0.2`
 
-	assertValidateComponentSet(invalidVersionComponentSet, 1, t)
+  assertValidateComponentSet(invalidVersionComponentSet, 1, t)
 }
 func TestComponentSetMissingField(t *testing.T) {
-	missingFieldComponentSet := `
+  missingFieldComponentSet := `
     apiVersion: 'bundle.gke.io/v1alpha1'  // missing setName in spec
     kind: ComponentSet
     spec:
@@ -227,10 +227,10 @@ func TestComponentSetMissingField(t *testing.T) {
       - componentName: foo-comp
         version: 1.0.2`
 
-	assertValidateComponentSet(missingFieldComponentSet, 1, t)
+  assertValidateComponentSet(missingFieldComponentSet, 1, t)
 }
 func TestComponentSetInvalidKind(t *testing.T) {
-	invalidKindComponentSet := `
+  invalidKindComponentSet := `
     apiVersion: 'bundle.gke.io/v1alpha1'    // kind Zor is not ComponentSet
     kind: Zor
     spec:
@@ -240,16 +240,16 @@ func TestComponentSetInvalidKind(t *testing.T) {
       - componentName: foo-comp
         version: 1.0.2`
 
-	assertValidateComponentSet(invalidKindComponentSet, 1, t)
+  assertValidateComponentSet(invalidKindComponentSet, 1, t)
 }
 func TestComponentSetMultipleErrors(t *testing.T) {
-	componentSet := `			// missing apiVersion, kind
-    spec:	
+  componentSet := `      // missing apiVersion, kind
+    spec:  
     setName: zip
     version: 1.0.2
     components:
     - componentName: zap-comp
       version: 1.0.2`
 
-	assertValidateComponentSet(componentSet, 2, t)
+  assertValidateComponentSet(componentSet, 2, t)
 }
