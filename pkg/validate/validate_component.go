@@ -169,7 +169,6 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	return errs
 }
 
-
 func cPath(ref bundle.ComponentReference) *field.Path {
 	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
 }
