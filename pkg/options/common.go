@@ -23,14 +23,11 @@ import (
 type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts JSONOptions) (*unstructured.Unstructured, error)
 
 // ApplyCommon provides common functionality for applying options, deferring
-// the specific object handling logic.
-func ApplyCommon(comp *bundle.Component, opts JSONOptions, objFn ObjHandler) (*bundle.Component, error) {
-	comp = comp.DeepCopy()
-	ref := comp.ComponentReference()
-
-	// Construct the objects.
+// the specific object handling logic. The objects will be modified in-place;
+// the caller should copy them if needed.
+func ApplyCommon(ref bundle.ComponentReference, objs []*unstructured.Unstructured, opts JSONOptions, objFn ObjHandler) ([]*unstructured.Unstructured, error) {
 	var newObj []*unstructured.Unstructured
-	for _, obj := range comp.Spec.Objects {
+	for _, obj := range objs {
 		nob, err := objFn(obj, ref, opts)
 		if err != nil {
 			return nil, err
@@ -38,6 +35,5 @@ func ApplyCommon(comp *bundle.Component, opts JSONOptions, objFn ObjHandler) (*b
 		newObj = append(newObj, nob)
 	}
 
-	comp.Spec.Objects = newObj
-	return comp, nil
+	return newObj, nil
 }

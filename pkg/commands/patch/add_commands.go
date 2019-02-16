@@ -18,28 +18,32 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "patch",
 		Short: "Apply patch templates to component objects",
 		Long: "Apply patch templates to component objects. " +
 			"Options are usually applied to the templates before application.",
-		Run: cmdlib.ContextAction(ctx, action),
+		Run: cmdlib.ContextAction(ctx, fio, sio, action),
 	}
 
 	// Optional flags
 
 	// While options-file is technically optional, it is usually provided to
 	// detemplatize the patch templates.
-	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "",
-		"File containing options to apply to patch templates")
+	cmd.Flags().StringArrayVar(&opts.optionsFiles, "options-file", []string{},
+		"File containing options to apply to patch templates. May be repeated, later values override earlier ones.")
 
-	cmd.Flags().StringVarP(&opts.patchAnnotations, "patch-annotations", "", "",
-		"Select a subset of patches to apply based on a list of annotations of the form \"key1,val1;key2,val2;\"")
+	cmd.Flags().StringVar(&opts.patchAnnotations, "patch-annotations", "",
+		"Select a subset of patches to apply based on a list of annotations of the form \"key1=val1,key2=val2\"")
+
+	cmd.Flags().BoolVar(&opts.keepTemplates, "keep-templates", false,
+		"Do not remove templates that have been applied from the component.")
 
 	root.AddCommand(cmd)
 }

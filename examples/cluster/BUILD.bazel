@@ -1,0 +1,8 @@
+filegroup(
+    name = "testdata",
+    srcs = glob([
+        "**/*.yaml",
+        "**/*.txt",
+    ]),
+    visibility = ["//visibility:public"],
+)

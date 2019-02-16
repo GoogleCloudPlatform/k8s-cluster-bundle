@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validate
+package export
 
 import (
-	_ "github.com/go-openapi/spec"
-	_ "github.com/go-openapi/strfmt"
-	_ "github.com/go-openapi/validate"
-	_ "github.com/go-openapi/validate/post"
-	_ "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"context"
 
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/spf13/cobra"
 )
 
-// ValidateOptions validates options based on a schema.
-func ValidateOptions(opts options.JSONOptions, optSchema *apiext.JSONSchemaProps) error {
-	if optSchema == nil {
-		return nil
+// AddCommandsTo adds commands to a root cobra command.
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "export",
+		Short: "Exports all of the objects",
+		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
+		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
 	}
-	return nil
+
+	root.AddCommand(cmd)
 }

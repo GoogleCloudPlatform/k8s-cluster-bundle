@@ -15,20 +15,19 @@
 package converter
 
 import (
+	"io/ioutil"
 	"testing"
-
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
 func TestRealisticDataParse_BundleBuilder(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/cluster/bundle-builder-example.yaml")
+	b, err := ioutil.ReadFile("../../examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
 	dataFiles, err := FromYAML(b).ToBundleBuilder()
 	if err != nil {
-		t.Fatalf("Error calling ToBundle(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(dataFiles.ComponentFiles); l == 0 {
@@ -37,14 +36,14 @@ func TestRealisticDataParse_BundleBuilder(t *testing.T) {
 }
 
 func TestRealisticDataParse_ComponentSet(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/cluster/component-set.yaml")
+	b, err := ioutil.ReadFile("../../examples/cluster/component-set.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
 	cset, err := FromYAML(b).ToComponentSet()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentSet(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(cset.Spec.Components); l == 0 {
@@ -53,14 +52,14 @@ func TestRealisticDataParse_ComponentSet(t *testing.T) {
 }
 
 func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/component/etcd-component-builder.yaml")
+	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
 	comp, err := FromYAML(b).ToComponentBuilder()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(comp.ObjectFiles); l == 0 {
@@ -69,14 +68,14 @@ func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
 }
 
 func TestRealisticDataParse_Component(t *testing.T) {
-	b, err := testutil.ReadData("../../", "examples/component/etcd-component.yaml")
+	b, err := ioutil.ReadFile("../../examples/component/etcd-component.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
 
 	comp, err := FromYAML(b).ToComponent()
 	if err != nil {
-		t.Fatalf("Error calling ToComponentBuilder(): %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(comp.Spec.Objects); l == 0 {

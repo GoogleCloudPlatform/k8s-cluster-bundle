@@ -15,9 +15,10 @@
 package cmdlib
 
 import (
+	"context"
 	"os"
 
-	"context"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
@@ -30,14 +31,14 @@ func ExitWithHelp(cmd *cobra.Command, err string) {
 }
 
 // ContextActionFunc is a common type for providing a context to a Cobra function.
-type ContextActionFunc func(ctx context.Context, cmd *cobra.Command, args []string)
+type ContextActionFunc func(ctx context.Context, fio files.FileReaderWriter, sio StdioReaderWriter, cmd *cobra.Command, args []string)
 
 // CobraActionFunc provides a common type for all Cobra commands.
 type CobraActionFunc func(cmd *cobra.Command, args []string)
 
 // ContextAction returns a CobraActionFunc for a provided ContextActionFunc.
-func ContextAction(ctx context.Context, f ContextActionFunc) CobraActionFunc {
+func ContextAction(ctx context.Context, fio files.FileReaderWriter, sio StdioReaderWriter, f ContextActionFunc) CobraActionFunc {
 	return func(cmd *cobra.Command, args []string) {
-		f(ctx, cmd, args)
+		f(ctx, fio, sio, cmd, args)
 	}
 }

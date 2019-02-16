@@ -68,7 +68,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 		}
 		uns, err := converter.FromFileName(f.URL, contents).ToUnstructured()
 		if err != nil {
-			return nil, fmt.Errorf("error converting file %q to Unstructured: %v", f.URL, err)
+			return nil, err
 		}
 
 		kind := uns.GetKind()
@@ -76,13 +76,16 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 		case "Component":
 			c, err := converter.FromFileName(f.URL, contents).ToComponent()
 			if err != nil {
-				return nil, fmt.Errorf("error converting file %q to a component: %v", f.URL, err)
+				return nil, err
 			}
 			comps = append(comps, c)
 		case "ComponentBuilder":
 			c, err := converter.FromFileName(f.URL, contents).ToComponentBuilder()
 			if err != nil {
-				return nil, fmt.Errorf("error converting file %q to a component builder: %v", f.URL, err)
+				return nil, err
+			}
+			if c.GetName() == "" && data.ComponentNamePolicy == "SetAndComponent" {
+				c.ObjectMeta.Name = strings.Join([]string{data.SetName, data.Version, c.ComponentName, c.Version}, "-")
 			}
 			compbs = append(compbs, c)
 		default:
@@ -132,7 +135,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 				}
 				obj, err := converter.FromYAMLString(s).ToUnstructured()
 				if err != nil {
-					return nil, fmt.Errorf("error converting multi-doc object number %d for component %q in file %q", i, name, cf.URL)
+					return nil, fmt.Errorf("converting multi-doc object number %d for component %q, %v", i, name, err)
 				}
 				annot := obj.GetAnnotations()
 				if annot == nil {
@@ -145,7 +148,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		} else {
 			obj, err := converter.FromFileName(cf.URL, contents).ToUnstructured()
 			if err != nil {
-				return nil, fmt.Errorf("error converting object to unstructured for component %q in file %q", name, cf.URL)
+				return nil, fmt.Errorf("for component %q, %v", name, err)
 			}
 			annot := obj.GetAnnotations()
 			if annot == nil {
@@ -174,7 +177,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		m.cfgMap.ObjectMeta.Annotations[string(bundle.InlineTypeIdentifier)] = string(bundle.RawStringInline)
 		uns, err := m.toUnstructured()
 		if err != nil {
-			return nil, fmt.Errorf("error converting text object to unstructured for component %q and file group %q: %v", name, fgName, err)
+			return nil, fmt.Errorf("for component %q and file group %q, %v", name, fgName, err)
 		}
 		newObjs = append(newObjs, uns)
 	}

@@ -17,14 +17,12 @@ package patch
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/patchtmpl"
@@ -34,24 +32,25 @@ import (
 // options represents options flags for the filter command.
 type options struct {
 	// patchAnnotations selects a subset of patch templates to apply via annotations.
-	// Has the form "foo,bar;biff,baz".
+	// Has the form "foo=bar,biff=baz".
 	patchAnnotations string
 
-	// optionsFile contains yaml or json structured data containing options to
+	// optionsFiles contains yaml or json structured data containing options to
 	// apply to PatchTemplates
-	optionsFile string
+	optionsFiles []string
+
+	// If keepTemplates is true, PatchTemplates will not be stripped from
+	// the component objects.
+	keepTemplates bool
 }
 
 // opts is a global options instance for reference via the add commands.
 var opts = &options{}
 
-func action(ctx context.Context, cmd *cobra.Command, _ []string) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	rw := &files.LocalFileSystemReaderWriter{}
-	brw := cmdlib.NewBundleReaderWriter(
-		rw,
-		&cmdlib.RealStdioReaderWriter{})
-	if err := run(ctx, opts, brw, rw, gopt); err != nil {
+	brw := cmdlib.NewBundleReaderWriter(fio, sio)
+	if err := run(ctx, opts, brw, fio, gopt); err != nil {
 		log.Exit(err)
 	}
 }
@@ -62,33 +61,13 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	optData := make(map[string]interface{})
-	if o.optionsFile != "" {
-		bytes, err := rw.ReadFile(ctx, o.optionsFile)
-		if err != nil {
-			return err
-		}
-		optData, err = converter.FromFileName(o.optionsFile, bytes).ToJSONMap()
-		if err != nil {
-			return err
-		}
+	optData, err := cmdlib.MergeOptions(ctx, rw, o.optionsFiles)
+	if err != nil {
+		return err
 	}
 
-	fopts := &filter.Options{}
-	if o.patchAnnotations != "" {
-		// TODO(kashomon): make a helper for this in bundleio
-		m := make(map[string]string)
-		splat := strings.Split(o.patchAnnotations, ";")
-		for _, v := range splat {
-			kv := strings.Split(v, ",")
-			if len(kv) == 2 {
-				m[kv[0]] = kv[1]
-			}
-		}
-		fopts.Annotations = m
-	}
-
-	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts)
+	fopts := &filter.Options{Annotations: cmdlib.ParseStringMap(o.patchAnnotations)}
+	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts, o.keepTemplates)
 
 	switch bw.Kind() {
 	case "Component":

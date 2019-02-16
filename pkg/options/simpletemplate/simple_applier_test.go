@@ -41,7 +41,7 @@ spec:
 func TestSimpleApplier(t *testing.T) {
 	comp, err := converter.FromYAMLString(component).ToComponent()
 	if err != nil {
-		t.Fatalf("Error converting component to yaml: %v", err)
+		t.Fatal(err)
 	}
 
 	usedParams := map[string]interface{}{
@@ -124,7 +124,7 @@ spec:
 func TestSimpleApplier_MultiItems(t *testing.T) {
 	comp, err := converter.FromYAMLString(multiComponent).ToComponent()
 	if err != nil {
-		t.Fatalf("Error converting component to yaml: %v", err)
+		t.Fatal(err)
 	}
 
 	usedParams := map[string]interface{}{

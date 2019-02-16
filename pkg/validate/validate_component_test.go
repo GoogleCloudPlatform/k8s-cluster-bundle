@@ -250,34 +250,3 @@ func TestComponentSetMultipleErrors(t *testing.T) {
 
 	assertValidateComponentSet(componentSet, 2, t)
 }
-
-// Components in relation to ComponentSets
-/*
-
-
-		{
-			desc: "object fail: duplicate",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-    objects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: foo-pod
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: foo-pod`,
-			errSubstring: "object reference",
-		},
-	}
-
-**/

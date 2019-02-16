@@ -1,0 +1,9 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+componentName: helloweb
+version: 0.1.0
+objectFiles:
+- url: deployment-patch-builder.yaml
+- url: service-patch.yaml
+- url: helloweb-deployment.yaml
+- url: helloweb-service-clusterip.yaml

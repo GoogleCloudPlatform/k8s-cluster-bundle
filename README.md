@@ -9,40 +9,52 @@ we package and release Kubernetes software. It was created by the Google
 Kubernetes team, and was developed based on our experience managing Kubernetes
 clusters and applications at scale in both GKE and GKE On-Prem.
 
-It is currently experimental and will have likely have frequent, breaking
-changes for a while until the API settles down.
+It is currently experimental (Pre-Alpha) and will have frequent, breaking
+changes until the API settles down.
 
-## An Introduction to Packaging in the Cluster Bundle
+## Installation
 
-Packaging in the cluster bundle revolves around a new type, called the
-Component:
+Most users will interact with Cluster Bundle objects via the command line
+interface `bundlectl`.
 
-* **Component**: A versioned collection of Kubernetes objects. This
-  should correspond to a logical application.
-* **Component Set**: A set of references to Components.
+To install, run:
+
+```shell
+go install github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl
+```
+
+## Packaging in the Cluster Bundle
+
+Packaging in Cluster Bundle revolves around a new type, called the `Component`:
+
+* **Component**: A versioned collection of Kubernetes objects. This should
+  correspond to a logical application. For example, we might imagine
+  components for each of Etcd, Istio, KubeProxy, and CoreDNS.
+* **ComponentBuilder**: An intermediate type that allows for easier creation of
+  component objects.
+* **ComponentSet**: A set of references to components.
 
 The Cluster Bundle APIs are minimal and focused on the problem of packaging
-Kubernetes objects into a single container. In particular, they are designed to
-represent Kubernetes components without worrying about deployment.  It is
-assumed that external deployment mechanisms like a command line interface or a
-deployment controller will consume the components and apply the components to a
-cluster.
+Kubernetes objects into a single unit. It is assumed that some external
+deployment mechanisms like a command line interface or an in-cluster controller
+will consume the components and apply the Kubernetes objects in the component to
+a cluster.
 
-### Components
+## Components
 
-In the wild, components look like the following:
+Here's how you might use the Component type to represent Etcd:
 
 ```yaml
 apiVersion: bundle.gke.io/v1alpha1
 kind: Component
 spec:
 
-  # A human readable name for the component. The combination of name + version
-  # should be unique in a cluster.
+  # A human readable name for the component.
   componentName: etcd-component
 
-  # Version of the component, representing any and all changes to the included
-  # object manifests.
+  # SemVer version for the component representing any and all changes to the
+  # component or included object manifests. This should not be tied to the
+  # application version.
   version: 30.0.2
 
   # A list of included Kubernetes objects.
@@ -59,28 +71,22 @@ spec:
         - -c
         - |
           exec /usr/local/bin/etcd
-    # and so on
+    # ... and so on
 ```
 
-Some notes about Components:
+Some notes about components:
 
-- Components must be named with a canonical component name.
-- Components must have a version field that indicates the precise version of
-  the component. Any time any change is made to the component, the version
-  should update.
-- The combination of the canonical component name + the version should be
-  unique for a component.
-- Objects must be Kubernetes objects -- they must have apiversion, kind, and
-  metadata. Other than that, there are no restrictions on what objects can be
+- Components have a name and version. The pair of these should be a unique
+  identifier for the component.
+- Objects must be Kubernetes objects -- they must have `apiVersion`, `kind`, and
+  `metadata`. Other than that, there are no restrictions on what objects can be
   contained in a component.
 
-You can see more about components in the [APIs directory]
-(https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/tree/master/pkg/apis/bundle/v1alpha1)
+You can see more about examples of components in the [examples directory](https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/tree/master/examples).
 
-## Component Building
+### Building
 
-To make it easier to create components, the Cluster Bundle provides builder
-types that allow users to inline
+To make it easier to create components, you can use the `ComponentBuilder` type:
 
 ```yaml
 apiVersion: bundle.gke.io/v1alpha1
@@ -95,12 +101,17 @@ objectFiles:
 - url: file:///etcd-server.yaml
 ```
 
-All cluster objects can be *inlined*, which means they are imported directly
-into the component, which allows the component package to hermetically describe
-the component.
+ComponentBuilders can be built into Components with:
 
-Additionally, raw text can be imported into a component package. When inlined,
-this text is converted into a config map and then added to the objects list:
+```shell
+bundlectl build --input-file=my-component.yaml
+```
+
+During `build`, objects are inlined, which means they are imported directly
+into the component.
+
+Raw-text can also be imported into a component. When inlined, this text is
+converted into a ConfigMap and then added to the objects list:
 
 ```yaml
 apiVersion: bundle.gke.io/v1alpha1
@@ -114,98 +125,110 @@ spec:
     - url: file:///some-data.txt
 ```
 
-Builder objects can be built using `bundlectl build --input-file=my-component.yaml`
+### Patching
 
-### ComponentSets
+The Cluster Bundle library provides a new type called the `PatchTemplate` to
+perform [Kustomize-style](https://github.com/kubernetes-sigs/kustomize) patching
+to objects in component.
 
-Component Sets are collections of references to components, which makes it
-possible publish, validate, and deploy components as a single unit.
+For example, if you had the following PatchTemplate in the component
 
 ```yaml
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplate
+template: |
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    namespace: {{.namespace}}
+```
+
+and the following Kubernetes object:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd-server
 spec:
-  version: 2.3.4
-
-  components:
-  - componentName: etcd-server
-    version: 30.0.2
-  - componentName: data-blob
-    version: 0.1.0
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - |
+      exec /usr/local/bin/etcd
+  # etc...
 ```
 
-## Bundle CLI (bundlectl)
-
-`bundlectl` is the name for the command line interface and is the
-standard way for interacting with components and component sets
-
-Install with `go install
-github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl`
-
-### Validation
-
-Components and ComponentSets have various constraints that must be validated.
-For functions in the library to work, the components are generalled assumed to
-have already been validated. For the ease of validating collections of
-components, the Bundle CLI knows about a type called `ComponentData` and has the
-form:
+and the following options YAML file:
 
 ```yaml
-componentFiles:
-- url: <component>
+namespace: foo-namespace
 ```
 
-And so, in the examples directory, you will see:
+Running the `bundlectl` command like so:
+
+```shell
+bundlectl patch --input-file=etcd-component.yaml --options-file=options.yaml
+```
+
+would produce:
 
 ```yaml
-componentFiles:
-- url: file:///etcd/etcd-component.yaml
-- url: file:///nodes/nodes-component.yaml
-- url: file:///kubernetes/kubernetes-component.yaml
-- url: file:///kubedns/kubedns-component.yaml
-- url: file:///kubeproxy/kube-proxy-component.yaml
-- url: file:///datablob/data-blob-component.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd-server
+  namespace: foo-namespace
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - |
+      exec /usr/local/bin/etcd
+  # etc...
 ```
 
-To validate component data, run:
-
-```
-bundlectl validate -f <component-data>
-```
-
-### Inlining
-
-Inlining pulls files from the various URLs and imports the contents directly
-into the component. To inline component data, run:
-
-```
-bundlectl inline -f <component-data>
-```
+For more examples of Patching and Patch-Building, see the
+[examples directory](https://github.com/GoogleCloudPlatform/k8s-cluster-bundle/tree/master/examples).
 
 ### Filtering
 
-Filtering allows removal of components and objects from the bundle.
+Filtering removes objects from a component.
 
-```
+```shell
 # Filter all config map objects
-bundlectl filter -f <component-data> --kind=ConfigMap
+bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap
 
 # Keep only config map objects.
-bundlectl filter -f <component-data> --kind=ConfigMap --keep-only
+bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap --keep-only
 ```
+
+## Public APIs and Compatibility.
+
+During pre-Alpha and Alpha, breaking changes may happen in any of the types in
+`pkg/apis`, the `bundlectl` CLI, or the Go APIs (methods, structs, interfaces
+not in `pkg/apis`).
+
+During Beta, backwards incompatible breaking changes in the `bundlectl` and the
+`pkg/apis` directory will only happy during Major version boundaries.
+
+The Go APIs are not covered by any compatibility guarantee and can break in
+backwards incompatible ways during any release.
 
 ## Development
 
 ### Directory Structure
 
-This directory should follow the structure the standard Go package layout
-specified in https://github.com/golang-standards/project-layout
+This directory follows a layout similar to other Kubernetes projects.
 
 *   `pkg/`: Library code.
-*   `examples/`: Examples of components and component packages.
 *   `pkg/apis`: APIs and schema for the Cluster Bundle.
-*   `cmd/`: Binaries. In particular, this contains the `bundler` CLI which
-    assists in modifying and inspecting Bundles.
+*   `pkg/client`: Generated client for the Cluster Bundle types.
+*   `config/crds`: Generated CRDs for the ClusterBundle types.
+*   `examples/`: Examples of components
+*   `cmd/`: Binaries. This contains the `bundlectl` CLI tool.
 
 ### Building and Testing
 
@@ -221,7 +244,7 @@ To run the unit tests, run
 bazel test ...
 ```
 
-Or, it should work fine to use the `go` command
+It should also work to use the `go` command:
 
 ```shell
 go test ./...
@@ -239,10 +262,18 @@ bazel run //:gazelle
 ### Regenerate Generated Code
 
 We rely heavily on Kubernetes code generation. To regenerate the code,
-run: 
+run:
 
 ```shell
 hacke/update-codegen.sh
 ```
 
 If new files are added, will to re-run Gazelle (see above).
+
+### Prow
+
+If the prow-jobs need to be updated, see:
+
+* Cluster Bundle Prow Jobs
+  * [historical, pinned](https://github.com/kubernetes/test-infra/blob/1f003d3e1d7aecad6e16fd08e9d0253df9033f20/config/jobs/GoogleCloudPlatform/k8s-cluster-bundle/k8s-cluster-bundle.yaml)
+  * [master](https://github.com/kubernetes/test-infra/blob/master/config/jobs/GoogleCloudPlatform/k8s-cluster-bundle/k8s-cluster-bundle.yaml)
