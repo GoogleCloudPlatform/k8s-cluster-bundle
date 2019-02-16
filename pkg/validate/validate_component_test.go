@@ -22,9 +22,9 @@ import (
 // COMPONENT TESTS
 func assertValidateComponent(componentString string, numErrors int, t *testing.T) {
 	component, errParse := converter.FromYAMLString(componentString).ToComponent()
-  if errParse != nil {
-    t.Fatalf("parse error: %v", errParse)
-  }
+	if errParse != nil {
+		t.Fatalf("parse error: %v", errParse)
+	}
 	errs := Component(component)
 	numErrorsActual := len(errs)
 	if numErrorsActual != numErrors {
@@ -72,8 +72,8 @@ func TestComponentVersionDotNotationAppVersion(t *testing.T) {
 	assertValidateComponent(component, 0, t)
 }
 
-func TestComponentRequiresKind(t *testing.T){
-component := `     // no kind field
+func TestComponentRequiresKind(t *testing.T) {
+	component := `     // no kind field
   apiVersion: 'bundle.gke.io/v1alpha1'
   metadata:
     name: foo-comp-1.0.2
@@ -81,7 +81,7 @@ component := `     // no kind field
     componentName: foo-comp
     version: 1.0.2`
 
-  assertValidateComponent(component, 1, t)
+	assertValidateComponent(component, 1, t)
 }
 func TestComponentXYZAppVersion(t *testing.T) {
 	component := `
@@ -93,7 +93,7 @@ func TestComponentXYZAppVersion(t *testing.T) {
       componentName: foo-comp
       version: 2.10.1
       appVersion: 3.10.32-blah.0` // invalid
-      
+
 	assertValidateComponent(component, 0, t)
 }
 func TestComponentSetInvalidVersion3(t *testing.T) {
@@ -167,15 +167,15 @@ func TestComponentMissingName(t *testing.T) {
 
 // Component Set Tests
 func assertValidateComponentSet(componentSetString string, numErrors int, t *testing.T) {
-  componentSet, errParse := converter.FromYAMLString(componentSetString).ToComponentSet()
-  if errParse != nil {
-    t.Fatalf("parse error: %v", errParse)
-  }
-  errs := ComponentSet(componentSet)
-  numErrorsActual := len(errs)
-  if numErrorsActual != numErrors {
-    t.Fatalf("expected %v errors got %v:  %v", numErrors, numErrorsActual, errs)
-  }
+	componentSet, errParse := converter.FromYAMLString(componentSetString).ToComponentSet()
+	if errParse != nil {
+		t.Fatalf("parse error: %v", errParse)
+	}
+	errs := ComponentSet(componentSet)
+	numErrorsActual := len(errs)
+	if numErrorsActual != numErrors {
+		t.Fatalf("expected %v errors got %v:  %v", numErrors, numErrorsActual, errs)
+	}
 }
 
 func TestComponentSet(t *testing.T) {

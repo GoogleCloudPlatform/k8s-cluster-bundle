@@ -47,7 +47,6 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
-
 // Component validates a single component.
 func Component(c *bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
@@ -95,6 +94,7 @@ func Component(c *bundle.Component) field.ErrorList {
 
 	return errs
 }
+
 // ComponentObjects validates objects in a componenst.
 func componentObjects(cp *bundle.Component) field.ErrorList {
 	// Map to catch duplicate objects.
