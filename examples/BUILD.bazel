@@ -1,9 +1,9 @@
 filegroup(
     name = "testdata",
     srcs = [
-      "//examples/cluster:testdata",
-      "//examples/component:testdata",
-      "//examples/patchbuilder:testdata",
+        "//examples/cluster:testdata",
+        "//examples/component:testdata",
+        "//examples/patchbuilder:testdata",
     ],
     visibility = ["//visibility:public"],
 )
