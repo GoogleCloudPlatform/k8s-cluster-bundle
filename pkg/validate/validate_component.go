@@ -77,6 +77,7 @@ func Component(c *bundle.Component) field.ErrorList {
 	}
 
 	expType := "Component"
+
 	if k := c.Kind; k != expType {
 		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be Component"))
 	}
@@ -84,12 +85,15 @@ func Component(c *bundle.Component) field.ErrorList {
 	if !versionPattern.MatchString(ver) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
 	}
+
 	if c.Spec.AppVersion != "" && !appVersionPattern.MatchString(c.Spec.AppVersion) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
 
-	if err := componentObjects(c); err != nil {
-		errs = append(err)
+	if componentErrs := componentObjects(c); componentErrs != nil {
+		for _, componentErr := range(componentErrs) {
+			errs = append(errs, componentErr)
+		}
 	}
 
 	return errs

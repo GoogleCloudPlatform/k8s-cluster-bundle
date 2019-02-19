@@ -28,10 +28,9 @@ func assertValidateComponent(componentString string, numErrors int, t *testing.T
   errs := Component(component)
   numErrorsActual := len(errs)
   if numErrorsActual != numErrors {
-    t.Fatalf("expected %v errors got %v", numErrors, numErrorsActual)
+    t.Fatalf("expected %v errors got %v,  errors: %v", numErrors, numErrorsActual, errs)
   }
 }
-
 func TestComponent(t *testing.T) {
   component := `
     apiVersion: bundle.gke.io/v1alpha1
@@ -42,7 +41,7 @@ func TestComponent(t *testing.T) {
       version: 30.0.2
       componentName: etcd-component`
 
-  assertValidateComponent(defaultComponent, 0, t)
+  assertValidateComponent(component, 0, t)
 
 }
 func TestComponentNoRefs(t *testing.T) {
@@ -56,7 +55,7 @@ func TestComponentNoRefs(t *testing.T) {
       version: 2.10.1
       appVersion: 3.10.1`
 
-  assertValidateComponent(defaultComponentNoRefs, 0, t)
+  assertValidateComponent(component, 0, t)
 }
 func TestComponentVersionDotNotationAppVersion(t *testing.T) {
   component := `
@@ -73,7 +72,7 @@ func TestComponentVersionDotNotationAppVersion(t *testing.T) {
 }
 
 func TestComponentRequiresKind(t *testing.T) {
-  component := `     // no kind field
+  component := `     # no kind field
   apiVersion: 'bundle.gke.io/v1alpha1'
   metadata:
     name: foo-comp-1.0.2
@@ -116,7 +115,7 @@ func TestComponentAppVersion(t *testing.T) {
       name: foo-comp-1.0.2
     spec:
       componentName: foo-comp
-      version: 2.10.1,
+      version: 2.10.1
       appVersion: 2.010.1` // must be of the form X.Y.Z
 
   assertValidateComponent(component, 1, t)
@@ -193,7 +192,7 @@ func TestComponentSet(t *testing.T) {
 }
 func TestComponentSetInvalidVersion(t *testing.T) {
   invalidApiVersionComponentSet := `
-    apiVersion: 'zork.gke.io/v1alpha1'         // this should be bundle.gke.io/<version>
+    apiVersion: 'zork.gke.io/v1alpha1'         # this should be bundle.gke.io/<version>
     kind: ComponentSet
     spec:
       setName: zip
@@ -210,7 +209,7 @@ func TestComponentSetInvalidVersion2(t *testing.T) {
     kind: ComponentSet
     spec:
       setName: zip
-      version: foo              // invalid version string, must be of form X.Y.Z
+      version: foo              # invalid version string, must be of form X.Y.Z
       components:
       - componentName: foo-comp
         version: 1.0.2`
@@ -219,7 +218,7 @@ func TestComponentSetInvalidVersion2(t *testing.T) {
 }
 func TestComponentSetMissingField(t *testing.T) {
   missingFieldComponentSet := `
-    apiVersion: 'bundle.gke.io/v1alpha1'  // missing setName in spec
+    apiVersion: 'bundle.gke.io/v1alpha1'  # missing setName in spec
     kind: ComponentSet
     spec:
       version: 1.0.2
@@ -231,7 +230,7 @@ func TestComponentSetMissingField(t *testing.T) {
 }
 func TestComponentSetInvalidKind(t *testing.T) {
   invalidKindComponentSet := `
-    apiVersion: 'bundle.gke.io/v1alpha1'    // kind Zor is not ComponentSet
+    apiVersion: 'bundle.gke.io/v1alpha1'    # kind Zor is not ComponentSet
     kind: Zor
     spec:
       setName: zip
@@ -243,13 +242,13 @@ func TestComponentSetInvalidKind(t *testing.T) {
   assertValidateComponentSet(invalidKindComponentSet, 1, t)
 }
 func TestComponentSetMultipleErrors(t *testing.T) {
-  componentSet := `      // missing apiVersion, kind
+  componentSet := `      # missing apiVersion, kind
     spec:  
-    setName: zip
-    version: 1.0.2
-    components:
-    - componentName: zap-comp
-      version: 1.0.2`
+      setName: zip
+      version: 1.0.2
+      components:
+      - componentName: zap-comp
+        version: 1.0.2`
 
   assertValidateComponentSet(componentSet, 2, t)
 }
