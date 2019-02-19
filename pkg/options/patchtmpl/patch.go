@@ -42,27 +42,28 @@ type applier struct {
 	// component objects.
 	includeTemplates bool
 
-	// Set the template missing key policy
-	missingKey string
+	// Set the template options
+	templateOpts []string
 }
 
 // NewApplier creates a new options applier instance. The filter indicates
 // keep-only options for what subsets of patches to look for.
-func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool, missingKey string) options.Applier {
-	if missingKey == "" {
-		missingKey = "error"
+func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool, templateOpts ...string) options.Applier {
+	if templateOpts == nil || len(templateOpts) == 0 {
+		templateOpts = []string{options.MissingKeyError}
 	}
+
 	return &applier{
 		scheme:           pt,
 		tmplFilter:       opts,
 		includeTemplates: includeTemplates,
-		missingKey:       missingKey,
+		templateOpts:     templateOpts,
 	}
 }
 
 // NewDefaultApplier creates a default patch template applier.
 func NewDefaultApplier() options.Applier {
-	return NewApplier(DefaultPatcherScheme(), nil, false, "error")
+	return NewApplier(DefaultPatcherScheme(), nil, false)
 }
 
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
@@ -127,7 +128,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
 		}
 
-		tmpl = tmpl.Option("missingkey=" + a.missingKey)
+		tmpl = tmpl.Option(a.templateOpts...)
 
 		newOpts := opts
 		if pto.OptionsSchema != nil {

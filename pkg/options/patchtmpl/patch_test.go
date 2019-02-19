@@ -454,7 +454,7 @@ spec:
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			patcher := NewApplier(DefaultPatcherScheme(), tc.customFilter, !tc.removeTemplates, "error")
+			patcher := NewApplier(DefaultPatcherScheme(), tc.customFilter, !tc.removeTemplates)
 
 			compObj, err := converter.FromYAMLString(tc.component).ToComponent()
 			if err != nil {
