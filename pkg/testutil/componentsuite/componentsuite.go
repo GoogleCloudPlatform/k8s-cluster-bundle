@@ -35,7 +35,7 @@ import (
 )
 
 // Run runs a component-tester test-suite. testSuiteFile specifies the path to
-// the current file.
+// the a component-test-suite YAML file.
 //
 // By default, go runs tests with the cwd being the current directory.
 func Run(t *testing.T, testSuiteFile string) {

@@ -36,13 +36,15 @@ type TestCase struct {
 	// Description of the test.
 	Description string `json:description`
 
-	// Build parameters
+	// Build contains parameters for the build-phase. This is roughly equivalent
+	// to 'bundlectl build'
 	Build Build `json:build`
 
-	// Options-apply Parameters
+	// Apply contains parameters for the apply-phase. This is roughly equivalent
+	// to 'bundlectl apply'
 	Apply Apply `json:apply`
 
-	// Expectations to check
+	// Expect contains expectations to check against.
 	Expect Expect `json:expect`
 }
 
@@ -80,7 +82,7 @@ type Expect struct {
 	ApplyErrSubstr string `json:applyErrSubstr`
 }
 
-// ObjectCheck contains checks for an objects. Kind, and Name are used to find
+// ObjectCheck contains checks for a specific Object. Kind, and Name are used to find
 // objects. Expects exactly one object to match.
 type ObjectCheck struct {
 	// Kind of the objects (required).
@@ -89,11 +91,11 @@ type ObjectCheck struct {
 	// Name of the objects (required).
 	Name string `json:name`
 
-	// FindSubstrs contains a list of substrings that are expecetd to be found in
-	// the object.
+	// FindSubstrs contains a list of substrings that are expected to be found in
+	// the object after the apply-phase.
 	FindSubstrs []string `json:findSubstrs`
 
 	// NotFindSubstrs contains a list of substrings that are not expecetd to be
-	// found in the object
+	// found in the object after the apply-phase.
 	NotFindSubstrs []string `json:notFindSubstrs`
 }
