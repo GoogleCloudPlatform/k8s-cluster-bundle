@@ -123,7 +123,8 @@ func runApply(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Compon
 	applier := patchtmpl.NewApplier(
 		patchtmpl.DefaultPatcherScheme(),
 		applyOpts,
-		true /* includeTemplates, for debugging */)
+		true /* includeTemplates, for debugging */,
+		"error")
 
 	comp, err := applier.ApplyOptions(comp, tc.Apply.Options)
 	cerr := testutil.CheckErrorCases(err, tc.Expect.ApplyErrSubstr)

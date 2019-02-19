@@ -67,7 +67,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 	}
 
 	fopts := &filter.Options{Annotations: cmdlib.ParseStringMap(o.patchAnnotations)}
-	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts, o.keepTemplates)
+	applier := patchtmpl.NewApplier(patchtmpl.DefaultPatcherScheme(), fopts, o.keepTemplates, "error")
 
 	switch bw.Kind() {
 	case "Component":

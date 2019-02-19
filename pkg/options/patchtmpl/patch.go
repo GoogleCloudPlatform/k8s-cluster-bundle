@@ -41,21 +41,28 @@ type applier struct {
 	// If includeTemplates is true, applied patch templates will be included in the
 	// component objects.
 	includeTemplates bool
+
+	// Set the template missing key policy
+	missingKey string
 }
 
 // NewApplier creates a new options applier instance. The filter indicates
 // keep-only options for what subsets of patches to look for.
-func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool) options.Applier {
+func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool, missingKey string) options.Applier {
+	if missingKey == "" {
+		missingKey = "error"
+	}
 	return &applier{
 		scheme:           pt,
 		tmplFilter:       opts,
 		includeTemplates: includeTemplates,
+		missingKey:       missingKey,
 	}
 }
 
 // NewDefaultApplier creates a default patch template applier.
 func NewDefaultApplier() options.Applier {
-	return NewApplier(DefaultPatcherScheme(), nil, false)
+	return NewApplier(DefaultPatcherScheme(), nil, false, "error")
 }
 
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
@@ -120,8 +127,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
 		}
 
-		// TODO(kashomon): Should this be configurable? This seems like the safest option.
-		tmpl = tmpl.Option("missingkey=error")
+		tmpl = tmpl.Option("missingkey=" + a.missingKey)
 
 		newOpts := opts
 		if pto.OptionsSchema != nil {
