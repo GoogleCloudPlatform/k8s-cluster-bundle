@@ -50,9 +50,7 @@ func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWrit
 		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-
 	bundleType := bw.Kind()
-
 	if bundleType == "Component" {
 		errs := validate.Component(bw.Component())
 		if len (errs) > 0 {
