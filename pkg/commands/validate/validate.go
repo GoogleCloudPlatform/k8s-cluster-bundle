@@ -20,9 +20,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
-	//"k8s.io/apimachinery/pkg/util/validation/field"
 
-	//bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
