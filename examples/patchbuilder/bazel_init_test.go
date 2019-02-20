@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package patchbuilder
+package patchbuilder_test
 
 import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
