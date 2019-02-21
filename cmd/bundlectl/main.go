@@ -22,7 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
 )
 
-var BUNDLECTL_VERSION string
+var BUNDLECTL_VERSION string       // This value gets statically set in go compilation.  See the bazel rules. 
 
 func main() {
 	if (BUNDLECTL_VERSION == ""){

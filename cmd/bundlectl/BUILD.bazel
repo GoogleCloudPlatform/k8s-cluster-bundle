@@ -13,5 +13,5 @@ go_binary(
     name = "bundlectl",
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
-    x_defs = {"main.BUNDLECTL_VERSION": VERSION},  # This is basically a go linker flag that inserts this value.
+    x_defs = {"main.BUNDLECTL_VERSION": VERSION},  # Links the version value into the binary
 )
