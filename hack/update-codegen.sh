@@ -17,9 +17,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# The release-1.10 version of the tooling appears to work the best, although
+# The release-1.11 version of the tooling appears to work the best, although
 # there are some mismatches since the kube-apimachinery version is set to 1.9.
-K8S_VERSION="release-1.10"
+K8S_VERSION="release-1.11"
 
 command -v deepcopy-gen >/dev/null 2>&1 || {
   pt1="Error: deepcopy-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
@@ -66,8 +66,6 @@ client-gen --clientset-name=versioned \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
-# TODO(#115): Because we're using apimachinery at 1.9 and tools at 1.10, it
-# means that there are some breakages that need to be fixed up.
 clientsetpattern="*clientset_generated.go"
 files=$(find ./pkg/clientset -type f -name *.go)
 for f in $files
@@ -76,21 +74,9 @@ do
   # Not using sed -i because darwin / bash have different behaviors for -i =(
 
   # TODO(#115): Replace googlecloudplatform with GoogleCloudPlatform. This is
-  # fixed with controller-tools >= release-1.11.
+  # fixed with controller-tools >= release-1.12 (?)
   sed $'s/googlecloudplatform/GoogleCloudPlatform/' $f > $f.t
   mv $f.t $f
-
-  # TODO(#115): These issues are caused because we controller tools at 1.10 and
-  # apimachinery/client-go at 1.9.
-  if [[ $f == $clientsetpattern ]]; then
-    # Watch is not supported in testing.ObjectTracker in 1.9
-    sed '/fakePtr.AddWatchReactor/{N;N;N;N;N;N;N;N;N;d;}' $f > $f.t
-    mv $f.t $f
-
-    # remove the import
-    sed '/"k8s\.io\/apimachinery\/pkg\/watch"/d' $f > $f.t
-    mv $f.t $f
-  fi
 done
 
 # Relies on ../PROJECT file
