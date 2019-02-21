@@ -111,7 +111,7 @@ zorp: zip
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			m := &Muxer{
+			m := &Decoder{
 				data:               []byte(tc.data),
 				allowUnknownFields: tc.allowUnknownFields,
 				format:             tc.format,

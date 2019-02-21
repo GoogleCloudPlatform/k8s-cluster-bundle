@@ -39,6 +39,13 @@ spec:
                 type: string
             type: object
           type: array
+        componentNamePolicy:
+          description: ComponentNamePolicy defines how to generate the metadata.name
+            for a Component or ComponentBuilder that does not already have one.  -
+            SetAndComponent generates a name from the set name and version and    component
+            name and version.  - Component (default) generates a name from the component
+            name and version
+          type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client

@@ -25,10 +25,11 @@ import (
 
 func TestPatch(t *testing.T) {
 	testCases := []struct {
-		desc         string
-		component    string
-		opts         map[string]interface{}
-		customFilter *filter.Options
+		desc            string
+		component       string
+		opts            map[string]interface{}
+		customFilter    *filter.Options
+		removeTemplates bool
 
 		expMatchSubstrs   []string
 		expNoMatchSubstrs []string
@@ -48,6 +49,20 @@ spec:
 			expMatchSubstrs: []string{"namespace: foo"},
 		},
 		{
+			desc: "success: no patch, with remove",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      namespace: foo
+`,
+			expMatchSubstrs: []string{"namespace: foo"},
+			removeTemplates: true,
+		},
+		{
 			desc: "success: patch, no options",
 			component: `
 kind: Component
@@ -64,6 +79,24 @@ spec:
 			expMatchSubstrs: []string{"metadata:\n      namespace: foo"},
 		},
 		{
+			desc: "success: patch, no options, remove",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    template: |
+      kind: Pod
+      metadata:
+        namespace: foo
+`,
+			removeTemplates:   true,
+			expMatchSubstrs:   []string{"metadata:\n      namespace: foo"},
+			expNoMatchSubstrs: []string{"PatchTemplate"},
+		},
+		{
 			desc: "success: patch, basic options",
 			opts: map[string]interface{}{
 				"Name": "zed",
@@ -75,6 +108,27 @@ spec:
   - apiVersion: v1
     kind: Pod
   - kind: PatchTemplate
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+`,
+			expMatchSubstrs: []string{"namespace: zed"},
+		},
+		{
+			desc: "success: patch, basic options with default",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    optionsSchema:
+      properties:
+        Name:
+          type: string
+          default: zed
     template: |
       kind: Pod
       metadata:
@@ -248,6 +302,44 @@ spec:
 			expNoMatchSubstrs: []string{"namespace: zed"},
 		},
 		{
+			desc: "success: two patches, one object: filtered, with removal",
+			opts: map[string]interface{}{
+				"Name":  "zed",
+				"Annot": "bar",
+			},
+			customFilter: &filter.Options{
+				Annotations: map[string]string{
+					"phase": "build",
+				},
+			},
+			removeTemplates: true,
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      namespace: derp
+  - kind: PatchTemplate
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+  - kind: PatchTemplate
+    metadata:
+      annotations:
+        phase: build
+    template: |
+      kind: Pod
+      metadata:
+        annotations:
+          fooAnnot: {{.Annot}}
+`,
+			expMatchSubstrs:   []string{"namespace: derp", "fooAnnot: bar", "{{.Name}}"},
+			expNoMatchSubstrs: []string{"namespace: zed", "phase: build"},
+		},
+		{
 			desc: "success: patch, basic options, rely on strategic-merge patch schema",
 			opts: map[string]interface{}{
 				"Name": "zed",
@@ -362,7 +454,7 @@ spec:
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			patcher := NewApplier(DefaultPatcherScheme(), tc.customFilter)
+			patcher := NewApplier(DefaultPatcherScheme(), tc.customFilter, !tc.removeTemplates)
 
 			compObj, err := converter.FromYAMLString(tc.component).ToComponent()
 			if err != nil {

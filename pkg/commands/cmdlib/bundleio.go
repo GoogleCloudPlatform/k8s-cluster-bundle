@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/golang/glog"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
 
@@ -201,4 +203,42 @@ func formatFromFile(path string) string {
 		return "json"
 	}
 	return ""
+}
+
+// ParseStringMap parses a CLI flag value into a map of string to string. It
+// expects the raw flag value to have the form "key1=value1,key2=value2,etc".
+func ParseStringMap(p string) map[string]string {
+	if p == "" {
+		return nil
+	}
+
+	m := make(map[string]string)
+	splat := strings.Split(p, ",")
+	for _, v := range splat {
+		kv := strings.Split(v, "=")
+		if len(kv) == 2 {
+			m[kv[0]] = kv[1]
+		}
+	}
+	return m
+}
+
+// MergeOptions reads multiple options files and combines them into a single map.
+// Option values will be overwritten if a later file has the same key.
+func MergeOptions(ctx context.Context, rw files.FileReaderWriter, files []string) (options.JSONOptions, error) {
+	optData := make(map[string]interface{})
+	for _, f := range files {
+		bytes, err := rw.ReadFile(ctx, f)
+		if err != nil {
+			return nil, err
+		}
+		data, err := converter.FromFileName(f, bytes).ToJSONMap()
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range data {
+			optData[k] = v
+		}
+	}
+	return optData, nil
 }

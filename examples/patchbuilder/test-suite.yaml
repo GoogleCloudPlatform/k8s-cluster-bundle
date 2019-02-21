@@ -1,0 +1,57 @@
+componentFile: builder.yaml
+rootDirectory: './'
+testCases:
+- description: Success
+  build:
+    options:
+      ImageTag: '2.0'
+  apply:
+    options:
+      Namespace: default
+  expect:
+    objects:
+    - kind: Deployment
+      name: helloweb
+      findSubstrs:
+      - 'namespace: default'
+      - 'image: gcr.io/google-samples/hello-app:2.0'
+      notFindSubstrs:
+      - 'image: gcr.io/google-samples/hello-app:1.0'
+    - kind: Service
+      name: helloweb
+      findSubstrs:
+      - 'targetPort: 8080'
+
+- description: 'Success: change port'
+  build:
+    options:
+      ImageTag: '2.0'
+  apply:
+    options:
+      Namespace: default
+      Port: 8888
+  expect:
+    objects:
+    - kind: Deployment
+      name: helloweb
+      findSubstrs:
+      - 'namespace: default'
+      - 'image: gcr.io/google-samples/hello-app:2.0'
+    - kind: Service
+      name: helloweb
+      findSubstrs:
+      - 'targetPort: 8888'
+
+- description: 'Error: no image Tag'
+  apply:
+    options:
+      Namespace: default
+  expect:
+    buildErrSubstr: 'ImageTag in body is required'
+
+- description: 'Error: no namespace'
+  build:
+    options:
+      ImageTag: '2.0'
+  expect:
+    applyErrSubstr: 'Namespace in body is required'

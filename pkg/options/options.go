@@ -38,3 +38,10 @@ type Applier interface {
 	// returned component should be copy of the original, with (perhaps) modifications made to the original.
 	ApplyOptions(comp *bundle.Component, opts JSONOptions) (*bundle.Component, error)
 }
+
+const (
+	MissingKeyError   = "missingkey=error"
+	MissingKeyDefault = "missingkey=default"
+	MissingKeyInvalid = "missingkey=invalid"
+	MissingKeyZero    = "missingkey=zero"
+)

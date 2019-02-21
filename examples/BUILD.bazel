@@ -1,8 +1,9 @@
 filegroup(
-    name = "component_testdata",
-    srcs = glob([
-        "**/*.yaml",
-        "**/*.txt",
-    ]),
+    name = "testdata",
+    srcs = [
+        "//examples/cluster:testdata",
+        "//examples/component:testdata",
+        "//examples/patchbuilder:testdata",
+    ],
     visibility = ["//visibility:public"],
 )

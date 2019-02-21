@@ -21,6 +21,7 @@ import (
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // BundleWrapper represents one of several possible bundle types -- a union type.
@@ -147,4 +148,39 @@ func (bw *BundleWrapper) AllComponents() []*bundle.Component {
 		return []*bundle.Component{bw.component}
 	}
 	return nil
+}
+
+// ExportAsObjects will export a Bundle as a ComponentSet and Components,
+// or a Component as unstructured Objects.
+func (bw *BundleWrapper) ExportAsObjects() ([]*unstructured.Unstructured, error) {
+	switch bw.Kind() {
+	case "Component":
+		return bw.Component().Spec.Objects, nil
+	case "Bundle":
+		bun := bw.Bundle()
+		y, err := converter.FromObject(bun.ComponentSet()).ToYAML()
+		if err != nil {
+			return nil, err
+		}
+		o, err := converter.FromYAML(y).ToUnstructured()
+		if err != nil {
+			return nil, err
+		}
+		var objs []*unstructured.Unstructured
+		objs = append(objs, o)
+		for _, c := range bun.Components {
+			y, err := converter.FromObject(c).ToYAML()
+			if err != nil {
+				return nil, err
+			}
+			o, err := converter.FromYAML(y).ToUnstructured()
+			if err != nil {
+				return nil, err
+			}
+			objs = append(objs, o)
+		}
+		return objs, nil
+	default:
+		return nil, fmt.Errorf("bundle kind %q not supported for exporting", bw.Kind())
+	}
 }

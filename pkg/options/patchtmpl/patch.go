@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	jsonpatch "github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,29 +37,44 @@ type applier struct {
 	// TODO(kashomon): Maybe we don't need a full options-filter? Maybe we could
 	// just have annotation values?
 	tmplFilter *filter.Options
+
+	// If includeTemplates is true, applied patch templates will be included in the
+	// component objects.
+	includeTemplates bool
+
+	// Set the template options
+	templateOpts []string
 }
 
 // NewApplier creates a new options applier instance. The filter indicates
 // keep-only options for what subsets of patches to look for.
-func NewApplier(pt *PatcherScheme, opts *filter.Options) options.Applier {
+func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool, templateOpts ...string) options.Applier {
+	if templateOpts == nil || len(templateOpts) == 0 {
+		templateOpts = []string{options.MissingKeyError}
+	}
+
 	return &applier{
-		scheme:     pt,
-		tmplFilter: opts,
+		scheme:           pt,
+		tmplFilter:       opts,
+		includeTemplates: includeTemplates,
+		templateOpts:     templateOpts,
 	}
 }
 
 // NewDefaultApplier creates a default patch template applier.
 func NewDefaultApplier() options.Applier {
-	return NewApplier(DefaultPatcherScheme(), nil)
+	return NewApplier(DefaultPatcherScheme(), nil, false)
 }
 
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
 func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
-	patches, err := a.makePatches(comp, p)
+	patches, objs, err := a.makePatches(comp, p)
 	if err != nil {
 		return nil, err
 	}
-	return options.ApplyCommon(comp, p, objectApplier(a.scheme, patches))
+	newObjs, err := options.ApplyCommon(comp.ComponentReference(), objs, p, objectApplier(a.scheme, patches))
+	comp.Spec.Objects = newObjs
+	return comp, err
 }
 
 // A parsedPatch has had options applied and has been converted both into raw
@@ -74,26 +90,34 @@ func (p *parsedPatch) String() string {
 	return string(p.raw)
 }
 
-func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) ([]*parsedPatch, error) {
+func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) ([]*parsedPatch, []*unstructured.Unstructured, error) {
 	tfil := a.tmplFilter
 	if tfil == nil {
 		tfil = &filter.Options{}
 	}
-	tfil.Kinds = append(tfil.Kinds, "PatchTemplate")
-	tfil.KeepOnly = true
+	tfil.Kinds = []string{"PatchTemplate"}
 
 	// Filter all the objects to include just the patch templates + any additional values.
-	objs := filter.NewFilter().Objects(comp.Spec.Objects, tfil)
+	ptObjs, objs := filter.NewFilter().PartitionObjects(comp.Spec.Objects, tfil)
 
+	// PartitionObjects will exclude *matching* patch templates from objs; if we actually
+	// want to include them, then use the original component objects for our object list
+	if a.includeTemplates {
+		objs = comp.Spec.Objects
+	}
 	// First parse the objects back into go-objects.
 	var pts []*bundle.PatchTemplate
-	for _, o := range objs {
+	for _, o := range ptObjs {
 		pto := &bundle.PatchTemplate{}
 		err := converter.FromUnstructured(o).ToObject(pto)
 		if err != nil {
-			return nil, fmt.Errorf("while converting object %v to PatchTemplate: %v", pto, err)
+			return nil, nil, fmt.Errorf("while converting object %v to PatchTemplate: %v", pto, err)
 		}
 		pts = append(pts, pto)
+	}
+
+	if opts == nil {
+		opts = options.JSONOptions{}
 	}
 
 	// Next, de-templatize the templates.
@@ -101,27 +125,34 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 	for j, pto := range pts {
 		tmpl, err := template.New(fmt.Sprintf("patch-tmpl-%d", j)).Parse(pto.Template)
 		if err != nil {
-			return nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
+			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
 		}
 
-		// TODO(kashomon): Should this be configurable? This seems like the safest option.
-		tmpl = tmpl.Option("missingkey=error")
+		tmpl = tmpl.Option(a.templateOpts...)
+
+		newOpts := opts
+		if pto.OptionsSchema != nil {
+			newOpts, err = openapi.ApplyDefaults(opts, pto.OptionsSchema)
+			if err != nil {
+				return nil, nil, fmt.Errorf("applying schema defaults for patch template %d, %s: %v", j, pto.Template, err)
+			}
+		}
 
 		var buf bytes.Buffer
-		err = tmpl.Execute(&buf, opts)
+		err = tmpl.Execute(&buf, newOpts)
 		if err != nil {
-			return nil, fmt.Errorf("while applying options to patch template %d: %v", j, err)
+			return nil, nil, fmt.Errorf("while applying options to patch template %d: %v", j, err)
 		}
 
 		raw := buf.Bytes()
 		uns, err := converter.FromYAML(raw).ToUnstructured()
 		if err != nil {
-			return nil, fmt.Errorf("while converting patch template %d: %v", j, err)
+			return nil, nil, fmt.Errorf("while converting patch template %d: %v", j, err)
 		}
 
 		rawJSON, err := converter.FromObject(uns).ToJSON()
 		if err != nil {
-			return nil, fmt.Errorf("while converting patch template %d back to json: %v", j, err)
+			return nil, nil, fmt.Errorf("while converting patch template %d back to json: %v", j, err)
 		}
 
 		patches = append(patches, &parsedPatch{
@@ -130,7 +161,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			uns: uns,
 		})
 	}
-	return patches, nil
+	return patches, objs, nil
 }
 
 // objectApplier creates a patch object-handler. For each patch, the object

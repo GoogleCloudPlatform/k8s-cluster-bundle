@@ -18,17 +18,25 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "build",
 		Short: "Build the bundle files",
 		Long:  `Build all the files in the given bundle yaml`,
-		Run:   cmdlib.ContextAction(ctx, action),
+		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
 	}
+
+	// Optional flags
+
+	// While options-file is technically optional, it is usually provided to
+	// detemplatize the patch templates.
+	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "",
+		"File containing options to apply to patch templates")
 
 	root.AddCommand(cmd)
 }

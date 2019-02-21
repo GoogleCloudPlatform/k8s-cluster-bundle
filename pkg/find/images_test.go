@@ -56,7 +56,7 @@ spec:
 func TestImageFinder_Found(t *testing.T) {
 	s, err := converter.FromYAMLString(schedulerExample).ToUnstructured()
 	if err != nil {
-		t.Fatalf("error converting obj: %v", err)
+		t.Fatal(err)
 	}
 	key := bundle.ComponentReference{"foo", "bar"}
 
@@ -108,7 +108,7 @@ spec:
 func TestImageFinder_NotFound(t *testing.T) {
 	s, err := converter.FromYAMLString(kubeDNSServiceExample).ToUnstructured()
 	if err != nil {
-		t.Fatalf("error converting obj: %v", err)
+		t.Fatal(err)
 	}
 	key := bundle.ComponentReference{"foo", "biff"}
 	f := ImageFinder{}
@@ -140,7 +140,7 @@ spec:
 func TestImageFinder_MultipleImages(t *testing.T) {
 	s, err := converter.FromYAMLString(loggerExample).ToUnstructured()
 	if err != nil {
-		t.Fatalf("error converting obj: %v", err)
+		t.Fatal(err)
 	}
 	key := bundle.ComponentReference{"gloo", "logger"}
 	expkey := core.ClusterObjectKey{
@@ -220,7 +220,7 @@ components:
 func TestImageFinder_Bundle(t *testing.T) {
 	s, err := converter.FromYAMLString(componentsExample).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 
 	found := NewImageFinder(s.Components).AllContainerImages()
@@ -292,7 +292,7 @@ components:
 func TestImageFinder_NodeImages(t *testing.T) {
 	s, err := converter.FromYAMLString(componentDataNodeConfig).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 
 	found := NewImageFinder(s.Components).AllContainerImages()
@@ -397,7 +397,7 @@ components:
 func TestImageFinder_AllFlattened(t *testing.T) {
 	s, err := converter.FromYAMLString(componentExampleAll).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting data: %v", err)
+		t.Fatal(err)
 	}
 
 	found := NewImageFinder(s.Components).AllImages().Flattened()
@@ -417,7 +417,7 @@ func TestImageFinder_AllFlattened(t *testing.T) {
 func TestImageFinder_WalkTransform(t *testing.T) {
 	s, err := converter.FromYAMLString(componentExampleAll).ToBundle()
 	if err != nil {
-		t.Fatalf("error converting bundle: %v", err)
+		t.Fatal(err)
 	}
 
 	finder := NewImageFinder(s.Components)

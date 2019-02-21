@@ -32,7 +32,7 @@ components:
 func TestDataParse(t *testing.T) {
 	data, err := FromYAMLString(componentDataExample).ToBundle()
 	if err != nil {
-		t.Fatalf("Error parsing bundle: %v", err)
+		t.Fatal(err)
 	}
 
 	if l := len(data.Components); l == 0 {

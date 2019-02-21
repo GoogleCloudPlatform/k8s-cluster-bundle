@@ -18,11 +18,12 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	// cmd is the parent image command, and is unrunnable by itself.
 	cmd := &cobra.Command{
 		Use:   "find",
@@ -34,7 +35,7 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 		Use:   "images",
 		Short: "Find images in the bundle",
 		Long:  "Apply all the patches found in a bundle to customize it with the given options custom resources",
-		Run:   cmdlib.ContextAction(ctx, findAction),
+		Run:   cmdlib.ContextAction(ctx, fio, sio, findAction),
 	}
 
 	cmd.AddCommand(imagesCmd)

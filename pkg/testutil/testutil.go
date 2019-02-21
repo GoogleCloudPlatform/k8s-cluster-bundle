@@ -17,22 +17,21 @@
 package testutil
 
 import (
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
-// TestPathPrefix returns the empty string or the bazel test path prefix.
-func TestPathPrefix(pathToRoot, file string) string {
-	path := os.Getenv("TEST_SRCDIR") // For dealing with bazel.
-	workspace := os.Getenv("TEST_WORKSPACE")
-	if path != "" {
-		return filepath.Join(path, workspace, file)
+// ChangeToBazelDir changes the CWD to a bazel directory if necessary.
+// pathToDir specifies the path from the root bazel-directory to the relevant
+// directory.  If changing the directory fails, the method panics.
+func ChangeToBazelDir(curDir string) {
+	bazelTestPath := os.Getenv("TEST_SRCDIR")
+	if bazelTestPath != "" {
+		workspace := os.Getenv("TEST_WORKSPACE")
+		dir := filepath.Join(bazelTestPath, workspace, curDir)
+		if err := os.Chdir(dir); err != nil {
+			panic(fmt.Sprintf("os.Chdir(%q): %v", dir, err))
+		}
 	}
-	return filepath.Join(pathToRoot, file)
-}
-
-// ReadData reads the test-data from disk.
-func ReadData(pathToRoot, file string) ([]byte, error) {
-	return ioutil.ReadFile(TestPathPrefix(pathToRoot, file))
 }

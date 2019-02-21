@@ -1,0 +1,32 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplate
+template: |
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    namespace: {{.namespace}}
+optionsSchema:
+  required:
+  - namespace
+  properties:
+    namespace:
+      type: string
+      pattern: '^[a-z0-9-]+$'
+---
+apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplate
+metadata:
+  annotations:
+    build-label-experiment: test
+optionsSchema:
+  properties:
+    buildLabel:
+      type: string
+      default: dev-env
+      pattern: '^[a-z0-9-]+$'
+template: |
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      build-label: {{.buildLabel}}

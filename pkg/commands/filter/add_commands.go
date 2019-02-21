@@ -18,16 +18,17 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "filter",
 		Short: "Filter the components or objects in a bundle file",
 		Long:  `Filter the components or objects in a bundle file, returning a new bundle file`,
-		Run:   cmdlib.ContextAction(ctx, action),
+		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
 	}
 
 	// Optional flags
@@ -40,9 +41,9 @@ func AddCommandsTo(ctx context.Context, root *cobra.Command) {
 	cmd.Flags().StringVarP(&opts.namespaces, "namespaces", "", "",
 		"Comma separated namespaces to filter on")
 	cmd.Flags().StringVarP(&opts.annotations, "annotations", "", "",
-		"Comma + semicolon separated annotations to filter on. Ex: 'foo,bar;biff,bam'")
+		"Comma + semicolon separated annotations to filter on. Ex: 'foo=bar,biff=bam'")
 	cmd.Flags().StringVarP(&opts.labels, "labels", "", "",
-		"Comma + semicolon separated labelsto filter on. Ex: 'foo,bar;biff,bam'")
+		"Comma + semicolon separated labelsto filter on. Ex: 'foo=bar,biff=bam'")
 	cmd.Flags().BoolVarP(&opts.keepOnly, "keep-only", "", false,
 		"Whether to keep options instead of filtering them")
 

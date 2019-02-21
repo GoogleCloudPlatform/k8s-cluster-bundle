@@ -22,17 +22,17 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// FromObject creates a converting demuxer from an object.
-func FromObject(obj interface{}) *Demuxer {
-	return &Demuxer{obj}
+// FromObject creates a converting encodeer from an object.
+func FromObject(obj interface{}) *Encoder {
+	return &Encoder{obj}
 }
 
-// Demuxer converts from an object to some serialized format for the object.
-type Demuxer struct {
+// Encoder converts from an object to some serialized format for the object.
+type Encoder struct {
 	obj interface{}
 }
 
-func (m *Demuxer) demux(format ContentType) ([]byte, error) {
+func (m *Encoder) encode(format ContentType) ([]byte, error) {
 	switch format {
 	case YAML:
 		return yaml.Marshal(m.obj)
@@ -44,29 +44,29 @@ func (m *Demuxer) demux(format ContentType) ([]byte, error) {
 }
 
 // ToYAML converts an object to YAML bytes slice
-func (m *Demuxer) ToYAML() ([]byte, error) {
-	return m.demux(YAML)
+func (m *Encoder) ToYAML() ([]byte, error) {
+	return m.encode(YAML)
 }
 
 // ToYAMLString converts an object to YAML string
-func (m *Demuxer) ToYAMLString() (string, error) {
-	yamlBytes, err := m.demux(YAML)
+func (m *Encoder) ToYAMLString() (string, error) {
+	yamlBytes, err := m.encode(YAML)
 	return string(yamlBytes[:]), err
 }
 
 // ToJSON converts an object to JSON bytes slice
-func (m *Demuxer) ToJSON() ([]byte, error) {
-	return m.demux(JSON)
+func (m *Encoder) ToJSON() ([]byte, error) {
+	return m.encode(JSON)
 }
 
 // ToJSONString converts an object to JSON string
-func (m *Demuxer) ToJSONString() (string, error) {
-	jsonBytes, err := m.demux(JSON)
+func (m *Encoder) ToJSONString() (string, error) {
+	jsonBytes, err := m.encode(JSON)
 	return string(jsonBytes[:]), err
 }
 
 // ToContentType converts to a custom content type.
-func (m *Demuxer) ToContentType(ctype string) ([]byte, error) {
+func (m *Encoder) ToContentType(ctype string) ([]byte, error) {
 	lower := strings.ToLower(ctype)
-	return m.demux(ContentType(lower))
+	return m.encode(ContentType(lower))
 }

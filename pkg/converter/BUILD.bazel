@@ -4,9 +4,9 @@ go_library(
     name = "go_default_library",
     srcs = [
         "converter.go",
-        "demuxer.go",
+        "decoder.go",
+        "encoder.go",
         "exporter.go",
-        "muxer.go",
         "name.go",
         "unstructured.go",
     ],
@@ -23,15 +23,16 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "bazel_init_test.go",
         "converter_integration_test.go",
         "converter_test.go",
+        "decoder_test.go",
         "example_test.go",
         "exporter_test.go",
-        "muxer_test.go",
         "name_test.go",
     ],
     data = [
-        "//examples:component_testdata",
+        "//examples:testdata",
     ],
     embed = [":go_default_library"],
     deps = [
