@@ -19,14 +19,19 @@ import (
 	"context"
 	"flag"
 	"os"
-
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
 )
 
+var BUNDLECTL_VERSION string
+
 func main() {
+	if (BUNDLECTL_VERSION == ""){
+		panic("No version specified.  This should have been specified during linking")
+	}
+
 	flag.Lookup("logtostderr").Value.Set("true")
 
-	root := commands.AddCommands(context.Background(), os.Args[1:])
+	root := commands.AddCommands(context.Background(), os.Args[1:], BUNDLECTL_VERSION)
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}

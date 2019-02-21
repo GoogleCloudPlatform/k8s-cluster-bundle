@@ -25,11 +25,12 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/modify"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/version"
 	"github.com/spf13/cobra"
 )
 
 // AddCommands adds all subcommands to the root command.
-func AddCommands(ctx context.Context, args []string) *cobra.Command {
+func AddCommands(ctx context.Context, args []string, bundlectlVersion string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "bundlectl",
 		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
@@ -58,6 +59,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	modify.AddCommandsTo(ctx, rootCmd)
 	patch.AddCommandsTo(ctx, rootCmd)
 	validate.AddCommandsTo(ctx, rootCmd)
+	version.AddCommandsTo(ctx, rootCmd, bundlectlVersion)
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
