@@ -10,8 +10,8 @@ import (
 func AddCommandsTo(ctx context.Context, root *cobra.Command, bundlectlVersion string) {
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Lists version of bundlectl",
-		Long:  "Lists version of bundlectl",
+		Short: "List version of bundlectl",
+		Long:  "List version of bundlectl",
 		Run:   cmdlib.ContextAction(ctx, func(ctx context.Context, cmd *cobra.Command, _ []string) {
 			fmt.Println(bundlectlVersion)
 		}),
