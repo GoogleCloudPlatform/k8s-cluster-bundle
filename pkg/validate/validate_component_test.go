@@ -153,21 +153,6 @@ func TestValidateComponents(t *testing.T) {
       expectedErrors: 1,
       description:    "no version specified for component in spec",
     },
-    {
-      componentConfig: `
-        apiVersion: 'bundle.gke.io/v1alpha1'
-        kind: Component
-        metadata:
-          name: foo-comp-1.0.2
-        spec:
-          componentName: foo-comp
-          version: 1.0.2
-          objects:
-          - apiVersion: v1
-            kind: Pod`,
-      expectedErrors: 1,
-      description:    "missing name",
-    },
   }
 
   for _, component := range components {

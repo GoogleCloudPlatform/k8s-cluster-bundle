@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
+	//"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 var (
@@ -101,43 +101,6 @@ func Component(c *bundle.Component) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
 
-	if componentErrs := componentObjects(c); componentErrs != nil {
-		for _, componentErr := range(componentErrs) {
-			errs = append(errs, componentErr)
-		}
-	}
-
-	return errs
-}
-
-// ComponentObjects validates objects in a componenst.
-func componentObjects(cp *bundle.Component) field.ErrorList {
-	// Map to catch duplicate objects.
-	compObjects := make(map[core.ObjectRef]bool)
-
-	errs := field.ErrorList{}
-
-	ref := cp.ComponentReference()
-	basep := cPath(ref)
-	for i, obj := range cp.Spec.Objects {
-		n := obj.GetName()
-		if n == "" {
-			errs = append(errs, field.Required(basep.Child("Spec", "Objects").Index(i).Child("Metadata", "Name"),
-				""))
-			continue
-		}
-		p := basep.Child("Spec", "Objects").Key(n)
-
-		if nameErrs := validateName(p, n); len(nameErrs) > 0 {
-			errs = append(errs, nameErrs...)
-		}
-
-		oref := core.ObjectRefFromUnstructured(obj)
-		if _, ok := compObjects[oref]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("object reference: %s", oref)))
-		}
-		compObjects[oref] = true
-	}
 	return errs
 }
 
