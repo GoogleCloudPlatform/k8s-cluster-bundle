@@ -104,6 +104,7 @@ func Component(c *bundle.Component) field.ErrorList {
 	return errs
 }
 
+
 // ComponentSet validates a component.
 func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	p := field.NewPath("ComponentSet")
