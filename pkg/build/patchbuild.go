@@ -25,7 +25,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
-	log "github.com/golang/glog"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -129,7 +128,6 @@ func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, op
 		}
 		bw = wrapper.FromComponent(comp)
 	case "Bundle":
-		log.Info("Building PatchTemplates for bundle")
 		bun := bw.Bundle()
 		var comps []*bundle.Component
 		for _, comp := range bun.Components {

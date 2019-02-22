@@ -98,13 +98,13 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 	inFmt := g.InputFormat
 
 	if g.InputFile != "" {
-		log.Infof("Reading input file %v", g.InputFile)
+		log.V(4).Infof("Reading input file %v", g.InputFile)
 		bytes, err = brw.rw.ReadFile(ctx, g.InputFile)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		log.Info("No component data file, reading from stdin")
+		log.V(4).Info("No component data file, reading from stdin")
 		if bytes, err = brw.stdio.ReadAll(); err != nil {
 			return nil, err
 		}
