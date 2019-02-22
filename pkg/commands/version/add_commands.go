@@ -1,8 +1,8 @@
 package version
 
 import (
-	"github.com/spf13/cobra"
 	"fmt"
+	"github.com/spf13/cobra"
 )
 
 func AddCommandsTo(root *cobra.Command, bundlectlVersion string) {
@@ -10,7 +10,7 @@ func AddCommandsTo(root *cobra.Command, bundlectlVersion string) {
 		Use:   "version",
 		Short: "List version of bundlectl",
 		Long:  "List version of bundlectl",
-		Run:  func(cmd *cobra.Command, _ []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			fmt.Println(bundlectlVersion)
 		},
 	}

@@ -16,23 +16,23 @@
 package main
 
 import (
-  "context"
-  "flag"
-  "os"
-  "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
+	"context"
+	"flag"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
+	"os"
 )
 
-var BUNDLECTL_VERSION string       // This value gets statically set in go compilation.  See the bazel rules. 
+var BUNDLECTL_VERSION string // This value gets statically set in go compilation.  See the bazel rules.
 
 func main() {
-  if (BUNDLECTL_VERSION == ""){
-    panic("No version specified.  This should have been specified during linking")
-  }
+	if BUNDLECTL_VERSION == "" {
+		panic("No version specified.  This should have been specified during linking")
+	}
 
-  flag.Lookup("logtostderr").Value.Set("true")
+	flag.Lookup("logtostderr").Value.Set("true")
 
-  root := commands.AddCommands(context.Background(), os.Args[1:], BUNDLECTL_VERSION)
-  if err := root.Execute(); err != nil {
-    os.Exit(1)
-  }
+	root := commands.AddCommands(context.Background(), os.Args[1:], BUNDLECTL_VERSION)
+	if err := root.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
