@@ -17,13 +17,13 @@
 package openapi
 
 import (
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 )
 
 // ValidateOptions based on an OpenAPI schema. The returned result object
@@ -50,7 +50,7 @@ func ValidateOptions(opts options.JSONOptions, optSchema *apiextv1beta1.JSONSche
 	}
 
 	openapiSchema := &spec.Schema{}
-	if err := ConvertJSONSchemaProps(intOptSchema, openapiSchema); err != nil {
+	if err := validation.ConvertJSONSchemaProps(intOptSchema, openapiSchema); err != nil {
 		return nil, err
 	}
 	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)

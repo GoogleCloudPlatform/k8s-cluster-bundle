@@ -34,17 +34,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:899234af23e5793c34e06fd397f86ba33af5307b959b6a7afd19b63db065a9d7"
-  name = "github.com/emicklei/go-restful"
-  packages = [
-    ".",
-    "log",
-  ]
-  pruneopts = "UT"
-  revision = "3eb9738c1697594ea6e71a7156a9bb32ed216cf0"
-  version = "v2.8.0"
-
-[[projects]]
   digest = "1:f1f2bd73c025d24c3b93abf6364bccb802cf2fdedaa44360804c67800e8fab8d"
   name = "github.com/evanphx/json-patch"
   packages = ["."]
@@ -246,14 +235,6 @@
   version = "v1.1.5"
 
 [[projects]]
-  digest = "1:190ff84d9b2ed6589088f178cba8edb4b8ecb334df4572421fb016be1ac20463"
-  name = "github.com/juju/ratelimit"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "59fac5042749a5afb9af70e813da1dd5474f0167"
-  version = "1.0.1"
-
-[[projects]]
   branch = "master"
   digest = "1:84a5a2b67486d5d67060ac393aa255d05d24ed5ee41daecd5635ec22657b6492"
   name = "github.com/mailru/easyjson"
@@ -323,6 +304,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:fde12c4da6237363bf36b81b59aa36a43d28061167ec4acb0d41fc49464e28b9"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  pruneopts = "UT"
+  revision = "a4c6cb3142f211c99e4bf4cd769535b29a9b616f"
+
+[[projects]]
+  branch = "master"
   digest = "1:c822b34344031b25ffa32de9384a5059abd019171d4a131437daf776bd0a3b32"
   name = "golang.org/x/net"
   packages = [
@@ -333,6 +322,17 @@
   ]
   pruneopts = "UT"
   revision = "8a410e7b638dca158bf9e766925842f6651ff828"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0d703f14f9bbbe1070ff0ce86d749dcbc9d68fb0ae554252c09bd4bb37a072e7"
+  name = "golang.org/x/sys"
+  packages = [
+    "unix",
+    "windows",
+  ]
+  pruneopts = "UT"
+  revision = "153ac476189d567564fda94622d7a8c0fb338f6b"
 
 [[projects]]
   digest = "1:0c56024909189aee3364b7f21a95a27459f718aa7c199a5c111c36cfffd9eaef"
@@ -359,6 +359,14 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:9fdc2b55e8e0fafe4b41884091e51e77344f7dc511c5acedcfd98200003bff90"
+  name = "golang.org/x/time"
+  packages = ["rate"]
+  pruneopts = "UT"
+  revision = "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd"
+
+[[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
   name = "gopkg.in/inf.v0"
   packages = ["."]
@@ -375,8 +383,8 @@
   version = "v2.2.1"
 
 [[projects]]
-  branch = "release-1.9"
-  digest = "1:81094787d3b75d7520d7dc92bdcabff480575a678c4f409a8bb30359cf60ac21"
+  branch = "release-1.11"
+  digest = "1:d937c84b21107b248846522386d8813a47537f28d60f1d7685cd15c1afe20ea6"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1alpha1",
@@ -403,28 +411,30 @@
     "rbac/v1alpha1",
     "rbac/v1beta1",
     "scheduling/v1alpha1",
+    "scheduling/v1beta1",
     "settings/v1alpha1",
     "storage/v1",
     "storage/v1alpha1",
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "9273ee02527c608cecc74969b3e489f5dba686da"
+  revision = "912cbe2bfef3d832db29f9d3125307fe907102e9"
 
 [[projects]]
-  branch = "release-1.9"
-  digest = "1:05115e62cf1a706659d04a041f9b4d0c3dc54b0e99bf7eb884bef9f874af9e0d"
+  branch = "release-1.11"
+  digest = "1:01748d0c482876b36fdd6401cdd5464d2bbc8b6e6b38aaeba9f62428d95a4d89"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
     "pkg/apis/apiextensions/v1beta1",
+    "pkg/apiserver/validation",
   ]
   pruneopts = "UT"
-  revision = "7e9f478f435dad2133a8b41431f4ac67c85f7ddf"
+  revision = "e419c5771cdcec16d68b632a451dab1d383168a8"
 
 [[projects]]
-  branch = "release-1.9"
-  digest = "1:d2318826e3d11d85c3b6b88f99db99f05b8254b66dfa8a0f3f40b52d9f4930a4"
+  branch = "release-1.11"
+  digest = "1:8225e2c491922b231b3b780093e3d54c6c50a459474cadd64fd27d15afc86c58"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -432,7 +442,7 @@
     "pkg/api/resource",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
-    "pkg/apis/meta/v1alpha1",
+    "pkg/apis/meta/v1beta1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
@@ -467,17 +477,21 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "1926e7bb5c13e9c651830fe950cb623071bb03d2"
+  revision = "1a579f8a7b42cff1430fca587b8745f209fc78da"
 
 [[projects]]
-  branch = "release-6.0"
-  digest = "1:1f8cd100dfdeabdabb8a04dfb307f5e7f1e6003910ad11154bdecb96015c1ca0"
+  branch = "release-8.0"
+  digest = "1:7115873769031f3339f6debe074d13e90a4a0b51f4225890e1eddc8487939ed1"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
     "discovery/fake",
     "kubernetes/scheme",
+    "pkg/apis/clientauthentication",
+    "pkg/apis/clientauthentication/v1alpha1",
+    "pkg/apis/clientauthentication/v1beta1",
     "pkg/version",
+    "plugin/pkg/client/auth/exec",
     "rest",
     "rest/watch",
     "testing",
@@ -485,20 +499,18 @@
     "tools/metrics",
     "transport",
     "util/cert",
+    "util/connrotation",
     "util/flowcontrol",
     "util/integer",
   ]
   pruneopts = "UT"
-  revision = "115d23201cc1aa2260c19f8f6bb79d400d123dbd"
+  revision = "4022682532b3b46b46a31b4c6150cbf55174cf0f"
 
 [[projects]]
   branch = "master"
-  digest = "1:0728020defbd5d26e88ec5f6a9e844b6f2982998bad1356b649ccc9469e0aa89"
+  digest = "1:03a96603922fc1f6895ae083e1e16d943b55ef0656b56965351bd87e7d90485f"
   name = "k8s.io/kube-openapi"
-  packages = [
-    "pkg/common",
-    "pkg/util/proto",
-  ]
+  packages = ["pkg/util/proto"]
   pruneopts = "UT"
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
@@ -518,6 +530,7 @@
     "k8s.io/api/extensions/v1beta1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/apiserver/validation",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
     "k8s.io/apimachinery/pkg/labels",
