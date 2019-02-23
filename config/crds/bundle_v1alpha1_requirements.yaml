@@ -1,0 +1,72 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: requirements.bundle.gke.io
+spec:
+  group: bundle.gke.io
+  names:
+    kind: Requirements
+    plural: requirements
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        exclude:
+          description: Exclude specific versions of a component.
+          items:
+            properties:
+              appVersion:
+                description: AppVersion specifies a specific excluded AppVersion present
+                  in another components Requirements object.
+                type: string
+              componentName:
+                description: ComponentName (required) specifies the name of a component
+                type: string
+              componentVersion:
+                description: ComponentVersion specifies a component's version to exclude.
+                type: string
+            required:
+            - componentVersion
+            type: object
+          type: array
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        require:
+          description: Require specific component versions. A component that with
+            an AppVersion >= to the AppVersion specified by a component may satisfy
+            this requirement, using minimal version selection or a similar algorithm.
+          items:
+            properties:
+              appVersion:
+                description: AppVersion specifies the minimum required AppVersion
+                  present in another components Requirements object. In otherwords,
+                  the AppVersion given by ComponentName in a Bundle or Set must be
+                  >= to this AppVersion, fixing the major version.  If AppVersion
+                  is not included, then any component with the specified ComponentName
+                  will be considered a valid match.
+                type: string
+              componentName:
+                description: ComponentName (required) specifies the name of a component.
+                type: string
+            type: object
+          type: array
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -10,6 +10,7 @@ go_library(
         "helpers.go",
         "identifiers.go",
         "patch_template_types.go",
+        "requirement_types.go",
         "zz_generated.deepcopy.go",
         "zz_generated.register.go",
     ],
