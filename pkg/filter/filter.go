@@ -112,8 +112,8 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 	return notMatched
 }
 
-// PartitionObjects splits the objects into matched and not matched sets. As a
-// detail, PartitionObjects ignores the KeepOnly option, since both matched and
+// PartitionObjects splits the objects into matched and not matched sets.
+// PartitionObjects ignores the KeepOnly option, since both matched and
 // unmatched objects are returned. Thus, the options to partition are always
 // treated as options for matching objects.
 func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
