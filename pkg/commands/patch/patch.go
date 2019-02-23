@@ -71,14 +71,12 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 
 	switch bw.Kind() {
 	case "Component":
-		log.Info("Patching component")
 		comp, err := applier.ApplyOptions(bw.Component(), optData)
 		if err != nil {
 			return err
 		}
 		bw = wrapper.FromComponent(comp)
 	case "Bundle":
-		log.Info("Patching bundle")
 		bun := bw.Bundle()
 		var comps []*bundle.Component
 		for _, comp := range bun.Components {
