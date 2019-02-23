@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/golang/glog"
 	"github.com/spf13/cobra"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
