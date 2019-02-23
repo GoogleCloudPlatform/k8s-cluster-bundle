@@ -99,10 +99,9 @@ func (f *Filter) Components(data []*bundle.Component, o *Options) []*bundle.Comp
 	return notMatched
 }
 
-// Objects filters objects based on the ObjectMeta properties of
-// the objects, returning a new list with just filtered
-// objects. By default objects are removed, unless KeepOnly is set, and
-// then the opposite is true.
+// Objects filters objects based on the ObjectMeta properties of the objects,
+// returning a new list with just filtered objects. By default objects are
+// removed, unless KeepOnly is set, and then the opposite is true.
 func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
 	matched, notMatched := f.PartitionObjects(data, o)
 
@@ -113,8 +112,10 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 	return notMatched
 }
 
-// TODO(jhoak): test for this
-// PartitionObjects splits the objects into matched and not matched sets.
+// PartitionObjects splits the objects into matched and not matched sets. As a
+// detail, PartitionObjects ignores the KeepOnly option, since both matched and
+// unmatched objects are returned. Thus, the options to partition are always
+// treated as options for matching objects.
 func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
 	if !f.ChangeInPlace {
 		var newData []*unstructured.Unstructured

@@ -58,7 +58,10 @@ func TestImageFinder_Found(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := bundle.ComponentReference{"foo", "bar"}
+	key := bundle.ComponentReference{
+		ComponentName: "foo",
+		Version:       "X.Y",
+	}
 
 	expkey := core.ClusterObjectKey{
 		Component: key,
@@ -110,7 +113,10 @@ func TestImageFinder_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := bundle.ComponentReference{"foo", "biff"}
+	key := bundle.ComponentReference{
+		ComponentName: "foo",
+		Version:       "100.3",
+	}
 	f := ImageFinder{}
 	found := f.ContainerImages(key, s)
 	if len(found) != 0 {
@@ -142,7 +148,10 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := bundle.ComponentReference{"gloo", "logger"}
+	key := bundle.ComponentReference{
+		ComponentName: "gloo",
+		Version:       "1.0",
+	}
 	expkey := core.ClusterObjectKey{
 		Component: key,
 		Object: core.ObjectRef{

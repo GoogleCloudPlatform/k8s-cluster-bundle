@@ -29,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// BuildPatchTemplate renders a PatchTemplate from a PatchTemplateBuilder and options.
-func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (*bundle.PatchTemplate, error) {
+// PatchTemplate renders a PatchTemplate from a PatchTemplateBuilder and options.
+func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (*bundle.PatchTemplate, error) {
 	name := ptb.GetName()
 	if ptb.Template == "" {
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: it has an empty template", name)
@@ -77,9 +77,9 @@ func BuildPatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptio
 	return pt, nil
 }
 
-// BuildComponentPatchTemplates iterates through all PatchTemplateBuilders in a
+// ComponentPatchTemplates iterates through all PatchTemplateBuilders in a
 // Components Objects, and converts them into PatchTemplates.
-func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, opts options.JSONOptions) (*bundle.Component, error) {
+func ComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, opts options.JSONOptions) (*bundle.Component, error) {
 	ptbFilter := fopts
 	if ptbFilter == nil {
 		ptbFilter = &filter.Options{}
@@ -99,7 +99,7 @@ func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, op
 			return nil, err
 		}
 
-		pt, err := BuildPatchTemplate(&ptb, opts)
+		pt, err := PatchTemplate(&ptb, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -117,12 +117,12 @@ func BuildComponentPatchTemplates(c *bundle.Component, fopts *filter.Options, op
 	return c, nil
 }
 
-// BuildAllPatchTemplates is a convenience method to build all PatchTemplateBuilders into
+// AllPatchTemplates is a convenience method to build all PatchTemplateBuilders into
 // PatchTemplates for all Components in a Bundle.
-func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, opts options.JSONOptions) (*wrapper.BundleWrapper, error) {
+func AllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, opts options.JSONOptions) (*wrapper.BundleWrapper, error) {
 	switch bw.Kind() {
 	case "Component":
-		comp, err := BuildComponentPatchTemplates(bw.Component(), fopts, opts)
+		comp, err := ComponentPatchTemplates(bw.Component(), fopts, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func BuildAllPatchTemplates(bw *wrapper.BundleWrapper, fopts *filter.Options, op
 		bun := bw.Bundle()
 		var comps []*bundle.Component
 		for _, comp := range bun.Components {
-			comp, err := BuildComponentPatchTemplates(comp, fopts, opts)
+			comp, err := ComponentPatchTemplates(comp, fopts, opts)
 			if err != nil {
 				return nil, err
 			}

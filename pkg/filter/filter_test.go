@@ -386,3 +386,53 @@ func getCompObjNames(comp []*bundle.Component) []string {
 	}
 	return names
 }
+
+func TestPartitionObjects(t *testing.T) {
+	testcases := []struct {
+		desc        string
+		opt         *Options
+		expMatch    []string
+		expNotMatch []string
+	}{
+		{
+			desc:     "match everything",
+			opt:      &Options{},
+			expMatch: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
+		},
+		{
+			desc: "match single pod: name filter",
+			opt: &Options{
+				Names: []string{"zap-pod"},
+			},
+			expMatch:    []string{"zap-pod"},
+			expNotMatch: []string{"bog-pod", "nog-pod", "zog-dep"},
+		},
+		{
+			desc: "keep only doesn't change result",
+			opt: &Options{
+				Names:    []string{"zap-pod"},
+				KeepOnly: true,
+			},
+			expMatch:    []string{"zap-pod"},
+			expNotMatch: []string{"bog-pod", "nog-pod", "zog-dep"},
+		},
+	}
+
+	data, err := converter.FromYAMLString(example).ToBundle()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range testcases {
+		t.Run(tc.desc, func(t *testing.T) {
+			match, notMatch := NewFilter().PartitionObjects(flatten(data.Components), tc.opt)
+			matchNames := getObjNames(match)
+			notMatchNames := getObjNames(notMatch)
+			if !reflect.DeepEqual(matchNames, tc.expMatch) {
+				t.Errorf("Filter.PartitionObjects(): got match group %v but wanted %v", matchNames, tc.expMatch)
+			}
+			if !reflect.DeepEqual(notMatchNames, tc.expNotMatch) {
+				t.Errorf("Filter.PartitionObjects(): got not-match group %v but wanted %v", notMatchNames, tc.expNotMatch)
+			}
+		})
+	}
+}

@@ -38,8 +38,10 @@ type makeInliner func(rw files.FileReaderWriter, inputFile string) fileInliner
 func realInlinerMaker(rw files.FileReaderWriter, inputFile string) fileInliner {
 	return build.NewInlinerWithScheme(
 		files.FileScheme,
-		&files.LocalFileObjReader{filepath.Dir(inputFile), rw},
-	)
+		&files.LocalFileObjReader{
+			WorkingDir: filepath.Dir(inputFile),
+			Rdr:        rw,
+		})
 }
 
 // StdioReaderWriter can read from STDIN and write to STDOUT.

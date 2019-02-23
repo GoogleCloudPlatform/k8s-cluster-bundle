@@ -70,7 +70,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return err
 	}
 
-	bw, err = build.BuildAllPatchTemplates(bw, &filter.Options{}, buildOpts)
+	bw, err = build.AllPatchTemplates(bw, &filter.Options{}, buildOpts)
 	if err != nil {
 		return err
 	}
