@@ -16,6 +16,7 @@ package build
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"testing"
@@ -78,9 +79,15 @@ type objCheck struct {
 	name     string
 	annotKey string
 	annotVal string
+	labelKey string
+	labelVal string
 
-	// For if the it's imported as raw text
+	// For if it's imported as raw text
 	cfgMap map[string]string
+
+	// For if it's imported as binary raw text. Still parsed in the
+	// unstructured.Unstructured as a string, though.
+	binaryCfgMap map[string]string
 }
 
 type compRef struct {
@@ -394,6 +401,82 @@ func TestInlineComponentFiles(t *testing.T) {
 			},
 		},
 
+		{
+			desc: "success: component, raw text, annotated",
+			data: `
+kind: ComponentBuilder
+componentName: kube-apiserver-blob
+version: 1.2.3
+rawTextFiles:
+- name: data-blob
+  annotations:
+    foo: bar
+    biff: bam
+  labels:
+    zip: zap
+  files:
+  - url: '/path/to/kube_apiserver.yaml'`,
+			files: defaultFiles,
+			expComp: compRef{
+				name: "kube-apiserver-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "kube-apiserver-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name:     "data-blob",
+						annotKey: string(bundle.InlineTypeIdentifier),
+						annotVal: string(bundle.RawStringInline),
+					},
+					{
+						name:     "data-blob",
+						annotKey: "foo",
+						annotVal: "bar",
+						labelKey: "zip",
+						labelVal: "zap",
+					},
+					{
+						name:     "data-blob",
+						annotKey: "biff",
+						annotVal: "bam",
+					},
+				},
+			},
+		},
+		{
+			desc: "success: component, raw text, binary",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+rawTextFiles:
+- name: data-blob
+  asBinary: true
+  files:
+  - url: '/path/to/blobby.yaml'`,
+			files: map[string][]byte{
+				"/path/to/blobby.yaml": []byte("blar"),
+			},
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name:     "data-blob",
+						annotKey: string(bundle.InlineTypeIdentifier),
+						annotVal: string(bundle.RawStringInline),
+						binaryCfgMap: map[string]string{
+							"blobby.yaml": base64.StdEncoding.EncodeToString([]byte("blar")),
+						},
+					},
+				},
+			},
+		},
+
 		// Error cases.
 		{
 			desc:         "fail: can't read file",
@@ -552,7 +635,11 @@ func validateComponents(t *testing.T, comp []*bundle.Component, expComps []compR
 			}
 			an := obj.GetAnnotations()
 			if an[o.annotKey] != o.annotVal {
-				t.Errorf("for obj %q, got annotation %q for key %q, but expected %q", o.name, an[o.annotKey], o.annotKey, o.annotVal)
+				t.Errorf("for obj %q, got annotation val %q for key %q, but expected %q", o.name, an[o.annotKey], o.annotKey, o.annotVal)
+			}
+			lab := obj.GetLabels()
+			if lab[o.labelKey] != o.labelVal {
+				t.Errorf("for obj %q, got annotation val %q for key %q, but expected %q", o.name, lab[o.labelKey], o.labelKey, o.labelVal)
 			}
 
 			// Check the config map contents.
@@ -564,7 +651,20 @@ func validateComponents(t *testing.T, comp []*bundle.Component, expComps []compR
 				}
 				val, ok := dataMap[expkey].(string)
 				if !ok || val != expval {
-					t.Fatalf("Could not find text object with key %q value %q for comp %v in object %q", expkey, expval, ref, obj.GetName())
+					t.Fatalf("Got value %q for key %q, but expected text object with value %q for comp %v in object %q. Map was %+v", val, expkey, expval, ref, obj.GetName(), dataMap)
+				}
+			}
+
+			// Check the binary config map contents.
+			for expkey, expval := range o.binaryCfgMap {
+				dataObj := obj.Object["binaryData"]
+				dataMap, ok := dataObj.(map[string]interface{})
+				if !ok {
+					t.Fatalf("Expected data to be a map of string to interface for comp %v in object %q", ref, obj.GetName())
+				}
+				val, ok := dataMap[expkey].(string)
+				if !ok || string(val) != string(expval) {
+					t.Fatalf("Got value %q for key %q, but expected text with value %q for comp %v in object %q. Map was %+v", val, expkey, expval, ref, obj.GetName(), dataMap)
 				}
 			}
 		}

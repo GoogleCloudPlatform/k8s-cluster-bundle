@@ -54,8 +54,8 @@ spec:
           items:
             properties:
               hash:
-                description: Optional Sha256 hash of the binary to ensure we are pulling
-                  the correct binary/file.
+                description: Digest is an optional hash of the file to ensure we are
+                  pulling the correct binary/file.
                 type: string
               url:
                 description: 'URL to find this file; the url string must be parsable
@@ -75,13 +75,21 @@ spec:
             being added to the objects. A ConfigMap is generated per-filegroup.
           items:
             properties:
+              annotations:
+                description: Annotations to apply to the resulting config map.
+                type: object
+              asBinary:
+                description: AsBinary indicates whether to import this text as Binary
+                  data rather than string data. Note that Binary data is only supported
+                  for Kubernetes clusters > Kubernetes v1.10.
+                type: boolean
               files:
                 description: Files that make up this file group.
                 items:
                   properties:
                     hash:
-                      description: Optional Sha256 hash of the binary to ensure we
-                        are pulling the correct binary/file.
+                      description: Digest is an optional hash of the file to ensure
+                        we are pulling the correct binary/file.
                       type: string
                     url:
                       description: 'URL to find this file; the url string must be
@@ -94,10 +102,15 @@ spec:
                       type: string
                   type: object
                 type: array
+              labels:
+                description: Labels to apply to the resulting config map.
+                type: object
               name:
                 description: Name of the filegroup. For raw text files, this becomes
                   the name of the.
                 type: string
+            required:
+            - asBinary
             type: object
           type: array
         version:

@@ -50,26 +50,6 @@ type ComponentReference struct {
 	Version string `json:"version,omitempty"`
 }
 
-// File represents some sort of file that's specified external to the bundle,
-// which could be on either a local or remote file system.
-type File struct {
-	// URL to find this file; the url string must be parsable via Go's net/url
-	// library. It is generally recommended that a URI scheme be provided in the
-	// URL, but it is not required. If a scheme is not provided, it is assumed
-	// that the scheme is a file-scheme.
-	//
-	// For example, these are all valid:
-	// - foo/bar/biff (a relative path)
-	// - /foo/bar/biff (an absolute path)
-	// - file:///foo/bar/biff (an absolute path with an explicit 'file' scheme)
-	// - http://example.com/foo.yaml
-	URL string `json:"url,omitempty"`
-
-	// Optional Sha256 hash of the binary to ensure we are pulling the correct
-	// binary/file.
-	Hash string `json:"hash,omitempty"`
-}
-
 // ComponentSpec represents the spec for the component.
 type ComponentSpec struct {
 	// ComponentName is the canonical name of this component. For example, 'etcd'
@@ -108,18 +88,6 @@ type ComponentSpec struct {
 	//
 	// This is essentially equivalent to the Kubernetes `Unstructured` type.
 	Objects []*unstructured.Unstructured `json:"objects,omitempty"`
-}
-
-// FileGroup represents a collection of files.  When used to create ConfigMaps
-// from RawTextFiles, the metadata.name comes from the Name field and data-key
-// being the basename of File URL. Thus, if the url is something like
-// 'file://foo/bar/biff.txt', the data-key will be 'biff.txt'.
-type FileGroup struct {
-	// Name of the filegroup. For raw text files, this becomes the name of the.
-	Name string `json:"name,omitempty"`
-
-	// Files that make up this file group.
-	Files []File `json:"files,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
