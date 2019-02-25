@@ -20,3 +20,5 @@ objectFiles:
 - url: file:///kubernetes/kube-apiserver.yaml
 - url: file:///kubernetes/kube-scheduler.yaml
 - url: file:///kubernetes/kube-controller-manager.yaml
+buildTags:
+- stable

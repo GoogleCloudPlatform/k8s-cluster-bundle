@@ -22,6 +22,9 @@ const (
 	// InlineTypeIdentifier is an identifier used to identify how an object in a
 	// component was inlined.
 	InlineTypeIdentifier Identifier = "bundle.gke.io/inline-type"
+
+	// BuildTagIdentifier is an identifier used for creating build tags.
+	BuildTagIdentifier = "bundle.gke.io/build-tags"
 )
 
 // InlineType is a value that the InlineTypeIdentifier can take.

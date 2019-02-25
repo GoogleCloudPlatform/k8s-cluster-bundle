@@ -23,16 +23,47 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand returns the command for exporting.
+// GetCommand returns the export command.
 func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
-	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "export",
+		Short: "Exports components or objects",
+		Long:  `Exports components or objects. See subcommands for usage`,
+	}
+
+	objOpts := &objOptions{}
+	objectCmd := &cobra.Command{
+		Use:   "objects",
 		Short: "Exports all of the objects",
 		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
 		Run: func(cmd *cobra.Command, args []string) {
-			action(ctx, fio, sio, cmd, opts, gopts)
+			objectAction(ctx, fio, sio, objOpts, gopts)
 		},
 	}
+
+	compOpts := &compOptions{}
+	componentCmd := &cobra.Command{
+		Use:   "components",
+		Short: "Exports all of the components",
+		Long:  `Exports all of the components, to STDOUT or to files.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			componentAction(ctx, fio, sio, compOpts, gopts)
+		},
+	}
+
+	componentCmd.Flags().StringVar(&compOpts.writeTo, "write-to", "",
+		"Directory to write the components to. If not set, writes to STDOUT, delimited by ---")
+	componentCmd.Flags().BoolVar(&compOpts.overwrite, "overwrite", false,
+		"Whether to overwrite files. By default, if a file already exists, an error will be produced.")
+
+	componentCmd.Flags().BoolVar(&compOpts.exportSet, "export-set", false,
+		"Whether to export a component set when exporting components.")
+	componentCmd.Flags().StringVar(&compOpts.setName, "setName", "component-set",
+		"name for the component set, if not specified by a bundle")
+	componentCmd.Flags().StringVar(&compOpts.setVersion, "setVersion", "0.1.0",
+		"version for the component set, if not specified by a bundle")
+
+	cmd.AddCommand(objectCmd)
+	cmd.AddCommand(componentCmd)
 	return cmd
 }

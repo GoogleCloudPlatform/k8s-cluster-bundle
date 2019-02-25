@@ -91,6 +91,15 @@ type ComponentBuilder struct {
 	// inline process, the data is inserted into a generated config map before
 	// being added to the objects. A ConfigMap is generated per-filegroup.
 	RawTextFiles []FileGroup `json:"rawTextFiles,omitempty"`
+
+	// BuildTags are tags to apply to the component during component-build time.
+	// The primary purpose of BuildTags is so that built-components can be
+	// exported to specific directories. It is stored as a comma-separated value
+	// in an annotation on the built-component.
+	//
+	// Build-tags should follow the same rules as Kubernetes names. See
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+	BuildTags []string `json:"buildTags,omitempty"`
 }
 
 // FileGroup represents a collection of files. When used to create ConfigMaps

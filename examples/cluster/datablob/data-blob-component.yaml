@@ -20,3 +20,5 @@ rawTextFiles:
 - name: data-blob
   files:
   - url: file:///datablob/some-data.txt
+buildTags:
+- latest

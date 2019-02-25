@@ -329,7 +329,7 @@ spec:
 				t.Fatalf("no objects found in new component")
 			}
 
-			strval, err := (&converter.ObjectExporter{Objects: newComp.Spec.Objects}).ExportAsYAML()
+			strval, err := converter.NewExporter(newComp).ObjectsAsSingleYAML()
 			if err != nil {
 				t.Fatalf("Error converting objects to yaml: %v", err)
 			}

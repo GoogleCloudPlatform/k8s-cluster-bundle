@@ -22,32 +22,25 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	log "k8s.io/klog"
-	"github.com/spf13/cobra"
 )
 
-// options represents options flags for the export command.
-type options struct{}
+// objOptions represents options flags for the export objects command.
+type objOptions struct{}
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command,  opts *options, gopt *cmdlib.GlobalOptions) {
+func objectAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, _ *objOptions, gopt *cmdlib.GlobalOptions) {
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
-	if err := run(ctx, opts, brw, sio, gopt); err != nil {
+	if err := runObject(ctx, brw, sio, gopt); err != nil {
 		log.Exit(err)
 	}
 }
 
-func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, stdio cmdlib.StdioReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func runObject(ctx context.Context, brw cmdlib.BundleReaderWriter, stdio cmdlib.StdioReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading bundle contents: %v", err)
 	}
 
-	objs, err := bw.ExportAsObjects()
-	if err != nil {
-		return err
-	}
-
-	exporter := converter.ObjectExporter{Objects: objs}
-	s, err := exporter.ExportAsYAML()
+	s, err := converter.NewExporter(bw.AllComponents()...).ObjectsAsSingleYAML()
 	if err != nil {
 		return err
 	}

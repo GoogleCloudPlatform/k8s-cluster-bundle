@@ -165,6 +165,15 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		return nil, fmt.Errorf("metadata.Name %q is not a valid DNS 1123 subdomain in component %q/%q: %v",
 			om.Name, comp.ComponentName, comp.Version, errs)
 	}
+
+	if len(comp.BuildTags) > 0 {
+		tagString := strings.Join(comp.BuildTags, ",")
+		if om.Annotations == nil {
+			om.Annotations = make(map[string]string)
+		}
+		om.Annotations[bundle.BuildTagIdentifier] = tagString
+	}
+
 	newComp := &bundle.Component{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "bundle.gke.io/v1alpha1",
