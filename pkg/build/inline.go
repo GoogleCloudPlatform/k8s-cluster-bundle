@@ -43,7 +43,10 @@ type Inliner struct {
 func NewLocalInliner(cwd string) *Inliner {
 	return NewInlinerWithScheme(
 		files.FileScheme,
-		&files.LocalFileObjReader{filepath.Dir(cwd), &files.LocalFileSystemReader{}},
+		&files.LocalFileObjReader{
+			WorkingDir: filepath.Dir(cwd),
+			Rdr:        &files.LocalFileSystemReader{},
+		},
 	)
 }
 

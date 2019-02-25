@@ -104,7 +104,7 @@ func runTest(t *testing.T, comp *bundle.Component, tc *TestCase) {
 
 func runBuild(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Component {
 	buildFilter := &filter.Options{}
-	comp, err := build.BuildComponentPatchTemplates(comp, buildFilter, tc.Build.Options)
+	comp, err := build.ComponentPatchTemplates(comp, buildFilter, tc.Build.Options)
 	cerr := testutil.CheckErrorCases(err, tc.Expect.BuildErrSubstr)
 	if cerr != nil {
 		t.Fatal(cerr)

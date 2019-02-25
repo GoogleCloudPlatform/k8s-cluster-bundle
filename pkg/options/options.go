@@ -26,8 +26,6 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// TODO(kashomon): Should options be of JSON Type or just interface{}?
-
 // JSONOptions is an instance of options, represented as a JSON object encoded
 // as map[string]interface{}. See more at the go docs for `encoding/json`.
 type JSONOptions map[string]interface{}
@@ -40,8 +38,18 @@ type Applier interface {
 }
 
 const (
-	MissingKeyError   = "missingkey=error"
+	// MissingKeyError is an option for go templates. Execution stops immediately
+	// with an error. This is the used as the default in the ClusterBundle.
+	MissingKeyError = "missingkey=error"
+
+	// MissingKeyDefault is same as MissingKeyInvalid.
 	MissingKeyDefault = "missingkey=default"
+
+	// MissingKeyInvalid ihe default behavior: Do nothing and continue execution.
+	// If printed, the result of the index operation is the string
 	MissingKeyInvalid = "missingkey=invalid"
-	MissingKeyZero    = "missingkey=zero"
+
+	// MissingKeyZero is an option for go templates. The operation returns the
+	// zero value for the map type's element.
+	MissingKeyZero = "missingkey=zero"
 )

@@ -363,7 +363,7 @@ spec:
 				t.Fatalf("Error converting component %s: %v", tc.component, err)
 			}
 
-			newComp, err := BuildComponentPatchTemplates(c, tc.customFilter, tc.opts)
+			newComp, err := ComponentPatchTemplates(c, tc.customFilter, tc.opts)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
 				t.Error(cerr)
