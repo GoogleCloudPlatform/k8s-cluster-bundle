@@ -1,4 +1,4 @@
 package version
 
-const BundlectlVersion = "1"
+const BundlectlVersion = "0.10.0"
 
