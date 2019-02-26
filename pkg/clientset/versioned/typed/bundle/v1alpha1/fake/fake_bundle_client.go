@@ -34,14 +34,6 @@ func (c *FakeBundleV1alpha1) ComponentSets(namespace string) v1alpha1.ComponentS
 	return &FakeComponentSets{c, namespace}
 }
 
-func (c *FakeBundleV1alpha1) PackageDeployments(namespace string) v1alpha1.PackageDeploymentInterface {
-	return &FakePackageDeployments{c, namespace}
-}
-
-func (c *FakeBundleV1alpha1) PackageDeploymentClasses(namespace string) v1alpha1.PackageDeploymentClassInterface {
-	return &FakePackageDeploymentClasses{c, namespace}
-}
-
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeBundleV1alpha1) RESTClient() rest.Interface {

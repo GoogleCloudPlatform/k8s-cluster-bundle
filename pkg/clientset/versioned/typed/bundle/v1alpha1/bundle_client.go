@@ -27,8 +27,6 @@ type BundleV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ComponentsGetter
 	ComponentSetsGetter
-	PackageDeploymentsGetter
-	PackageDeploymentClassesGetter
 }
 
 // BundleV1alpha1Client is used to interact with features provided by the bundle.gke.io group.
@@ -42,14 +40,6 @@ func (c *BundleV1alpha1Client) Components(namespace string) ComponentInterface {
 
 func (c *BundleV1alpha1Client) ComponentSets(namespace string) ComponentSetInterface {
 	return newComponentSets(c, namespace)
-}
-
-func (c *BundleV1alpha1Client) PackageDeployments(namespace string) PackageDeploymentInterface {
-	return newPackageDeployments(c, namespace)
-}
-
-func (c *BundleV1alpha1Client) PackageDeploymentClasses(namespace string) PackageDeploymentClassInterface {
-	return newPackageDeploymentClasses(c, namespace)
 }
 
 // NewForConfig creates a new BundleV1alpha1Client for the given config.
