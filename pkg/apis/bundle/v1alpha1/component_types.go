@@ -41,6 +41,15 @@ type ComponentSetSpec struct {
 	Components []ComponentReference `json:"components,omitempty"`
 }
 
+// ComponentSetReference provides a reference to a component set
+type ComponentSetReference struct {
+	// SetName is the readable name of a component set.
+	SetName string `json:"setName,omitempty"`
+
+	// Version is the version string for a component set.
+	Version string `json:"version,omitempty"`
+}
+
 // ComponentReference provides a reference
 type ComponentReference struct {
 	// ComponentName is the readable name of a component.

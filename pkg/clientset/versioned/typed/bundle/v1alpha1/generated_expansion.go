@@ -19,3 +19,7 @@ package v1alpha1
 type ComponentExpansion interface{}
 
 type ComponentSetExpansion interface{}
+
+type PackageDeploymentExpansion interface{}
+
+type PackageDeploymentClassExpansion interface{}

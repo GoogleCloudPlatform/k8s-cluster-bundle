@@ -6,6 +6,7 @@ go_library(
         "builder_types.go",
         "bundle_types.go",
         "component_types.go",
+        "deploy_types.go",
         "doc.go",
         "helpers.go",
         "identifiers.go",
