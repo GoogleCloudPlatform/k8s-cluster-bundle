@@ -31,10 +31,10 @@ import (
 )
 
 // AddCommands adds all subcommands to the root command.
-func AddCommands(ctx context.Context, args []string, bundlectlVersion string) *cobra.Command {
+func AddCommands(ctx context.Context, args []string) *cobra.Command {
 	fio := &files.LocalFileSystemReaderWriter{}
 	sio := &cmdlib.RealStdioReaderWriter{}
-	return AddCommandsInternal(ctx, fio, sio, args, bundlectlVersion)
+	return AddCommandsInternal(ctx, fio, sio, args)
 }
 
 // AddCommandsInternal is an internal command that allows for dependency
@@ -42,7 +42,7 @@ func AddCommands(ctx context.Context, args []string, bundlectlVersion string) *c
 //
 // Note: This method is only public to allow for sub-commands to define
 // integration tests.
-func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, args []string, bundlectlVersion string) *cobra.Command {
+func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "bundlectl",
 		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
@@ -71,7 +71,7 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 	find.AddCommandsTo(ctx, fio, sio, rootCmd)
 	patch.AddCommandsTo(ctx, fio, sio, rootCmd)
 	validate.AddCommandsTo(ctx, fio, sio, rootCmd)
-	version.AddCommandsTo(rootCmd, bundlectlVersion)
+	version.AddCommandsTo(rootCmd)
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:

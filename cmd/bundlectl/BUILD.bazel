@@ -1,5 +1,4 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load(":version.bzl", "VERSION")
 
 go_library(
     name = "go_default_library",
@@ -13,5 +12,4 @@ go_binary(
     name = "bundlectl",
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
-    x_defs = {"main.BUNDLECTL_VERSION": VERSION},  # Links the version value into the binary
 )

@@ -22,16 +22,10 @@ import (
 	"os"
 )
 
-var BUNDLECTL_VERSION string // This value gets statically set in go compilation.  See the bazel rules.
-
 func main() {
-	if BUNDLECTL_VERSION == "" {
-		panic("No version specified.  This should have been specified during linking")
-	}
-
 	flag.Lookup("logtostderr").Value.Set("true")
 
-	root := commands.AddCommands(context.Background(), os.Args[1:], BUNDLECTL_VERSION)
+	root := commands.AddCommands(context.Background(), os.Args[1:])
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
