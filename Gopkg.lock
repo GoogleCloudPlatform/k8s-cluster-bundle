@@ -508,6 +508,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:aecaf65aafd7b6fd9ab070022df68777bc3d5ecd80679fca40e5a7381e969602"
+  name = "k8s.io/klog"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8145543d67ada0bd556af97faeeb8a65a2651c98"
+
+[[projects]]
+  branch = "master"
   digest = "1:03a96603922fc1f6895ae083e1e16d943b55ef0656b56965351bd87e7d90485f"
   name = "k8s.io/kube-openapi"
   packages = ["pkg/util/proto"]
@@ -524,7 +532,6 @@
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/validate",
     "github.com/go-openapi/validate/post",
-    "github.com/golang/glog",
     "github.com/spf13/cobra",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
@@ -547,6 +554,7 @@
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
     "k8s.io/client-go/util/flowcontrol",
+    "k8s.io/klog",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

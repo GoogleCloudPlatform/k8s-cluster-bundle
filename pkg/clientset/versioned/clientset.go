@@ -17,7 +17,7 @@
 package versioned
 
 import (
-	glog "github.com/golang/glog"
+	klog "k8s.io/klog"
 	bundlev1alpha1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -72,7 +72,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
-		glog.Errorf("failed to create the DiscoveryClient: %v", err)
+		klog.Errorf("failed to create the DiscoveryClient: %v", err)
 		return nil, err
 	}
 	return &cs, nil
