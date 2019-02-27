@@ -82,7 +82,7 @@ func TestRealisticDataParseAndInline_Component(t *testing.T) {
 		t.Fatalf("Error calling ComponentFiles(): %v", err)
 	}
 
-	yaml, err := converter.FromObject(component).ToYAML()
+	_, err = converter.FromObject(component).ToYAML()
 	if err != nil {
 		t.Fatalf("Error converting the inlined component back into YAML: %v", err)
 	}
