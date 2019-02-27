@@ -43,7 +43,6 @@ func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioRea
 	}
 }
 
-
 func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
@@ -53,10 +52,10 @@ func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWrit
 	bundleType := bw.Kind()
 	if bundleType == "Component" {
 		errs := validate.Component(bw.Component())
-		if len (errs) > 0 {
+		if len(errs) > 0 {
 			return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
 		}
-	}else{   //@todo add validation for BundleBuilder, Bundle, ComponentBuilder here.
+	} else { //@todo add validation for BundleBuilder, Bundle, ComponentBuilder here.
 		return fmt.Errorf("Kind %q not yet supported", bundleType)
 	}
 

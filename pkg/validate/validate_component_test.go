@@ -16,7 +16,7 @@ package validate
 
 import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
-	"strings"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 	"testing"
 )
 
@@ -31,11 +31,9 @@ func assertValidateComponent(componentString string, expectedError string, numEr
 		t.Fatalf("got %v errors, expected %v", numErrorsActual, numErrors)
 	}
 
-	errString := errs.ToAggregate()
-	if errString != nil && expectedError != "" && !strings.Contains(errString.Error(), expectedError) {
-		t.Fatalf("got %v should contain %v", errString.Error(), expectedError)
+	if err := testutil.CheckErrorCases(errs.ToAggregate(), expectedError); err != nil {
+		t.Fatalf(err.Error())
 	}
-
 }
 
 func TestValidateComponents(t *testing.T) {
@@ -171,9 +169,8 @@ func assertValidateComponentSet(componentSetString string, expectedError string,
 		t.Fatalf("got %v errors, want %v", numErrorsActual, numErrors)
 	}
 
-	errString := errs.ToAggregate()
-	if errString != nil && expectedError != "" && !strings.Contains(errString.Error(), expectedError) {
-		t.Fatalf("got %v should contain %v", errString.Error(), expectedError)
+	if err := testutil.CheckErrorCases(errs.ToAggregate(), expectedError); err != nil {
+		t.Fatalf(err.Error())
 	}
 }
 
@@ -262,6 +259,7 @@ func TestValidateComponentSets(t *testing.T) {
             version: 1.0.2`,
 			expectedErrors: 2,
 			description:    "api version, kind must be specified",
+			errorDesc:      "must be ComponentSet",
 		},
 	}
 
