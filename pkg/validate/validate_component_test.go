@@ -28,7 +28,7 @@ func assertValidateComponent(componentString string, expectedError string, numEr
 	errs := Component(component)
 	numErrorsActual := len(errs)
 	if numErrorsActual != numErrors {
-		t.Fatalf("expected %v errors got %v,  errors: %v", numErrors, numErrorsActual, errs)
+		t.Fatalf("got %v errors, expected %v", numErrorsActual, numErrors)
 	}
 
 	errString := errs.ToAggregate()
@@ -168,7 +168,7 @@ func assertValidateComponentSet(componentSetString string, expectedError string,
 	errs := ComponentSet(componentSet)
 	numErrorsActual := len(errs)
 	if numErrorsActual != numErrors {
-		t.Fatalf("expected %v errors got %v:  %v", numErrors, numErrorsActual, errs)
+		t.Fatalf("got %v errors, want %v", numErrorsActual, numErrors)
 	}
 
 	errString := errs.ToAggregate()
