@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/golang/glog"
+	log "k8s.io/klog"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build"
