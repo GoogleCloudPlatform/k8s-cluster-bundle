@@ -57,7 +57,7 @@ func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWrit
 			return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
 		}
 	}else{   //@todo add validation for BundleBuilder, Bundle, ComponentBuilder here.
-		return fmt.Errorf("Kind %v not yet supported", bundleType)
+		return fmt.Errorf("Kind %q not yet supported", bundleType)
 	}
 
 	log.Info("No errors found")
