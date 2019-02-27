@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	//"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 var (
