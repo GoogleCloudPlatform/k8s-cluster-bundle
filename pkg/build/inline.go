@@ -175,9 +175,24 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 				return nil, fmt.Errorf("error reading raw text file for component %q: %v", name, err)
 			}
 			dataName := filepath.Base(cf.URL)
-			m.addData(dataName, string(text))
+			if fg.AsBinary {
+				m.addBinaryData(dataName, text)
+			} else {
+				m.addData(dataName, string(text))
+			}
 		}
+		if len(m.cfgMap.Data) > 0 && len(m.cfgMap.BinaryData) > 0 {
+			return nil, fmt.Errorf("both and binary data were filled out for group: %v", fg)
+		}
+
 		m.cfgMap.ObjectMeta.Annotations[string(bundle.InlineTypeIdentifier)] = string(bundle.RawStringInline)
+		for key, value := range fg.Annotations {
+			m.cfgMap.ObjectMeta.Annotations[key] = value
+		}
+		for key, value := range fg.Labels {
+			m.cfgMap.ObjectMeta.Labels[key] = value
+		}
+
 		uns, err := m.toUnstructured()
 		if err != nil {
 			return nil, fmt.Errorf("for component %q and file group %q, %v", name, fgName, err)

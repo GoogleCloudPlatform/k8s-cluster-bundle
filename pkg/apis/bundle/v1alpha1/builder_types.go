@@ -92,3 +92,46 @@ type ComponentBuilder struct {
 	// being added to the objects. A ConfigMap is generated per-filegroup.
 	RawTextFiles []FileGroup `json:"rawTextFiles,omitempty"`
 }
+
+// FileGroup represents a collection of files. When used to create ConfigMaps
+// from RawTextFiles, the metadata.name comes from the Name field and data-key
+// being the basename of File URL. Thus, if the url is something like
+// 'file://foo/bar/biff.txt', the data-key will be 'biff.txt'.
+type FileGroup struct {
+	// Name of the filegroup. For raw text files, this becomes the name of the.
+	Name string `json:"name,omitempty"`
+
+	// AsBinary indicates whether to import this text as Binary data rather than
+	// string data. Note that Binary data is only supported for Kubernetes
+	// clusters > Kubernetes v1.10.
+	AsBinary bool `json:"asBinary"`
+
+	// Annotations to apply to the resulting config map.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Labels to apply to the resulting config map.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Files that make up this file group.
+	Files []File `json:"files,omitempty"`
+}
+
+// File represents some sort of file that's specified external to a component or bundle,
+// which could be on either a local or remote file system.
+type File struct {
+	// URL to find this file; the url string must be parsable via Go's net/url
+	// library. It is generally recommended that a URI scheme be provided in the
+	// URL, but it is not required. If a scheme is not provided, it is assumed
+	// that the scheme is a file-scheme.
+	//
+	// For example, these are all valid:
+	// - foo/bar/biff (a relative path)
+	// - /foo/bar/biff (an absolute path)
+	// - file:///foo/bar/biff (an absolute path with an explicit 'file' scheme)
+	// - http://example.com/foo.yaml
+	URL string `json:"url,omitempty"`
+
+	// Digest is an optional hash of the file to ensure we are pulling
+	// the correct binary/file.
+	Digest string `json:"hash,omitempty"`
+}

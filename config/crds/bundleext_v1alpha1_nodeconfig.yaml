@@ -38,8 +38,8 @@ spec:
           description: ExternalInitFile is an externally specified init file.
           properties:
             hash:
-              description: Optional Sha256 hash of the binary to ensure we are pulling
-                the correct binary/file.
+              description: Digest is an optional hash of the file to ensure we are
+                pulling the correct binary/file.
               type: string
             url:
               description: 'URL to find this file; the url string must be parsable
@@ -66,8 +66,8 @@ spec:
           description: OsImage is the the OS image to use for VM creation.
           properties:
             hash:
-              description: Optional Sha256 hash of the binary to ensure we are pulling
-                the correct binary/file.
+              description: Digest is an optional hash of the file to ensure we are
+                pulling the correct binary/file.
               type: string
             url:
               description: 'URL to find this file; the url string must be parsable
