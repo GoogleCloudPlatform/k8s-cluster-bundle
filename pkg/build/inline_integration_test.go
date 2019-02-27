@@ -18,7 +18,6 @@ import (
 	"context"
 	"io/ioutil"
 	"testing"
-	"fmt"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
@@ -87,8 +86,6 @@ func TestRealisticDataParseAndInline_Component(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error converting the inlined component back into YAML: %v", err)
 	}
-
-	fmt.Println("yaml data is: ", string(yaml))
 
 	// Ensure it validates
 	if errs := validate.Component(component); len(errs) > 0 {
