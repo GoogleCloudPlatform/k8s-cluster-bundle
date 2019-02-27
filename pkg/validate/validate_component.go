@@ -47,10 +47,10 @@ var (
 )
 
 func Components(components []*bundle.Component) field.ErrorList {
-	errs := field.ErrorList{ }
-	for _, component := range(components){
+	errs := field.ErrorList{}
+	for _, component := range components {
 		compErrs := Component(component)
-		for _, err := range(compErrs){
+		for _, err := range compErrs {
 			errs = append(errs, err)
 		}
 	}
@@ -102,7 +102,6 @@ func Component(c *bundle.Component) field.ErrorList {
 
 	return errs
 }
-
 
 // ComponentSet validates a component.
 func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
