@@ -29,10 +29,6 @@
   branch = "master"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
-
-[[constraint]]
   name = "github.com/spf13/cobra"
   version = "0.0.3"
 
@@ -51,6 +47,10 @@
 [[constraint]]
   branch = "release-8.0" # Roughly equal to K8S 1.11
   name = "k8s.io/client-go"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/klog"
 
 [prune]
   go-tests = true
