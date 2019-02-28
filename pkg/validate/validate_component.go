@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/core"
 )
 
 var (
@@ -47,34 +46,13 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
-// All validates components and components sets, providing as many errors as it can.
-func All(cp []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
+func Components(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
-	errs = append(errs, ComponentSet(cs)...)
-	errs = append(errs, AllComponents(cp)...)
-	errs = append(errs, ComponentsAndComponentSet(cp, cs)...)
-	errs = append(errs, AllComponentObjects(cp)...)
-	return errs
-}
-
-func cPath(ref bundle.ComponentReference) *field.Path {
-	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
-}
-
-// AllComponents validates a list of components.
-func AllComponents(components []*bundle.Component) field.ErrorList {
-	errs := field.ErrorList{}
-	objCollect := make(map[bundle.ComponentReference]bool)
-	for _, c := range components {
-		errs = append(errs, Component(c)...)
-
-		ref := c.ComponentReference()
-		p := cPath(ref)
-		if _, ok := objCollect[ref]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("component reference %v", ref)))
-			continue
+	for _, component := range components {
+		compErrs := Component(component)
+		for _, err := range compErrs {
+			errs = append(errs, err)
 		}
-		objCollect[ref] = true
 	}
 	return errs
 }
@@ -109,6 +87,7 @@ func Component(c *bundle.Component) field.ErrorList {
 	}
 
 	expType := "Component"
+
 	if k := c.Kind; k != expType {
 		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be Component"))
 	}
@@ -116,9 +95,11 @@ func Component(c *bundle.Component) field.ErrorList {
 	if !versionPattern.MatchString(ver) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
 	}
+
 	if c.Spec.AppVersion != "" && !appVersionPattern.MatchString(c.Spec.AppVersion) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
+
 	return errs
 }
 
@@ -166,64 +147,6 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 	return errs
 }
 
-// ComponentsAndComponentSet validates components in the context of a component set.
-func ComponentsAndComponentSet(components []*bundle.Component, cs *bundle.ComponentSet) field.ErrorList {
-	errs := field.ErrorList{}
-
-	compMap := make(map[bundle.ComponentReference]*bundle.Component)
-	for _, c := range components {
-		compMap[c.ComponentReference()] = c
-	}
-
-	p := field.NewPath("ComponentSet")
-	// It is possible for there to be components that the component set does not
-	// know about, but all components in the component set must be in the
-	// components list
-	for _, ref := range cs.Spec.Components {
-		if _, ok := compMap[ref]; !ok {
-			errs = append(errs, field.NotFound(p.Child("Spec", "Components").Key(fmt.Sprintf("%v", ref)), "component reference from set not found in component list"))
-		}
-	}
-
-	return errs
-}
-
-// AllComponentObjects validates all objects in all componenst
-func AllComponentObjects(components []*bundle.Component) field.ErrorList {
-	errs := field.ErrorList{}
-	for _, ca := range components {
-		errs = append(errs, ComponentObjects(ca)...)
-	}
-	return errs
-}
-
-// ComponentObjects validates objects in a componenst.
-func ComponentObjects(cp *bundle.Component) field.ErrorList {
-	// Map to catch duplicate objects.
-	compObjects := make(map[core.ObjectRef]bool)
-
-	errs := field.ErrorList{}
-
-	ref := cp.ComponentReference()
-	basep := cPath(ref)
-	for i, obj := range cp.Spec.Objects {
-		n := obj.GetName()
-		if n == "" {
-			errs = append(errs, field.Required(basep.Child("Spec", "Objects").Index(i).Child("Metadata", "Name"),
-				""))
-			continue
-		}
-		p := basep.Child("Spec", "Objects").Key(n)
-
-		if nameErrs := validateName(p, n); len(nameErrs) > 0 {
-			errs = append(errs, nameErrs...)
-		}
-
-		oref := core.ObjectRefFromUnstructured(obj)
-		if _, ok := compObjects[oref]; ok {
-			errs = append(errs, field.Duplicate(p, fmt.Sprintf("object reference: %s", oref)))
-		}
-		compObjects[oref] = true
-	}
-	return errs
+func cPath(ref bundle.ComponentReference) *field.Path {
+	return field.NewPath("Component").Key(fmt.Sprintf("%v", ref))
 }

@@ -15,405 +15,255 @@
 package validate
 
 import (
-	"fmt"
-	"strings"
-	"testing"
-
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"testing"
 )
 
-var defaultComponentSet = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  setName: foo-set
-  version: 1.0.2
-  components:
-  - componentName: foo-comp
-    version: 1.0.2
-`
+func assertValidateComponent(componentString string, expectedError string, numErrors int, t *testing.T) {
+	component, errParse := converter.FromYAMLString(componentString).ToComponent()
+	if errParse != nil {
+		t.Fatalf("parse error: %v", errParse)
+	}
+	errs := Component(component)
+	numErrorsActual := len(errs)
+	if numErrorsActual != numErrors {
+		t.Fatalf("got %v errors, expected %v", numErrorsActual, numErrors)
+	}
 
-var defaultComponentSetNoRefs = `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  setName: bar-set
-  version: 1.0.2
-`
+	if err := testutil.CheckErrorCases(errs.ToAggregate(), expectedError); err != nil {
+		t.Fatalf(err.Error())
+	}
+}
 
-var defaultComponentData = `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: bar-comp-2.0.3
-  spec:
-    componentName: foo-comp
-    version: 2.0.3
-    appVersion: 2.4.5
-`
-
-func TestValidateAll(t *testing.T) {
-	testCases := []struct {
-		desc         string
-		set          string
-		components   string
-		errSubstring string
+func TestValidateComponents(t *testing.T) {
+	components := []struct {
+		componentConfig string
+		expectedErrors  int
+		description     string
+		errorDesc       string
 	}{
 		{
-			desc:       "success",
-			set:        defaultComponentSet,
-			components: defaultComponentData,
-			// no errors
-		},
-
-		// Tests for component sets
-		{
-			desc: "component set fail: bad kind",
-			set: `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: Zor
-spec:
-  setName: zip
-  version: 1.0.2
-  components:
-  - componentName: foo-comp
-    version: 1.0.2`,
-			components:   defaultComponentData,
-			errSubstring: "must be ComponentSet",
-		},
-
-		{
-			desc: "component set fail: apiVersion",
-			set: `
-apiVersion: 'zork.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  setName: zip
-  version: 1.0.2
-  components:
-  - componentName: foo-comp
-    version: 1.0.2`,
-			components:   defaultComponentData,
-			errSubstring: "bundle.gke.io/<version>",
+			componentConfig: `
+        apiVersion: bundle.gke.io/v1alpha1
+        kind: Component
+        metadata:
+          creationTimestamp: null
+        spec:
+          version: 30.0.2
+          componentName: etcd-component`,
+			expectedErrors: 0,
+			description:    "basic component validation",
 		},
 		{
-			desc: "component set fail: invalid X.Y.Z version string",
-			set: `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  setName: zip
-  version: foo
-  components:
-  - componentName: foo-comp
-    version: 1.0.2`,
-			components:   defaultComponentData,
-			errSubstring: "must be of the form X.Y.Z",
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 2.10.1
+          appVersion: 3.10.1`,
+			expectedErrors: 0,
+			description:    "basic component no refs",
 		},
 		{
-			desc: "fail: missing X.Y.Z version string",
-			set: `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  setName: zip
-  components:
-  - componentName: foo-comp
-    version: 1.0.2`,
-			components:   defaultComponentData,
-			errSubstring: "Required value",
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 2.10.1
+          appVersion: 3.10`,
+			expectedErrors: 0,
+			description:    "dot notation app version verification",
 		},
 		{
-			desc: "fail: missing set name",
-			set: `
-apiVersion: 'bundle.gke.io/v1alpha1'
-kind: ComponentSet
-spec:
-  version: 1.0.2
-  components:
-  - componentName: foo-comp
-    version: 1.0.2`,
-			components:   defaultComponentData,
-			errSubstring: "Required value",
-		},
-
-		// Tests for Components
-		{
-			desc: "success",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 2.10.1
-    appVersion: 3.10.1`,
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'       
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 2.010.1             #invalid`,
+			expectedErrors: 1,
+			description:    "version notation is incorrect",
+			errorDesc:      "must be of the form X.Y.Z",
 		},
 		{
-			desc: "success: X.Y app version",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 2.10.1
-    appVersion: 3.10`,
+			componentConfig: `     # no kind field
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 1.0.2`,
+			expectedErrors: 1,
+			description:    "requires kind field to be specified",
+			errorDesc:      "kind must be Component",
 		},
 		{
-			desc: "success: X.Y.Z-blah app version",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 2.10.1
-    appVersion: 3.10.32-blah.0`,
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 2.10.1
+          appVersion: 2.010.1   #invalid`,
+			expectedErrors: 1,
+			description:    "app version validation must be of form X.Y.Z",
+			errorDesc:      "must be of the form X.Y.Z or X.Y",
 		},
 		{
-			desc: "fail component: no kind",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2`,
-			errSubstring: "must be Component",
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp
+          version: 1.0.2
+          objects:
+          - apiVersion: v1
+            kind: Pod
+            metadata:
+              name: foo-pod`,
+			expectedErrors: 0,
+			description:    "component with objects specified",
 		},
 		{
-			desc: "fail component: duplicate component reference",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2-zed
-  spec:
-    componentName: foo-comp
-    version: 1.0.2`,
-			errSubstring: "component reference",
-		},
-
-		{
-			desc: "fail: component invalid X.Y.Z version string ",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 2.010.1`,
-			errSubstring: "must be of the form X.Y.Z",
-		},
-		{
-			desc: "fail: component invalid X.Y.Z app version string ",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 2.10.1,
-    appVersion: 2.010.1`,
-			errSubstring: "must be of the form X.Y.Z",
-		},
-		{
-			desc: "fail: component missing X.Y.Z version string ",
-			set:  defaultComponentSetNoRefs,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp`,
-			errSubstring: "Required value",
-		},
-
-		{
-			desc: "component object success",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-    objects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: foo-pod`,
-		},
-		{
-			desc: "object fail: duplicate",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-    objects:
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: foo-pod
-    - apiVersion: v1
-      kind: Pod
-      metadata:
-        name: foo-pod`,
-			errSubstring: "object reference",
-		},
-		{
-			desc: "object fail: no metadata.name",
-			set:  defaultComponentSet,
-			components: `
-components:
-- apiVersion: 'bundle.gke.io/v1alpha1'
-  kind: Component
-  metadata:
-    name: foo-comp-1.0.2
-  spec:
-    componentName: foo-comp
-    version: 1.0.2
-    objects:
-    - apiVersion: v1
-      kind: Pod`,
-			errSubstring: "Required value",
+			componentConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: Component
+        metadata:
+          name: foo-comp-1.0.2
+        spec:
+          componentName: foo-comp`,
+			expectedErrors: 1,
+			description:    "no version specified for component in spec",
+			errorDesc:      "components must have a Version",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			set, err := converter.FromYAMLString(tc.set).ToComponentSet()
-			if err != nil {
-				t.Fatal(err)
-			}
-			comp, err := converter.FromYAMLString(tc.components).ToBundle()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err = checkErrCases(All(comp.Components, set).ToAggregate(), tc.errSubstring); err != nil {
-				t.Errorf(err.Error())
-			}
+	for _, component := range components {
+		t.Run(component.description, func(t *testing.T) {
+			assertValidateComponent(component.componentConfig, component.errorDesc, component.expectedErrors, t)
 		})
 	}
 }
 
-func checkErrCases(err error, expErrSubstring string) error {
-	if err == nil && expErrSubstring == "" {
-		return nil // success!
-	} else if err == nil && expErrSubstring != "" {
-		return fmt.Errorf("got nil error, but expected one containing %q", expErrSubstring)
-	} else if err != nil && expErrSubstring == "" {
-		return fmt.Errorf("got error: %q. but did not expect one", err.Error())
-	} else if err != nil && expErrSubstring != "" && !strings.Contains(err.Error(), expErrSubstring) {
-		return fmt.Errorf("got error: %q. expected it to contain substring %q", err.Error(), expErrSubstring)
+func assertValidateComponentSet(componentSetString string, expectedError string, numErrors int, t *testing.T) {
+	componentSet, errParse := converter.FromYAMLString(componentSetString).ToComponentSet()
+	if errParse != nil {
+		t.Fatalf("parse error: %v", errParse)
 	}
-	return nil
+	errs := ComponentSet(componentSet)
+	numErrorsActual := len(errs)
+	if numErrorsActual != numErrors {
+		t.Fatalf("got %v errors, want %v", numErrorsActual, numErrors)
+	}
+
+	if err := testutil.CheckErrorCases(errs.ToAggregate(), expectedError); err != nil {
+		t.Fatalf(err.Error())
+	}
 }
 
-func TestValidateAll_MultipleErrors(t *testing.T) {
-	testCases := []struct {
-		desc       string
-		set        string
-		components string
-		numErrors  int
+func TestValidateComponentSets(t *testing.T) {
+	componentSets := []struct {
+		componentSetConfig string
+		expectedErrors     int
+		description        string
+		errorDesc          string
 	}{
 		{
-			desc:       "success: no errors",
-			set:        defaultComponentSet,
-			components: defaultComponentData,
+			componentSetConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: ComponentSet
+        spec:
+          setName: foo-set
+          version: 1.0.2
+          components:
+          - componentName: foo-comp
+            version: 1.0.2`,
+			expectedErrors: 0,
+			description:    "basic component set validation",
 		},
 		{
-			desc: "set errors: apiversion, kind, component-mismatch",
-			set: `
-spec:
-  setName: zip
-  version: 1.0.2
-  components:
-  - componentName: zap-comp
-    version: 1.0.2`,
-			components: defaultComponentData,
-			numErrors:  3,
+			componentSetConfig: `
+        apiVersion: 'zork.gke.io/v1alpha1'         # this should be bundle.gke.io/<version>
+        kind: ComponentSet
+        spec:
+          setName: zip
+          version: 1.0.2
+          components:
+          - componentName: foo-comp
+            version: 1.0.2`,
+			expectedErrors: 1,
+			description:    "invalid api version",
+			errorDesc:      "must have an apiVersion of the form \"bundle.gke.io/<version>",
 		},
 		{
-			desc: "set and component errors",
-			set: `
-spec:
-  setName: zip
-  version: 1.0.2
-  components:
-  - componentName: zap-comp
-    version: 1.0.2`,
-			components: `
-components:
-- spec:
-    componentName: foo-comp
-    version: 1.0.2
-    objects:
-    - apiVersion: v1
-      kind: Pod`,
-			numErrors: 6,
+			componentSetConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'
+        kind: ComponentSet
+        spec:
+          setName: zip
+          version: foo              # invalid version string, must be of form X.Y.Z
+          components:
+          - componentName: foo-comp
+            version: 1.0.2`,
+			expectedErrors: 1,
+			description:    "invalid spec version must be of form X.Y.Z",
+			errorDesc:      "must be of the form X.Y.Z",
+		},
+		{
+			componentSetConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'  # missing setName in spec
+        kind: ComponentSet
+        spec:
+          version: 1.0.2
+          components:
+          - componentName: foo-comp
+            version: 1.0.2`,
+			expectedErrors: 1,
+			description:    "missing set name",
+			errorDesc:      "setName is required",
+		},
+		{
+			componentSetConfig: `
+        apiVersion: 'bundle.gke.io/v1alpha1'    # kind Zor is not ComponentSet
+        kind: Zor
+        spec:
+          setName: zip
+          version: 1.0.2
+          components:
+          - componentName: foo-comp
+            version: 1.0.2`,
+			expectedErrors: 1,
+			description:    "kind must be component set",
+			errorDesc:      "must be ComponentSet",
+		},
+		{
+			componentSetConfig: `      
+        spec:  
+          setName: zip
+          version: 1.0.2
+          components:
+          - componentName: zap-comp
+            version: 1.0.2`,
+			expectedErrors: 2,
+			description:    "api version, kind must be specified",
+			errorDesc:      "must be ComponentSet",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			set, err := converter.FromYAMLString(tc.set).ToComponentSet()
-			if err != nil {
-				t.Fatal(err)
-			}
-			comp, err := converter.FromYAMLString(tc.components).ToBundle()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if errs := All(comp.Components, set); len(errs) != tc.numErrors {
-				t.Errorf("got %d errors. expected exactly %d. errors were: %v", len(errs), tc.numErrors, errs)
-			}
-		})
+	for _, componentSet := range componentSets {
+		assertValidateComponentSet(componentSet.componentSetConfig, componentSet.errorDesc, componentSet.expectedErrors, t)
 	}
 }

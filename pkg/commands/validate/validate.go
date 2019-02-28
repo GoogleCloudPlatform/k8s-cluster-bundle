@@ -20,9 +20,7 @@ import (
 
 	log "k8s.io/klog"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
@@ -45,20 +43,22 @@ func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioRea
 	}
 }
 
-type componentValidator func([]*bundle.Component) field.ErrorList
-
-// componentValidationFn validates components.
-var componentValidationFn componentValidator = validate.AllComponents
-
 func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading contents: %v", err)
 	}
 
-	if errs := componentValidationFn(bw.AllComponents()); len(errs) > 0 {
-		return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
+	bundleType := bw.Kind()
+	if bundleType == "Component" {
+		errs := validate.Component(bw.Component())
+		if len(errs) > 0 {
+			return fmt.Errorf("there were one or more errors found while validating the bundle:\n%v", errs.ToAggregate())
+		}
+	} else { // TODO(BradfordMedeiros): add validation for BundleBuilder, Bundle, ComponentBuilder here.
+		return fmt.Errorf("Kind %q not yet supported", bundleType)
 	}
+
 	log.Info("No errors found")
 	return nil
 }
