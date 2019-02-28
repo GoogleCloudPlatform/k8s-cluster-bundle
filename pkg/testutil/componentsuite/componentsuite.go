@@ -35,7 +35,7 @@ import (
 )
 
 // Run runs a component-tester test-suite. testSuiteFile specifies the path to
-// the current file.
+// the a component-test-suite YAML file.
 //
 // By default, go runs tests with the cwd being the current directory.
 func Run(t *testing.T, testSuiteFile string) {
@@ -104,7 +104,7 @@ func runTest(t *testing.T, comp *bundle.Component, tc *TestCase) {
 
 func runBuild(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Component {
 	buildFilter := &filter.Options{}
-	comp, err := build.BuildComponentPatchTemplates(comp, buildFilter, tc.Build.Options)
+	comp, err := build.ComponentPatchTemplates(comp, buildFilter, tc.Build.Options)
 	cerr := testutil.CheckErrorCases(err, tc.Expect.BuildErrSubstr)
 	if cerr != nil {
 		t.Fatal(cerr)

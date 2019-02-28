@@ -22,78 +22,80 @@ import (
 type ComponentTestSuite struct {
 	// ComponentFile contains a path to a component file or component builder
 	// file.
-	ComponentFile string `json:componentFile`
+	ComponentFile string `json:"componentFile"`
 
 	// RootDirectory is the path to a root-directory.
-	RootDirectory string `json:rootDirectory`
+	RootDirectory string `json:"rootDirectory"`
 
 	// TestCases contains a list of component TestCases.
-	TestCases []*TestCase `json:testCases`
+	TestCases []*TestCase `json:"testCases"`
 }
 
 // TestCase contains the schema expected for the test-cases.
 type TestCase struct {
 	// Description of the test.
-	Description string `json:description`
+	Description string `json:"description"`
 
-	// Build parameters
-	Build Build `json:build`
+	// Build contains parameters for the build-phase. This is roughly equivalent
+	// to 'bundlectl build'
+	Build Build `json:"build"`
 
-	// Options-apply Parameters
-	Apply Apply `json:apply`
+	// Apply contains parameters for the apply-phase. This is roughly equivalent
+	// to 'bundlectl apply'
+	Apply Apply `json:"apply"`
 
-	// Expectations to check
-	Expect Expect `json:expect`
+	// Expect contains expectations to check against.
+	Expect Expect `json:"expect"`
 }
 
 // Build contains build parameters
 type Build struct {
 	// Options for the PatchTemplate build process
-	Options options.JSONOptions `json:options`
+	Options options.JSONOptions `json:"options"`
 
 	// Filters selects which patches to apply, based on the
 	// annotations on the patches.
-	Filters map[string]string `json:filters`
+	Filters map[string]string `json:"filters"`
 }
 
 // Apply contains build paramaters
 type Apply struct {
 	// Options for apply process
-	Options options.JSONOptions `json:options`
+	Options options.JSONOptions `json:"options"`
 
 	// Filters selects which patches to apply, based on the
 	// annotations on the patches.
-	Filters map[string]string `json:filters`
+	Filters map[string]string `json:"filters"`
 }
 
 // Expect contains expectations that should be filled.
 type Expect struct {
 	// Objects contains expectations for objects.
-	Objects []ObjectCheck `json:objects`
+	Objects []ObjectCheck `json:"objects"`
 
 	// BuildErrSubstr indicates a substring that's expected to be in an error in
 	// the build-process.
-	BuildErrSubstr string `json:buildErrSubstr`
+	BuildErrSubstr string `json:"buildErrSubstr"`
 
 	// ApplyErrSubstr indicates a substring that's expected to be in an error in
 	// the apply-process.
-	ApplyErrSubstr string `json:applyErrSubstr`
+	ApplyErrSubstr string `json:"applyErrSubstr"`
 }
 
-// ObjectCheck contains checks for an objects. Kind, and Name are used to find
+// ObjectCheck contains checks for a specific Object. Kind, and Name are used to find
 // objects. Expects exactly one object to match.
 type ObjectCheck struct {
-	// Kind of the objects (required).
-	Kind string `json:kind`
+	// Kind of the object (required).
+	Kind string `json:"kind"`
 
-	// Name of the objects (required).
-	Name string `json:name`
+	// Name of the object (required).
+	Name string `json:"name"`
 
-	// FindSubstrs contains a list of substrings that are expecetd to be found in
-	// the object.
-	FindSubstrs []string `json:findSubstrs`
+	// FindSubstrs contains a list of substrings that are expected to be found in
+	// the object after the apply-phase.
+	FindSubstrs []string `json:"findSubstrs"`
 
 	// NotFindSubstrs contains a list of substrings that are not expecetd to be
-	// found in the object
-	NotFindSubstrs []string `json:notFindSubstrs`
+	// found in the object after the apply-phase.
+	NotFindSubstrs []string `json:"notFindSubstrs"`
 }

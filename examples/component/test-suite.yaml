@@ -1,0 +1,45 @@
+componentFile: etcd-component-builder.yaml
+rootDirectory: './'
+
+testCases:
+- description: Success
+  apply:
+    options:
+      namespace: default-ns
+      buildLabel: test-env
+  expect:
+    objects:
+    - kind: Pod
+      name: etcd-server
+      findSubstrs:
+      - 'build-label: test-env'
+      - 'image: k8s.gcr.io/etcd:3.1.11'
+      - 'namespace: default-ns'
+      notFindSubstrs:
+      - 'build-label: dev-env'
+
+- description: 'Success: default build label'
+  apply:
+    options:
+      namespace: default-ns
+  expect:
+    objects:
+    - kind: Pod
+      name: etcd-server
+      findSubstrs:
+      - 'build-label: dev-env'
+      - 'namespace: default-ns'
+      notFindSubstrs:
+      - 'build-label: test-env'
+
+- description: 'Fail: parameter missing'
+  expect:
+    applyErrSubstr: 'namespace in body is required'
+
+- description: 'Fail: parameter does not match regex'
+  apply:
+    options:
+      namespace: default-ns
+      buildLabel: '1263[]){'
+  expect:
+    applyErrSubstr: "buildLabel in body should match '^[a-z0-9-]+$'"

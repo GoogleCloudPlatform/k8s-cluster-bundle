@@ -19,5 +19,5 @@ import (
 )
 
 func TestComponentSuite(t *testing.T) {
-	Run(t, "../../../examples/patchbuilder/component-test.yaml")
+	Run(t, "../../../examples/patchbuilder/test-suite.yaml")
 }

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/golang/glog"
+	log "k8s.io/klog"
 	"github.com/spf13/cobra"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"

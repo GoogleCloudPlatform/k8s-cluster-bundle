@@ -43,18 +43,28 @@ func newConfigMapMaker(name string) *configMapMaker {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        sanitizedName,
 			Annotations: make(map[string]string),
+			Labels:      make(map[string]string),
 		},
-		Data: make(map[string]string),
+		Data:       make(map[string]string),
+		BinaryData: make(map[string][]byte),
 	}
 	return &configMapMaker{c}
 }
 
-// AddData adds a data-key to the config map.
+// addData adds a data-key to the config map.
 func (m *configMapMaker) addData(key, value string) {
 	// ConfigMaps require that each key must consist of alphanumeric characters,
 	// '-', '_' or '.'.
 	sanitizedKey := converter.SanitizeName(key)
 	m.cfgMap.Data[sanitizedKey] = value
+}
+
+// addBinaryData adds a data-key to the config map.
+func (m *configMapMaker) addBinaryData(key string, value []byte) {
+	// ConfigMaps require that each key must consist of alphanumeric characters,
+	// '-', '_' or '.'.
+	sanitizedKey := converter.SanitizeName(key)
+	m.cfgMap.BinaryData[sanitizedKey] = value
 }
 
 // toUnstructured converts the config map to an Unstructured type.

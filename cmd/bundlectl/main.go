@@ -18,9 +18,8 @@ package main
 import (
 	"context"
 	"flag"
-	"os"
-
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
+	"os"
 )
 
 func main() {

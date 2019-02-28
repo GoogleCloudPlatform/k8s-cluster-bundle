@@ -21,7 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
-	log "github.com/golang/glog"
+	log "k8s.io/klog"
 	"github.com/spf13/cobra"
 )
 

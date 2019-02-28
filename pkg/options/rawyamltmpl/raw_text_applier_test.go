@@ -99,7 +99,7 @@ func TestRawStringApplier_MultiItems(t *testing.T) {
 		t.Fatalf("no objects found in new component")
 	}
 
-	strval, err := (&converter.ObjectExporter{newComp.Spec.Objects}).ExportAsYAML()
+	strval, err := (&converter.ObjectExporter{Objects: newComp.Spec.Objects}).ExportAsYAML()
 	if err != nil {
 		t.Fatalf("Error converting objects to yaml: %v", err)
 	}

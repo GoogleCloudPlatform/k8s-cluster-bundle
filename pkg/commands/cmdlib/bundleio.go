@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/golang/glog"
+	log "k8s.io/klog"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/build"
@@ -38,8 +38,10 @@ type makeInliner func(rw files.FileReaderWriter, inputFile string) fileInliner
 func realInlinerMaker(rw files.FileReaderWriter, inputFile string) fileInliner {
 	return build.NewInlinerWithScheme(
 		files.FileScheme,
-		&files.LocalFileObjReader{filepath.Dir(inputFile), rw},
-	)
+		&files.LocalFileObjReader{
+			WorkingDir: filepath.Dir(inputFile),
+			Rdr:        rw,
+		})
 }
 
 // StdioReaderWriter can read from STDIN and write to STDOUT.
@@ -98,13 +100,13 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 	inFmt := g.InputFormat
 
 	if g.InputFile != "" {
-		log.Infof("Reading input file %v", g.InputFile)
+		log.V(4).Infof("Reading input file %v", g.InputFile)
 		bytes, err = brw.rw.ReadFile(ctx, g.InputFile)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		log.Info("No component data file, reading from stdin")
+		log.V(4).Info("No component data file, reading from stdin")
 		if bytes, err = brw.stdio.ReadAll(); err != nil {
 			return nil, err
 		}

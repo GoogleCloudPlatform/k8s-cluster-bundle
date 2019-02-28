@@ -43,8 +43,13 @@ func TestCreateName(t *testing.T) {
 }
 
 func TestGetLocalObjectRef(t *testing.T) {
-	ref := ComponentReference{"foo", "bar"}
-	exp := corev1.LocalObjectReference{"foo-bar"}
+	ref := ComponentReference{
+		ComponentName: "foo",
+		Version:       "bar",
+	}
+	exp := corev1.LocalObjectReference{
+		Name: "foo-bar",
+	}
 	if got := ref.GetLocalObjectRef(); got != exp {
 		t.Errorf("GetLocalObjectRef: got %s, but wanted %s", got, exp)
 	}
@@ -53,11 +58,15 @@ func TestGetLocalObjectRef(t *testing.T) {
 func TestGetAllLocalObjectRefs(t *testing.T) {
 	cset := ComponentSet{
 		Spec: ComponentSetSpec{
-			SetName:    "zip",
-			Components: []ComponentReference{{"foo", "1.2"}, {"biff", "2.3"}},
+			SetName: "zip",
+			Components: []ComponentReference{
+				{ComponentName: "foo", Version: "1.2"}, {ComponentName: "biff", Version: "2.3"}},
 		},
 	}
-	exp := []corev1.LocalObjectReference{{"foo-1.2"}, {"biff-2.3"}}
+	exp := []corev1.LocalObjectReference{
+		{Name: "foo-1.2"},
+		{Name: "biff-2.3"},
+	}
 	if got := cset.GetAllLocalObjectRefs(); !reflect.DeepEqual(got, exp) {
 		t.Errorf("GetAllLocalObjectRefs: got %v, but wanted %v", got, exp)
 	}
@@ -79,9 +88,12 @@ func TestMakeComponentReference(t *testing.T) {
 func TestMakeAndSetName_ComponentSet(t *testing.T) {
 	cset := ComponentSet{
 		Spec: ComponentSetSpec{
-			SetName:    "zip",
-			Version:    "1.2.3",
-			Components: []ComponentReference{{"foo", "1.2"}, {"biff", "2.3"}},
+			SetName: "zip",
+			Version: "1.2.3",
+			Components: []ComponentReference{
+				{ComponentName: "foo", Version: "1.2"},
+				{ComponentName: "biff", Version: "2.3"},
+			},
 		},
 	}
 	exp := "zip-1.2.3"

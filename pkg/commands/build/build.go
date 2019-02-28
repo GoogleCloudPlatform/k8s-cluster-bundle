@@ -22,7 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
-	log "github.com/golang/glog"
+	log "k8s.io/klog"
 	"github.com/spf13/cobra"
 )
 
@@ -70,7 +70,7 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw file
 		return err
 	}
 
-	bw, err = build.BuildAllPatchTemplates(bw, &filter.Options{}, buildOpts)
+	bw, err = build.AllPatchTemplates(bw, &filter.Options{}, buildOpts)
 	if err != nil {
 		return err
 	}

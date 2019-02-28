@@ -63,8 +63,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ComponentList{},
 		&ComponentSet{},
 		&ComponentSetList{},
+		&ObjectTemplate{},
 		&PatchTemplate{},
 		&PatchTemplateBuilder{},
+		&Requirements{},
 	)
 	// AddToGroupVersion allows the serialization of client types like ListOptions.
 	v1.AddToGroupVersion(scheme, SchemeGroupVersion)
