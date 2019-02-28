@@ -22,8 +22,8 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
-	log "k8s.io/klog"
 	"github.com/spf13/cobra"
+	log "k8s.io/klog"
 )
 
 // options represents options flags for the build command.

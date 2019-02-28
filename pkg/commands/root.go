@@ -62,9 +62,6 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
 			"If not specified, it defaults to yaml.")
 
-	rootCmd.PersistentFlags().BoolVarP(
-		&cmdlib.GlobalOptionsValues.Inline, "inline", "l", true, "Whether to inline files before processing")
-
 	build.AddCommandsTo(ctx, fio, sio, rootCmd)
 	export.AddCommandsTo(ctx, fio, sio, rootCmd)
 	filter.AddCommandsTo(ctx, fio, sio, rootCmd)
