@@ -20,9 +20,6 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
 
-// EmptyComponentRef is an empty ComponentReference.
-var EmptyComponentRef = bundle.ComponentReference{}
-
 // ClusterObjectKey is a key representing a specific cluster object.
 type ClusterObjectKey struct {
 	// Component references a single component.
@@ -32,8 +29,6 @@ type ClusterObjectKey struct {
 	Object ObjectRef
 }
 
-// EmptyClusterObjectKey is an empty ClusterObjectKey.
-var EmptyClusterObjectKey = ClusterObjectKey{}
 
 // TODO(kashomon): Replace ObjectRef with corev1.TypedLocalObjectReference when
 // the Bundle library can depend on Kubernetes v1.12 or greater.
