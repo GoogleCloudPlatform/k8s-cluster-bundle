@@ -24,13 +24,14 @@ import (
 
 // AddCommandsTo adds commands to a root cobra command.
 func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
+	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "patch",
 		Short: "Apply patch templates to component objects",
 		Long: "Apply patch templates to component objects. " +
 			"Options are usually applied to the templates before application.",
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args)
+			action(ctx, fio, sio, cmd, args, opts)
 		},
 	}
 

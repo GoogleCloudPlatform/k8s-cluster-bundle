@@ -34,10 +34,8 @@ type options struct {
 	optionsFile string
 }
 
-// opts is a global options instance for reference via the add commands.
-var opts = &options{}
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, fio, gopt); err != nil {

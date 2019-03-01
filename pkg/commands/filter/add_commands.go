@@ -24,12 +24,14 @@ import (
 
 // AddCommandsTo adds commands to a root cobra command.
 func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
+	opts := &options{}
+	
 	cmd := &cobra.Command{
 		Use:   "filter",
 		Short: "Filter the components or objects in a bundle file",
 		Long:  `Filter the components or objects in a bundle file, returning a new bundle file`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args)
+			action(ctx, fio, sio, cmd, args, opts)
 		},	
 	}
 

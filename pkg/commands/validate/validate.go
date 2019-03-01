@@ -30,12 +30,8 @@ import (
 type options struct {
 }
 
-// opts is a global options flags instance for reference via the cobra command
-// installation.
-var opts = &options{}
-
 // Action is the cobra command action for bundle validation.
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := runValidate(ctx, opts, brw, gopt); err != nil {
