@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bundleio.go",
-        "cmdlib.go",
         "doc.go",
         "global_options.go",
     ],

@@ -28,7 +28,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Use:   "validate",
 		Short: "Validate a bundle file",
 		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
-		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, args)
+		},
 	}
 
 	root.AddCommand(cmd)

@@ -35,7 +35,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Use:   "images",
 		Short: "Find images in the bundle",
 		Long:  "Apply all the patches found in a bundle to customize it with the given options custom resources",
-		Run:   cmdlib.ContextAction(ctx, fio, sio, findAction),
+		Run: func(cmd *cobra.Command, args[] string) {
+			findAction(ctx, fio, sio, cmd, args)
+		},
 	}
 
 	cmd.AddCommand(imagesCmd)

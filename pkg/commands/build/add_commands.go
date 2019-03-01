@@ -28,7 +28,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Use:   "build",
 		Short: "Build the bundle files",
 		Long:  `Build all the files in the given bundle yaml`,
-		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, args)
+		},
 	}
 
 	// Optional flags
