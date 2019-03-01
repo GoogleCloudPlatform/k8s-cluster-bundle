@@ -39,7 +39,6 @@ var opts = &options{}
 
 func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
 	gopt := cmdlib.GlobalOptionsValues.Copy()
-	gopt.Inline = true
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, fio, gopt); err != nil {
 		log.Exit(err)

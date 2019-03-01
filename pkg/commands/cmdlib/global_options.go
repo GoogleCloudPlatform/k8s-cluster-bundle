@@ -26,10 +26,6 @@ type GlobalOptions struct {
 
 	// OutputFormat is the the format for any output. By default, assumes YAML.
 	OutputFormat string
-
-	// Inline indicates whether to inline the components in the bundle builders
-	// or component builders before doing any processing.
-	Inline bool
 }
 
 // GlobalOptionsValues is a global tracker for global options (for command line
@@ -42,6 +38,5 @@ func (g *GlobalOptions) Copy() *GlobalOptions {
 		InputFile:    g.InputFile,
 		InputFormat:  g.InputFormat,
 		OutputFormat: g.OutputFormat,
-		Inline:       g.Inline,
 	}
 }
