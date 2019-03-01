@@ -15,10 +15,8 @@
 package cmdlib
 
 import (
-	"context"
 	"os"
 
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	log "k8s.io/klog"
 	"github.com/spf13/cobra"
 )
@@ -28,17 +26,4 @@ func ExitWithHelp(cmd *cobra.Command, err string) {
 	log.Error(err)
 	cmd.Help()
 	os.Exit(1)
-}
-
-// ContextActionFunc is a common type for providing a context to a Cobra function.
-type ContextActionFunc func(ctx context.Context, fio files.FileReaderWriter, sio StdioReaderWriter, cmd *cobra.Command, args []string)
-
-// CobraActionFunc provides a common type for all Cobra commands.
-type CobraActionFunc func(cmd *cobra.Command, args []string)
-
-// ContextAction returns a CobraActionFunc for a provided ContextActionFunc.
-func ContextAction(ctx context.Context, fio files.FileReaderWriter, sio StdioReaderWriter, f ContextActionFunc) CobraActionFunc {
-	return func(cmd *cobra.Command, args []string) {
-		f(ctx, fio, sio, cmd, args)
-	}
 }

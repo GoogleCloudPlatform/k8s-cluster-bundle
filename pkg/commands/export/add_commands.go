@@ -28,7 +28,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Use:   "export",
 		Short: "Exports all of the objects",
 		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
-		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, args)
+		},
 	}
 
 	root.AddCommand(cmd)

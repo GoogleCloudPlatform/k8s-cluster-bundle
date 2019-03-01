@@ -28,7 +28,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Use:   "filter",
 		Short: "Filter the components or objects in a bundle file",
 		Long:  `Filter the components or objects in a bundle file, returning a new bundle file`,
-		Run:   cmdlib.ContextAction(ctx, fio, sio, action),
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, args)
+		},	
 	}
 
 	// Optional flags

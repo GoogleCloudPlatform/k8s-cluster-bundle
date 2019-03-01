@@ -29,7 +29,9 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Short: "Apply patch templates to component objects",
 		Long: "Apply patch templates to component objects. " +
 			"Options are usually applied to the templates before application.",
-		Run: cmdlib.ContextAction(ctx, fio, sio, action),
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, args)
+		},
 	}
 
 	// Optional flags
