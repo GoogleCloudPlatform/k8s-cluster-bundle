@@ -127,7 +127,7 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 
 	// For now, we can only inline component data files because we need the path
 	// context.
-	if g.Inline && g.InputFile != "" && (bw.BundleBuilder() != nil || bw.ComponentBuilder() != nil) {
+	if g.InputFile != "" && (bw.BundleBuilder() != nil || bw.ComponentBuilder() != nil) {
 		return brw.inlineData(ctx, bw, g)
 	}
 	return bw, nil
@@ -135,10 +135,6 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 
 // inlineData inlines a cluster bundle before processing
 func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *wrapper.BundleWrapper, g *GlobalOptions) (*wrapper.BundleWrapper, error) {
-	if !g.Inline {
-		return bw, nil
-	}
-
 	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
 	switch bw.Kind() {
 	case "BundleBuilder":
