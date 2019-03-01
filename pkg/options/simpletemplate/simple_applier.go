@@ -32,6 +32,11 @@ import (
 // applier applies options via go-templating.
 type applier struct{}
 
+// NewApplier creates a new options applier instance.
+func NewApplier() options.Applier {
+	return &applier{}
+}
+
 // ApplyOptions treats objects in the components as go templates, applying the
 // options, and then returning the completed objects.
 func (m *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
@@ -39,11 +44,6 @@ func (m *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*
 	newObjs, err := options.ApplyCommon(comp.ComponentReference(), comp.Spec.Objects, p, applyOptions)
 	comp.Spec.Objects = newObjs
 	return comp, err
-}
-
-// NewApplier creates a new options applier instance.
-func NewApplier() options.Applier {
-	return &applier{}
 }
 
 func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) (*unstructured.Unstructured, error) {
