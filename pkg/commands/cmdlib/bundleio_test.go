@@ -201,7 +201,6 @@ func TestReadBundleData(t *testing.T) {
 			desc: "Test success file read + inline comp: bundle",
 			opts: &GlobalOptions{
 				InputFile: "/foo/bar/biff.yaml",
-				Inline:    true,
 			},
 			readFile:        bundleBuilderEx,
 			inlineBundleOut: bundleEx,
@@ -211,7 +210,6 @@ func TestReadBundleData(t *testing.T) {
 			desc: "Test success file read + inline obj: bundle",
 			opts: &GlobalOptions{
 				InputFile: "/foo/bar/biff.yaml",
-				Inline:    true,
 			},
 			readFile:        bundleBuilderEx,
 			inlineBundleOut: bundleEx,
@@ -221,7 +219,6 @@ func TestReadBundleData(t *testing.T) {
 			desc: "Test success component file read + inline obj: component",
 			opts: &GlobalOptions{
 				InputFile: "/foo/bar/biff.yaml",
-				Inline:    true,
 			},
 			readFile:      componentBuilderEx,
 			inlineCompOut: componentEx,
@@ -252,7 +249,6 @@ spec:
 			desc: "Error: inlining",
 			opts: &GlobalOptions{
 				InputFile: "foo/bar/biff.yaml",
-				Inline:    true,
 			},
 			readFile:      componentBuilderEx,
 			inlineCompOut: componentEx,
