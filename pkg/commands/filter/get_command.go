@@ -22,8 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command, gopts *cmdlib.GlobalOptions) {
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
 	opts := &options{}
 
 	cmd := &cobra.Command{
@@ -31,25 +30,18 @@ func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.S
 		Short: "Filter the components or objects in a bundle file",
 		Long:  `Filter the components or objects in a bundle file, returning a new bundle file`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args, opts, gopts)
+			action(ctx, fio, sio, cmd, opts, gopts)
 		},	
 	}
 
 	// Optional flags
-	cmd.Flags().StringVarP(&opts.filterType, "filter-type", "", "objects",
-		"Whether to filter components or objects")
-	cmd.Flags().StringVarP(&opts.kinds, "kinds", "", "",
-		"Comma separated kinds to filter on")
-	cmd.Flags().StringVarP(&opts.names, "names", "", "",
-		"Comma separated names to filter on")
-	cmd.Flags().StringVarP(&opts.namespaces, "namespaces", "", "",
-		"Comma separated namespaces to filter on")
-	cmd.Flags().StringVarP(&opts.annotations, "annotations", "", "",
-		"Comma + semicolon separated annotations to filter on. Ex: 'foo=bar,biff=bam'")
-	cmd.Flags().StringVarP(&opts.labels, "labels", "", "",
-		"Comma + semicolon separated labelsto filter on. Ex: 'foo=bar,biff=bam'")
-	cmd.Flags().BoolVarP(&opts.keepOnly, "keep-only", "", false,
-		"Whether to keep options instead of filtering them")
+	cmd.Flags().StringVarP(&opts.filterType, "filter-type", "", "objects", "Whether to filter components or objects")
+	cmd.Flags().StringVarP(&opts.kinds, "kinds", "", "", "Comma separated kinds to filter on")
+	cmd.Flags().StringVarP(&opts.names, "names", "", "", "Comma separated names to filter on")
+	cmd.Flags().StringVarP(&opts.namespaces, "namespaces", "", "", "Comma separated namespaces to filter on")
+	cmd.Flags().StringVarP(&opts.annotations, "annotations", "", "", "Comma + semicolon separated annotations to filter on. Ex: 'foo=bar,biff=bam'")
+	cmd.Flags().StringVarP(&opts.labels, "labels", "", "", "Comma + semicolon separated labelsto filter on. Ex: 'foo=bar,biff=bam'")
+	cmd.Flags().BoolVarP(&opts.keepOnly, "keep-only", "", false, "Whether to keep options instead of filtering them")
 
-	root.AddCommand(cmd)
+	return cmd
 }

@@ -22,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to tho root command.
-func AddCommandsTo(root *cobra.Command) {
+// GetCommands prints the version of bundlectl.
+func GetCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "List version of bundlectl",
@@ -32,5 +32,5 @@ func AddCommandsTo(root *cobra.Command) {
 			fmt.Println(version.BundlectlVersion)
 		},
 	}
-	root.AddCommand(cmd)
+	return cmd
 }

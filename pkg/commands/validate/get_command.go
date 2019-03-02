@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package build
+package validate
 
 import (
 	"context"
@@ -23,25 +23,14 @@ import (
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command, gopts *cmdlib.GlobalOptions) {
-	opts := &options{}
-
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
 	cmd := &cobra.Command{
-		Use:   "build",
-		Short: "Build the bundle files",
-		Long:  `Build all the files in the given bundle yaml`,
+		Use:   "validate",
+		Short: "Validate a bundle file",
+		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args, opts, gopts)
+			action(ctx, fio, sio, cmd, gopts)
 		},
 	}
-
-
-	// Optional flags
-
-	// While options-file is technically optional, it is usually provided to
-	// detemplatize the patch templates.
-	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "",
-		"File containing options to apply to patch templates")
-
-	root.AddCommand(cmd)
+	return cmd
 }

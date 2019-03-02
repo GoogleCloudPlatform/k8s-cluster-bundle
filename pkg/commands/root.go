@@ -64,13 +64,13 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 		&(gopts.OutputFormat), "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
 			"If not specified, it defaults to yaml.")
 
-	build.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	export.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	filter.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	find.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	patch.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	validate.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
-	version.AddCommandsTo(rootCmd)
+	rootCmd.AddCommand(build.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(export.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(filter.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(find.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(patch.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(validate.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(version.GetCommand())
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:

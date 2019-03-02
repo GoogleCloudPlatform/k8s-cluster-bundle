@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validate
+package export
 
 import (
 	"context"
@@ -22,18 +22,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command, gopts *cmdlib.GlobalOptions) {
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
 	opts := &options{}
-
 	cmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate a bundle file",
-		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
+		Use:   "export",
+		Short: "Exports all of the objects",
+		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args, opts, gopts)
+			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}
-
-	root.AddCommand(cmd)
+	return cmd
 }

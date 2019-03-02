@@ -28,7 +28,7 @@ import (
 
 type options struct {}
 
-func findAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArgs *cmdlib.GlobalOptions) {
+func findAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, goptArgs *cmdlib.GlobalOptions) {
 	gopt := goptArgs.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := runFindImages(ctx, brw, gopt); err != nil {

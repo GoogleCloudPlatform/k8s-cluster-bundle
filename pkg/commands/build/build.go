@@ -35,7 +35,7 @@ type options struct {
 }
 
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArgs *cmdlib.GlobalOptions) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, goptArgs *cmdlib.GlobalOptions) {
 	gopt := goptArgs.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, fio, gopt); err != nil {
