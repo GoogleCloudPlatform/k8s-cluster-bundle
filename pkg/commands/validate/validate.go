@@ -27,8 +27,7 @@ import (
 )
 
 // Action is the cobra command action for bundle validation.
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, goptArgs *cmdlib.GlobalOptions) {
-	gopts := goptArgs.Copy()
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, gopts *cmdlib.GlobalOptions) {
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := runValidate(ctx, brw, gopts); err != nil {
 		log.Exit(err)
