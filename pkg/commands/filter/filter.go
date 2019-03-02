@@ -53,8 +53,7 @@ type options struct {
 	keepOnly bool
 }
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, goptArgs *cmdlib.GlobalOptions) {
-	gopt := goptArgs.Copy()
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, gopt *cmdlib.GlobalOptions) {
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, gopt); err != nil {
 		log.Exit(err)
