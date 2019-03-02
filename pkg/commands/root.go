@@ -43,6 +43,8 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 // Note: This method is only public to allow for sub-commands to define
 // integration tests.
 func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, args []string) *cobra.Command {
+	gopts := &cmdlib.GlobalOptions{}
+
 	rootCmd := &cobra.Command{
 		Use:   "bundlectl",
 		Short: "bundlectl is tool for inspecting, validation, and modifying components packages and component sets. If a command outputs data, the data is written to STDOUT.",
@@ -52,22 +54,22 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 	}
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.InputFile, "input-file", "f", "", "The path to an input file")
+		&(gopts.InputFile), "input-file", "f", "", "The path to an input file")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.InputFormat, "in-format", "", "", "The input file format. One of either 'json' or 'yaml'. "+
+		&(gopts.InputFormat), "in-format", "", "", "The input file format. One of either 'json' or 'yaml'. "+
 			"If an input-file is specified, it is inferred from the file extension. If not specified, it defaults to yaml.")
 
 	rootCmd.PersistentFlags().StringVarP(
-		&cmdlib.GlobalOptionsValues.OutputFormat, "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
+		&(gopts.OutputFormat), "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
 			"If not specified, it defaults to yaml.")
 
-	build.AddCommandsTo(ctx, fio, sio, rootCmd)
-	export.AddCommandsTo(ctx, fio, sio, rootCmd)
-	filter.AddCommandsTo(ctx, fio, sio, rootCmd)
-	find.AddCommandsTo(ctx, fio, sio, rootCmd)
-	patch.AddCommandsTo(ctx, fio, sio, rootCmd)
-	validate.AddCommandsTo(ctx, fio, sio, rootCmd)
+	build.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
+	export.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
+	filter.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
+	find.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
+	patch.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
+	validate.AddCommandsTo(ctx, fio, sio, rootCmd, gopts)
 	version.AddCommandsTo(rootCmd)
 
 	// This is magic hackery I don't unherdstand but somehow this fixes

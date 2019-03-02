@@ -28,10 +28,6 @@ type GlobalOptions struct {
 	OutputFormat string
 }
 
-// GlobalOptionsValues is a global tracker for global options (for command line
-// executions only).
-var GlobalOptionsValues = &GlobalOptions{}
-
 // Copy creates an options copy.
 func (g *GlobalOptions) Copy() *GlobalOptions {
 	return &GlobalOptions{

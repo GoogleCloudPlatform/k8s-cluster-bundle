@@ -23,14 +23,15 @@ import (
 )
 
 // AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
+func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command, gopts *cmdlib.GlobalOptions) {
 	opts := &options{}
+
 	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Exports all of the objects",
 		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args, opts)
+			action(ctx, fio, sio, cmd, args, opts, gopts)
 		},
 	}
 

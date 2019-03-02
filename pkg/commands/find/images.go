@@ -26,11 +26,10 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/find"
 )
 
-type options struct {
-}
+type options struct {}
 
-func findAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options) {
-	gopt := cmdlib.GlobalOptionsValues.Copy()
+func findAction(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArgs *cmdlib.GlobalOptions) {
+	gopt := goptArgs.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := runFindImages(ctx, brw, gopt); err != nil {
 		log.Exitf("error in runFindImages: %v", err)
