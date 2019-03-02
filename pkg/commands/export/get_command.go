@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package version contains the version command.
-package version
+package export
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/version"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
 
-func AddCommandsTo(root *cobra.Command) {
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+	opts := &options{}
 	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "List version of bundlectl",
-		Long:  "List version of bundlectl",
-		Run: func(cmd *cobra.Command, _ []string) {
-			fmt.Println(version.BundlectlVersion)
+		Use:   "export",
+		Short: "Exports all of the objects",
+		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
+		Run: func(cmd *cobra.Command, args[] string) {
+			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}
-	root.AddCommand(cmd)
+	return cmd
 }

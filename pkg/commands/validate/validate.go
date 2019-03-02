@@ -26,20 +26,16 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/validate"
 )
 
-// options contain options flags for the bundle validation command.
-type options struct {
-}
-
 // Action is the cobra command action for bundle validation.
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArgs *cmdlib.GlobalOptions) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, goptArgs *cmdlib.GlobalOptions) {
 	gopts := goptArgs.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
-	if err := runValidate(ctx, opts, brw, gopts); err != nil {
+	if err := runValidate(ctx, brw, gopts); err != nil {
 		log.Exit(err)
 	}
 }
 
-func runValidate(ctx context.Context, opts *options, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
+func runValidate(ctx context.Context, brw cmdlib.BundleReaderWriter, gopt *cmdlib.GlobalOptions) error {
 	bw, err := brw.ReadBundleData(ctx, gopt)
 	if err != nil {
 		return fmt.Errorf("error reading contents: %v", err)

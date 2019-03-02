@@ -28,7 +28,7 @@ import (
 // options represents options flags for the export command.
 type options struct{}
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArg *cmdlib.GlobalOptions) {
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command,  opts *options, goptArg *cmdlib.GlobalOptions) {
 	gopt := goptArg.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, sio, gopt); err != nil {

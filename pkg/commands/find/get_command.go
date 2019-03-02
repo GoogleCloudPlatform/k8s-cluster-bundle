@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validate
+package find
 
 import (
 	"context"
@@ -22,18 +22,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command, gopts *cmdlib.GlobalOptions) {
-	opts := &options{}
-
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+	// cmd is the parent image command, and is unrunnable by itself.
 	cmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate a bundle file",
-		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
+		Use:   "find",
+		Short: "Search for objects inside the bundle",
+		Long:  "Provides functionality for searching through cluster bundles. See subcommands usage.",
+	}
+
+	imagesCmd := &cobra.Command{
+		Use:   "images",
+		Short: "Find images in the bundle",
+		Long:  "Apply all the patches found in a bundle to customize it with the given options custom resources",
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args, opts, gopts)
+			findAction(ctx, fio, sio, cmd, gopts)
 		},
 	}
 
-	root.AddCommand(cmd)
+	cmd.AddCommand(imagesCmd)
+	return cmd
 }
