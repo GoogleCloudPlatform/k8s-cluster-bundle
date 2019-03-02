@@ -31,10 +31,10 @@ type options struct {
 }
 
 // Action is the cobra command action for bundle validation.
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options) {
-	gopt := cmdlib.GlobalOptionsValues.Copy()
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string, opts *options, goptArgs *cmdlib.GlobalOptions) {
+	gopts := goptArgs.Copy()
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
-	if err := runValidate(ctx, opts, brw, gopt); err != nil {
+	if err := runValidate(ctx, opts, brw, gopts); err != nil {
 		log.Exit(err)
 	}
 }
