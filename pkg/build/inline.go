@@ -256,6 +256,7 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects []*unstruc
 			tmplType = builder.TemplateType
 		}
 		objTemplate.ObjectMeta.Annotations[string(bundle.TemplateTypeIdentifier)] = string(tmplType)
+		objTemplate.TemplateType = tmplType
 
 		objJSON, err := converter.FromObject(objTemplate).ToJSON()
 		if err != nil {

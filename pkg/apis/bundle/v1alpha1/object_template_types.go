@@ -47,7 +47,7 @@ type ObjectTemplateBuilder struct {
 	TemplateFile File `json:"templateFile,omitempty"`
 
 	// TemplateType indicates how the template should be detemplatized. By
-	// default, it relies on Go-Templates. During Build, this value is stored
+	// default, it assumes Go-Templates. During Build, this value is stored
 	// in the "bundle.gke.io/template-type" annotation.
 	TemplateType TemplateType `json:"templateType,omitempty"`
 
@@ -63,8 +63,12 @@ type ObjectTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Template is a template that creates a K8S object.
+	// Template is a template-string that creates a K8S object.
 	Template string `json:"template,omitempty"`
+
+	// TemplateType indicates how the template should be detemplatized. By
+	// default, it assumes on Go-Templates.
+	TemplateType TemplateType `json:"templateType,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.

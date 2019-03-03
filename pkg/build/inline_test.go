@@ -478,6 +478,7 @@ metadata:
 						subStrings: []string{
 							"name: {{.foo}}",
 							"type: string",
+							"templateType: go-template",
 						},
 					},
 				},
