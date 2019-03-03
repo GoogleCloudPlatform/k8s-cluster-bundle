@@ -28,8 +28,33 @@ const (
 	UndefinedTemplateType TemplateType = ""
 
 	// GoTemplate represents a go-template type.
-	GoTemplate TemplateType = "GoTemplate"
+	GoTemplate TemplateType = "go-template"
 )
+
+const (
+	// TemplateTypeIdentifier is an annotation
+	TemplateTypeIdentifier Identifier = "bundle.gke.io/template-type"
+)
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ObjectTemplateBuilder contains configuration for creating ObjectTemplates.
+type ObjectTemplateBuilder struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// TemplateFile is references a template file
+	TemplateFile File `json:"templateFile,omitempty"`
+
+	// TemplateType indicates how the template should be detemplatized. By
+	// default, it relies on Go-Templates. During Build, this value is stored
+	// in the "bundle.gke.io/template-type" annotation.
+	TemplateType TemplateType `json:"templateType,omitempty"`
+
+	// OptionsSchema is the schema for the parameters meant to be applied to
+	// the object template, which includes both defaulting and validation.
+	OptionsSchema *apiextensions.JSONSchemaProps `json:"optionsSchema,omitempty"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -40,10 +65,6 @@ type ObjectTemplate struct {
 
 	// Template is a template that creates a K8S object.
 	Template string `json:"template,omitempty"`
-
-	// TemplateType indicates how the template should be detemplatized. By
-	// default, it relies on Go-Templates.
-	TemplateType TemplateType `json:"templateType,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.
