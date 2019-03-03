@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 )
 
 var dataComponentMulti = `
@@ -28,6 +29,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
+    templateType: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -41,6 +43,7 @@ spec:
   - kind: ObjectTemplate
     metadata:
       name: logger-pod-no-inline
+    templateType: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -53,13 +56,24 @@ spec:
           image: '{{.AnotherContainerImage}}'
 `
 
-func TestRawStringApplier_MultiItems(t *testing.T) {
-	var dataComponentBasic = `
+func TestGoTemplateApplier(t *testing.T) {
+	testCases := []struct {
+		desc          string
+		component     string
+		usedParams    map[string]interface{}
+		notUsedParams map[string]interface{}
+		expSubstrings []string
+		expErrSubstr  string
+	}{
+		{
+			desc: "success",
+			component: `
 kind: Component
 spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
+    templateType: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -69,58 +83,235 @@ spec:
         dnsPolicy: '{{.DNSPolicy}}'
         containers:
         - name: logger
-          image: '{{.ContainerImage}}'`
-	comp, err := converter.FromYAMLString(dataComponentBasic).ToComponent()
-	if err != nil {
-		t.Fatal(err)
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			notUsedParams: map[string]interface{}{
+				"AnotherDNSPolicy":      "BlooBlarPolicy",
+				"AnotherContainerImage": "AnotherContainerImageVal",
+			},
+		},
+		{
+			desc: "multiple object templates",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    templateType: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'
+  - kind: ObjectTemplate
+    metadata:
+      name: logger-pod-no-inline
+    templateType: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.AnotherDNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.AnotherContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":             "FooBarPolicy",
+				"ContainerImage":        "MyContainerImage",
+				"AnotherDNSPolicy":      "BlooBlarPolicy",
+				"AnotherContainerImage": "AnotherContainerImageVal",
+			},
+			notUsedParams: map[string]interface{}{
+				"Foof": "Boof",
+			},
+		},
+		{
+			desc: "object templates of wrong kind",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    templateType: zed
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			notUsedParams: map[string]interface{}{
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expSubstrings: []string{
+				"ObjectTemplate",
+			},
+		},
+		{
+			desc: "object templates and other objects",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: Pod
+    metadata:
+      name: derp
+  - kind: ObjectTemplate
+    templateType: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expSubstrings: []string{
+				"derp",
+			},
+		},
+		{
+			desc: "object templates: options schema defaulting",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    templateType: go-template
+    optionsSchema:
+      properties:
+        ContainerImage:
+          default: 'my-container-image'
+          type: string
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy": "FooBarPolicy",
+			},
+			expSubstrings: []string{
+				"my-container-image",
+			},
+		},
+		{
+			desc: "object templates: param validation fail",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    templateType: go-template
+    optionsSchema:
+      properties:
+        ContainerImage:
+          type: string
+          pattern: '^[a-z]+$'
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expErrSubstr: "ContainerImage in body should match",
+		},
 	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.desc, func(t *testing.T) {
+			comp, err := converter.FromYAMLString(tc.component).ToComponent()
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	usedParams := map[string]interface{}{
-		"DNSPolicy":      "FooBarPolicy",
-		"ContainerImage": "MyContainerImage",
-	}
-	notUsedParams := map[string]interface{}{
-		"AnotherDNSPolicy":      "BlooBlarPolicy",
-		"AnotherContainerImage": "AnotherContainerImageVal",
-	}
+			opts := func() options.JSONOptions {
+				allMap := map[string]interface{}{}
+				for k, v := range tc.usedParams {
+					allMap[k] = v
+				}
+				for k, v := range tc.notUsedParams {
+					allMap[k] = v
+				}
+				return allMap
+			}()
 
-	opts := func() options.JSONOptions {
-		allMap := map[string]interface{}{}
-		for k, v := range usedParams {
-			allMap[k] = v
-		}
-		for k, v := range notUsedParams {
-			allMap[k] = v
-		}
-		return allMap
-	}()
+			newComp, err := NewApplier().ApplyOptions(comp, opts)
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
+			if err != nil {
+				// Even an expected error is terminla
+				return
+			}
+			if newComp == nil {
+				t.Fatalf("new-component must not be nil")
+			}
+			if len(newComp.Spec.Objects) == 0 {
+				t.Fatalf("no objects found in new component")
+			}
 
-	newComp, err := NewApplier().ApplyOptions(comp, opts)
-	if err != nil {
-		t.Fatalf("Error applying options: %v", err)
-	}
-	if newComp == nil {
-		t.Fatalf("new-component must not be nil")
-	}
-	if len(newComp.Spec.Objects) == 0 {
-		t.Fatalf("no objects found in new component")
-	}
+			strval, err := (&converter.ObjectExporter{Objects: newComp.Spec.Objects}).ExportAsYAML()
+			if err != nil {
+				t.Fatalf("Error converting objects to yaml: %v", err)
+			}
 
-	strval, err := (&converter.ObjectExporter{Objects: newComp.Spec.Objects}).ExportAsYAML()
-	if err != nil {
-		t.Fatalf("Error converting objects to yaml: %v", err)
-	}
-
-	for _, val := range usedParams {
-		vstr := val.(string)
-		if !strings.Contains(strval, vstr) {
-			t.Errorf("expected object yaml:\n%s\nto contain %q", strval, vstr)
-		}
-	}
-	for _, val := range notUsedParams {
-		vstr := val.(string)
-		if strings.Contains(strval, vstr) {
-			t.Errorf("expected object yaml:\n%s\nto NOT contain %q", strval, vstr)
-		}
+			for _, val := range tc.usedParams {
+				vstr := val.(string)
+				if !strings.Contains(strval, vstr) {
+					t.Errorf("got object yaml:\n%s\nbut expected it to contain %q", strval, vstr)
+				}
+			}
+			for _, val := range tc.notUsedParams {
+				vstr := val.(string)
+				if strings.Contains(strval, vstr) {
+					t.Errorf("got object yaml:\n%s\nbut expected it to NOT contain %q", strval, vstr)
+				}
+			}
+			for _, substr := range tc.expSubstrings {
+				if !strings.Contains(strval, substr) {
+					t.Errorf("got object yaml:\n%s\nbut expected it to contain %q", strval, substr)
+				}
+			}
+		})
 	}
 }

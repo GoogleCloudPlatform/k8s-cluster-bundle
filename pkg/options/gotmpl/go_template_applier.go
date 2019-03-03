@@ -62,7 +62,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 }
 
 func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) (*unstructured.Unstructured, error) {
-	// TODO(kashomon): this should clone the options for safety.
+	// TODO(kashomon): this should probably clone the options for safety.
 	objTmpl := &bundle.ObjectTemplate{}
 	err := converter.FromUnstructured(obj).ToObject(objTmpl)
 	if err != nil {
@@ -76,11 +76,10 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 		}
 	}
 
-	tmpl, err := template.New(ref.ComponentName + "-tmpl").Parse(objTmpl.Template)
+	tmpl, err := template.New(ref.ComponentName + "-" + obj.GetName() + "-tmpl").Parse(objTmpl.Template)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing template for component %v: %v", ref, err)
+		return nil, fmt.Errorf("error parsing template for object %q in component %v: %v", obj.GetName(), ref, err)
 	}
-	fmt.Printf("tmpl: %v", tmpl)
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, opts)

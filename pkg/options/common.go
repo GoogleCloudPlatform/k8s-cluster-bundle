@@ -47,13 +47,16 @@ func PartitionObjectTemplates(allObjects []*unstructured.Unstructured, templateK
 			notMatch = append(notMatch, obj)
 			continue
 		}
-		objData, found := obj.Object["templateType"]
+
+		var templateType string
+		objData := obj.Object["templateType"]
 		templateType, isString := objData.(string)
-		if !found || !isString {
+		if !isString {
 			notMatch = append(notMatch, obj)
 			continue
 		}
-		if templateType == templateKind || (templateKind == string(bundle.GoTemplate) && templateType == string(bundle.UndefinedTemplateType)) {
+
+		if templateType == templateKind {
 			match = append(match, obj)
 		} else {
 			notMatch = append(notMatch, obj)
