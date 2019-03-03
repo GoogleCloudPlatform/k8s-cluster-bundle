@@ -31,11 +31,6 @@ const (
 	GoTemplate TemplateType = "go-template"
 )
 
-const (
-	// TemplateTypeIdentifier is an annotation
-	TemplateTypeIdentifier Identifier = "bundle.gke.io/template-type"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ObjectTemplateBuilder contains configuration for creating ObjectTemplates.
@@ -47,8 +42,7 @@ type ObjectTemplateBuilder struct {
 	TemplateFile File `json:"templateFile,omitempty"`
 
 	// TemplateType indicates how the template should be detemplatized. By
-	// default, it assumes Go-Templates. During Build, this value is stored
-	// in the "bundle.gke.io/template-type" annotation.
+	// default, it assumes Go-Templates.
 	TemplateType TemplateType `json:"templateType,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
