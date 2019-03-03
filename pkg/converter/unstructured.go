@@ -15,6 +15,7 @@
 package converter
 
 import (
+	"github.com/mitchellh/mapstructure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -54,12 +55,5 @@ func (c *UnstructuredConverter) ExtractObjectMeta() *metav1.ObjectMeta {
 
 // ToObject converts an Unstructured object to an arbitrary interface via JSON.
 func (c *UnstructuredConverter) ToObject(obj interface{}) error {
-	// Note: The apimachinery library has a custom converter method for
-	// converting from Unstructured to an arbitrary object. It has some
-	// non-hermetic configuration (environment variables), so is not used here.
-	json, err := FromObject(c.o).ToJSON()
-	if err != nil {
-		return err
-	}
-	return FromJSON(json).ToObject(obj)
+	return mapstructure.Decode(c.o.Object, obj)
 }

@@ -22,6 +22,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Identifier is a key used for a metadata label or annotation to experess
+// extra information about components and objects.
+type Identifier string
+
 // CreateName creates a name string to be used for ObjectMeta.Name. It
 // is used to create standarized names for Components and ComponentSets.
 // It assumes that the inName and version fields already conform to naming
