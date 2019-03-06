@@ -24,7 +24,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
-	jsonpatch "github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -189,7 +188,9 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 			if runtime.IsNotRegisteredError(err) || isUnstructured {
 				// Strategic merge patch can't handle unstructured.Unstructured or
 				// unregistered objects, so defer to normal merge-patch.
-				newObjJSON, err = jsonpatch.MergePatch(objJSON, pat.raw)
+				// TODO(kashomon): Make this configurable
+				// newObjJSON, err = jsonpatch.MergePatch(objJSON, pat.raw)
+				return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
 			} else if err != nil {
 				return nil, fmt.Errorf("while decoding object via scheme: %v", err)
 			} else {

@@ -137,25 +137,6 @@ spec:
 			expMatchSubstrs: []string{"namespace: zed"},
 		},
 		{
-			desc: "success: patch, basic options, fall-back to json-patch",
-			opts: map[string]interface{}{
-				"Name": "zed",
-			},
-			component: `
-kind: Component
-spec:
-  objects:
-  - apiVersion: bloog/v1alpha1
-    kind: Flog
-  - kind: PatchTemplate
-    template: |
-      kind: Flog
-      metadata:
-        namespace: {{.Name}}
-`,
-			expMatchSubstrs: []string{"namespace: zed"},
-		},
-		{
 			desc: "success: patch, basic options, two object-matches",
 			opts: map[string]interface{}{
 				"Name": "zed",
