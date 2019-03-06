@@ -46,6 +46,7 @@ var (
 	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
+// Components validates a list of components.
 func Components(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	for _, component := range components {
