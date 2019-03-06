@@ -44,6 +44,5 @@ go_test(
         "//pkg/filter:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/validate:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )

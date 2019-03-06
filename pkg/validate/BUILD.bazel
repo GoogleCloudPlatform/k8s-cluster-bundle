@@ -26,6 +26,6 @@ go_test(
     deps = [
         "//pkg/converter:go_default_library",
         "//pkg/testutil:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",\
+        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",
     ],
 )
