@@ -41,7 +41,9 @@ func ApplyCommon(ref bundle.ComponentReference, objs []*unstructured.Unstructure
 // PartitionObjectTemplates returns all the ObjectTemplates that match a
 // specified TemplateKind and all other objects that don't match, in that
 // order.
-func PartitionObjectTemplates(allObjects []*unstructured.Unstructured, templateKind string) (match []*unstructured.Unstructured, notMatch []*unstructured.Unstructured) {
+func PartitionObjectTemplates(allObjects []*unstructured.Unstructured, templateKind string) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
+	var match []*unstructured.Unstructured
+	var notMatch []*unstructured.Unstructured
 	for _, obj := range allObjects {
 		if obj.GetKind() != "ObjectTemplate" {
 			notMatch = append(notMatch, obj)
@@ -62,5 +64,5 @@ func PartitionObjectTemplates(allObjects []*unstructured.Unstructured, templateK
 			notMatch = append(notMatch, obj)
 		}
 	}
-	return
+	return match, notMatch
 }
