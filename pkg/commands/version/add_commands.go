@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// AddCommandsTo adds commands to tho root command.
 func AddCommandsTo(root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "version",
