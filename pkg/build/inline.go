@@ -122,83 +122,21 @@ var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 // ComponentFiles reads file-references for component builder objects.
 // The returned components are copies with the file-references removed.
 func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuilder) (*bundle.Component, error) {
-	name := comp.ComponentName
-	var newObjs []*unstructured.Unstructured
-	for _, cf := range comp.ObjectFiles {
-		contents, err := n.readFile(ctx, cf)
-		if err != nil {
-			return nil, fmt.Errorf("error reading file %v for component %q: %v", cf, name, err)
-		}
-		ext := filepath.Ext(cf.URL)
-		if ext == ".yaml" && multiDoc.Match(contents) {
-			splat := multiDoc.Split(string(contents), -1)
-			for i, s := range splat {
-				if onlyWhitespace.MatchString(s) {
-					continue
-				}
-				obj, err := converter.FromYAMLString(s).ToUnstructured()
-				if err != nil {
-					return nil, fmt.Errorf("converting multi-doc object number %d for component %q, %v", i, name, err)
-				}
-				annot := obj.GetAnnotations()
-				if annot == nil {
-					annot = make(map[string]string)
-				}
-				annot[string(bundle.InlineTypeIdentifier)] = string(bundle.KubeObjectInline)
-				obj.SetAnnotations(annot)
-				newObjs = append(newObjs, obj)
-			}
-		} else {
-			obj, err := converter.FromFileName(cf.URL, contents).ToUnstructured()
-			if err != nil {
-				return nil, fmt.Errorf("for component %q, %v", name, err)
-			}
-			annot := obj.GetAnnotations()
-			if annot == nil {
-				annot = make(map[string]string)
-			}
-			annot[string(bundle.InlineTypeIdentifier)] = string(bundle.KubeObjectInline)
-			obj.SetAnnotations(annot)
-			newObjs = append(newObjs, obj)
-		}
+	newObjs, err := n.objectFiles(ctx, comp.ObjectFiles, comp.ComponentReference())
+	if err != nil {
+		return nil, err
 	}
 
-	for _, fg := range comp.RawTextFiles {
-		fgName := fg.Name
-		if fgName == "" {
-			return nil, fmt.Errorf("error reading raw text file group object for component %q; name was empty ", name)
-		}
-		m := newConfigMapMaker(fgName)
-		for _, cf := range fg.Files {
-			text, err := n.readFile(ctx, cf)
-			if err != nil {
-				return nil, fmt.Errorf("error reading raw text file for component %q: %v", name, err)
-			}
-			dataName := filepath.Base(cf.URL)
-			if fg.AsBinary {
-				m.addBinaryData(dataName, text)
-			} else {
-				m.addData(dataName, string(text))
-			}
-		}
-		if len(m.cfgMap.Data) > 0 && len(m.cfgMap.BinaryData) > 0 {
-			return nil, fmt.Errorf("both and binary data were filled out for group: %v", fg)
-		}
-
-		m.cfgMap.ObjectMeta.Annotations[string(bundle.InlineTypeIdentifier)] = string(bundle.RawStringInline)
-		for key, value := range fg.Annotations {
-			m.cfgMap.ObjectMeta.Annotations[key] = value
-		}
-		for key, value := range fg.Labels {
-			m.cfgMap.ObjectMeta.Labels[key] = value
-		}
-
-		uns, err := m.toUnstructured()
-		if err != nil {
-			return nil, fmt.Errorf("for component %q and file group %q, %v", name, fgName, err)
-		}
-		newObjs = append(newObjs, uns)
+	newObjs, err = n.objectTemplateBuilders(ctx, newObjs, comp.ComponentReference())
+	if err != nil {
+		return nil, err
 	}
+
+	cfgObj, err := n.rawTextFiles(ctx, comp.RawTextFiles, comp.ComponentReference())
+	if err != nil {
+		return nil, err
+	}
+	newObjs = append(newObjs, cfgObj...)
 
 	om := *comp.ObjectMeta.DeepCopy()
 	if om.Name == "" {
@@ -237,6 +175,140 @@ func (n *Inliner) AllComponentFiles(ctx context.Context, cbs []*bundle.Component
 		out = append(out, newc)
 	}
 	return out, nil
+}
+
+// objectFiles inlines object files
+func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+	var newObjs []*unstructured.Unstructured
+	for _, cf := range objFiles {
+		contents, err := n.readFile(ctx, cf)
+		if err != nil {
+			return nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
+		}
+		ext := filepath.Ext(cf.URL)
+		if ext == ".yaml" && multiDoc.Match(contents) {
+			splat := multiDoc.Split(string(contents), -1)
+			for i, s := range splat {
+				if onlyWhitespace.MatchString(s) {
+					continue
+				}
+				obj, err := converter.FromYAMLString(s).ToUnstructured()
+				if err != nil {
+					return nil, fmt.Errorf("converting multi-doc object number %d for component %v, %v", i, ref, err)
+				}
+				annot := obj.GetAnnotations()
+				if annot == nil {
+					annot = make(map[string]string)
+				}
+				obj.SetAnnotations(annot)
+				newObjs = append(newObjs, obj)
+			}
+		} else {
+			obj, err := converter.FromFileName(cf.URL, contents).ToUnstructured()
+			if err != nil {
+				return nil, fmt.Errorf("for component %q, %v", ref, err)
+			}
+			annot := obj.GetAnnotations()
+			if annot == nil {
+				annot = make(map[string]string)
+			}
+			obj.SetAnnotations(annot)
+			newObjs = append(newObjs, obj)
+		}
+	}
+	return newObjs, nil
+}
+
+// objectTemplateBuilders builds ObjectTemplates from ObjectTemplateBuilders
+func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects []*unstructured.Unstructured, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+	var outObj []*unstructured.Unstructured
+	for _, obj := range objects {
+		if obj.GetKind() != "ObjectTemplateBuilder" {
+			outObj = append(outObj, obj)
+			continue
+		}
+		name := obj.GetName()
+
+		builder := &bundle.ObjectTemplateBuilder{}
+		if err := converter.FromUnstructured(obj).ToObject(builder); err != nil {
+			return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+		}
+
+		contents, err := n.readFile(ctx, builder.TemplateFile)
+		if err != nil {
+			return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+		}
+
+		objTemplate := &bundle.ObjectTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "bundle.gke.io/v1alpha1",
+				Kind:       "ObjectTemplate",
+			},
+			ObjectMeta:    builder.ObjectMeta,
+			OptionsSchema: builder.OptionsSchema,
+			Template:      string(contents),
+		}
+		if objTemplate.ObjectMeta.Annotations == nil {
+			objTemplate.ObjectMeta.Annotations = make(map[string]string)
+		}
+		tmplType := bundle.GoTemplate
+		if builder.TemplateType != bundle.UndefinedTemplateType {
+			tmplType = builder.TemplateType
+		}
+		objTemplate.TemplateType = tmplType
+
+		objJSON, err := converter.FromObject(objTemplate).ToJSON()
+		if err != nil {
+			return nil, fmt.Errorf("for component %v and object %q, while converting back to JSON: %v", ref, name, err)
+		}
+
+		unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
+		if err != nil {
+			return nil, fmt.Errorf("for component %v and object %q, while converting back to Unstructured: %v", ref, name, err)
+		}
+		outObj = append(outObj, unsObj)
+	}
+	return outObj, nil
+}
+
+func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGroup, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+	var newObjs []*unstructured.Unstructured
+	for _, fg := range fileGroups {
+		fgName := fg.Name
+		if fgName == "" {
+			return nil, fmt.Errorf("error reading raw text file group object for component %v; name was empty ", ref)
+		}
+		m := newConfigMapMaker(fgName)
+		for _, cf := range fg.Files {
+			text, err := n.readFile(ctx, cf)
+			if err != nil {
+				return nil, fmt.Errorf("error reading raw text file for component %q: %v", ref, err)
+			}
+			dataName := filepath.Base(cf.URL)
+			if fg.AsBinary {
+				m.addBinaryData(dataName, text)
+			} else {
+				m.addData(dataName, string(text))
+			}
+		}
+		if len(m.cfgMap.Data) > 0 && len(m.cfgMap.BinaryData) > 0 {
+			return nil, fmt.Errorf("both and binary data were filled out for group: %v", fg)
+		}
+
+		for key, value := range fg.Annotations {
+			m.cfgMap.ObjectMeta.Annotations[key] = value
+		}
+		for key, value := range fg.Labels {
+			m.cfgMap.ObjectMeta.Labels[key] = value
+		}
+
+		uns, err := m.toUnstructured()
+		if err != nil {
+			return nil, fmt.Errorf("for component %v and file group %q, %v", ref, fgName, err)
+		}
+		newObjs = append(newObjs, uns)
+	}
+	return newObjs, nil
 }
 
 // readFile from either a local or remote location.
