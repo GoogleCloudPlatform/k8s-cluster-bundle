@@ -16,19 +16,34 @@
 package generate
 
 import (
+	"os"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/generate"
 )
 
 // GetCommand generate placeholder components
 func GetCommand() *cobra.Command {
+	var filepath string
+	var includeTests bool
+
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate placeholder components",
 		Long:  "Generate placeholder components",
 		Run: func(cmd *cobra.Command, _ []string) {
-			generate.Generate()
+			if filepath == "" {
+				os.Stderr.WriteString("Filepath not specified")
+				os.Exit(1)
+			}
+			fmt.Println("include tests: ", includeTests)
+			generate.GenerateComponent(filepath, includeTests)
 		},
 	}
+
+	cmd.Flags().StringVar(&filepath, "path", "", "filepath to create component")
+	cmd.Flags().BoolVarP(&includeTests, "include-test-suite", "", false, "include test suite or not")
+
+
 	return cmd
 }
