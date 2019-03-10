@@ -22,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GetCommand searches through the bundle and filters objects 
 func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
-	// cmd is the parent image command, and is unrunnable by itself.
 	cmd := &cobra.Command{
 		Use:   "find",
 		Short: "Search for objects inside the bundle",
