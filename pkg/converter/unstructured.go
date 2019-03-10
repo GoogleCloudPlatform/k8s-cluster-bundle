@@ -62,4 +62,9 @@ func (c *UnstructuredConverter) ToObject(obj interface{}) error {
 		return err
 	}
 	return FromJSON(json).ToObject(obj)
+
+	// TODO(kashomon): Consider use mapstructure, if possible. It
+	// Alternatively, use UnstructuredConverter from
+	// https://github.com/kubernetes/apimachinery/blob/master/pkg/runtime/converter.go
+	// return mapstructure.Decode(c.o.Object, obj)
 }
