@@ -22,11 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-<<<<<<< HEAD
-// GetCommands prints the version of bundlectl.
-=======
-// GetCommand lists the version of bundlectl
->>>>>>> linting
+// GetCommand prints the version of bundlectl.
 func GetCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
