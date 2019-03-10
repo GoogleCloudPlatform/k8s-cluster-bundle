@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GetCommand patches components objects with templates
 func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
 	opts := &options{}
 	cmd := &cobra.Command{

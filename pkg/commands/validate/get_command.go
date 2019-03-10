@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to a root cobra command.
+// GetCommand validates passed in typess for correctness
 func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
 	cmd := &cobra.Command{
 		Use:   "validate",
