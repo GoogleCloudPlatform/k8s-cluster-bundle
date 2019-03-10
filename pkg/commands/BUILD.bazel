@@ -14,6 +14,7 @@ go_library(
         "//pkg/commands/export:go_default_library",
         "//pkg/commands/filter:go_default_library",
         "//pkg/commands/find:go_default_library",
+        "//pkg/commands/generate:go_default_library",
         "//pkg/commands/patch:go_default_library",
         "//pkg/commands/validate:go_default_library",
         "//pkg/commands/version:go_default_library",

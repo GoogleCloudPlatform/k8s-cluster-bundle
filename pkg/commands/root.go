@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/version"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/generate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
 	"github.com/spf13/cobra"
 )
@@ -71,6 +72,7 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 	rootCmd.AddCommand(patch.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(validate.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(version.GetCommand())
+	rootCmd.AddCommand(generate.GetCommand())
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
