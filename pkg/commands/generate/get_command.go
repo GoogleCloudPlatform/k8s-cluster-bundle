@@ -18,7 +18,7 @@ package generate
 import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/generate"
 	"github.com/spf13/cobra"
-	"os"
+	log "k8s.io/klog"
 )
 
 // GetCommand generate placeholder components
@@ -31,8 +31,7 @@ func GetCommand() *cobra.Command {
 		Long:  "Generate placeholder components",
 		Run: func(cmd *cobra.Command, _ []string) {
 			if filepath == "" {
-				os.Stderr.WriteString("Filepath not specified")
-				os.Exit(1)
+				log.Exit("Filepath not specified")
 			}
 			generate.Create(filepath, componentName)
 		},
