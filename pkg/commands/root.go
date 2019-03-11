@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/generate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/version"
@@ -68,6 +69,7 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 	rootCmd.AddCommand(export.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(filter.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(find.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(generate.GetCommand())
 	rootCmd.AddCommand(patch.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(validate.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(version.GetCommand())
