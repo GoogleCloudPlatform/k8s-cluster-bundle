@@ -28,6 +28,7 @@ version: 1.0.0
 objectFiles:
 - url: /sample-deployment.yaml
 - url: /sample-service.yaml
+- url: /sample-patch.yaml
 `
 const sampleDeployment = `apiVersion: apps/v1beta1
 kind: Deployment
@@ -63,6 +64,26 @@ spec:
     app: {{.Name}}
 `
 
+const patchTemplate = `apiVersion: bundle.gke.io/v1alpha1
+kind: PatchTemplate
+template: |
+  apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    namespace: {{.namespace}}
+optionsSchema:
+  required:
+  - namespace
+  properties:
+    namespace:
+      type: string
+      pattern: '^[a-z0-9-]+$'
+`
+const patchOptions = `# Options for applying to the component via patch-templates
+namespace: foo-namespace
+buildLabel: test-build
+`
+
 // Create scaffolds basic set of files to the filesystem
 func Create(filepath string, name string) error {
 	var writeErr error
@@ -80,26 +101,36 @@ func Create(filepath string, name string) error {
 		Name: name,
 	}
 
-	deploymentTemplate, err := template.New("deployment").Parse(sampleDeployment)
-	if err != nil {
-		writeErr = err
-	}
+	deploymentTemplate, _ := template.New("deployment").Parse(sampleDeployment)
 	var deploymentText bytes.Buffer
 	deploymentTemplate.Execute(&deploymentText, replacement)
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
-		writeErr = err
-	}
 
-	serviceTemplate, err := template.New("deployment").Parse(sampleService)
-	if err != nil {
-		writeErr = err
-	}
+	serviceTemplate, _ := template.New("service").Parse(sampleService)
 	var serviceText bytes.Buffer
 	serviceTemplate.Execute(&serviceText, replacement)
+
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
+		writeErr = err
+		goto handleError
+	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
 		writeErr = err
+		goto handleError
+	}
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
+		writeErr = err
+		goto handleError
+	}
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
+		writeErr = err
+		goto handleError
+	}
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-options.yaml"), []byte(patchOptions), 0666); err != nil {
+		writeErr = err
+		goto handleError
 	}
 
+handleError:
 	if writeErr != nil {
 		os.Remove(filepath)
 	}
