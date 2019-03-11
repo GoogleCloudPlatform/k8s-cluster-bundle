@@ -34,21 +34,12 @@ type options struct {
 	optionsFile string
 }
 
-// opts is a global options instance for reference via the add commands.
-var opts = &options{}
 
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
-	gopt := cmdlib.GlobalOptionsValues.Copy()
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, gopt *cmdlib.GlobalOptions) {
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, fio, gopt); err != nil {
 		log.Exit(err)
 	}
-}
-
-// createInlinerFn creates an Inliner that works with the given current working
-// directory for the purposes of dependency injection.
-var createInlinerFn = func(pbr files.FileObjReader) *build.Inliner {
-	return build.NewInlinerWithScheme(files.FileScheme, pbr)
 }
 
 func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, rw files.FileReaderWriter, gopt *cmdlib.GlobalOptions) error {

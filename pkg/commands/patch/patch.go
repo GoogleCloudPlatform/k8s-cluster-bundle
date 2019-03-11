@@ -44,11 +44,7 @@ type options struct {
 	keepTemplates bool
 }
 
-// opts is a global options instance for reference via the add commands.
-var opts = &options{}
-
-func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, _ []string) {
-	gopt := cmdlib.GlobalOptionsValues.Copy()
+func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, gopt *cmdlib.GlobalOptions) {
 	brw := cmdlib.NewBundleReaderWriter(fio, sio)
 	if err := run(ctx, opts, brw, fio, gopt); err != nil {
 		log.Exit(err)

@@ -22,23 +22,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommandsTo adds commands to a root cobra command.
-func AddCommandsTo(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, root *cobra.Command) {
+// GetCommand retrieves command to build bundle files
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "build",
 		Short: "Build the bundle files",
 		Long:  `Build all the files in the given bundle yaml`,
 		Run: func(cmd *cobra.Command, args[] string) {
-			action(ctx, fio, sio, cmd, args)
+			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}
-
-	// Optional flags
-
-	// While options-file is technically optional, it is usually provided to
-	// detemplatize the patch templates.
-	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "",
-		"File containing options to apply to patch templates")
-
-	root.AddCommand(cmd)
+	// While options-file is technically optional, it is usually provided to detemplatize the patch templates.
+	cmd.Flags().StringVarP(&opts.optionsFile, "options-file", "", "", "File containing options to apply to patch templates")
+	return cmd
 }
