@@ -15,9 +15,10 @@
 package validate
 
 import (
+	"testing"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
-	"testing"
 )
 
 func assertValidateComponent(componentString string, expectedError string, numErrors int, t *testing.T) {
