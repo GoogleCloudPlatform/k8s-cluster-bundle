@@ -72,7 +72,7 @@ func Run(t *testing.T, testSuiteFile string) {
 	var comp *bundle.Component
 	if bw.Kind() == "ComponentBuilder" {
 		inliner := build.NewLocalInliner(ts.RootDirectory)
-		comp, err = inliner.ComponentFiles(ctx, bw.ComponentBuilder())
+		comp, err = inliner.ComponentFiles(ctx, bw.ComponentBuilder(), ts.ComponentFile)
 		if err != nil {
 		}
 	} else {

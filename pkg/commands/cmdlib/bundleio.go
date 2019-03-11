@@ -64,8 +64,8 @@ func (r *RealStdioReaderWriter) Write(b []byte) (int, error) {
 }
 
 type fileInliner interface {
-	BundleFiles(context.Context, *bundle.BundleBuilder) (*bundle.Bundle, error)
-	ComponentFiles(context.Context, *bundle.ComponentBuilder) (*bundle.Component, error)
+	BundleFiles(context.Context, *bundle.BundleBuilder, string) (*bundle.Bundle, error)
+	ComponentFiles(context.Context, *bundle.ComponentBuilder, string) (*bundle.Component, error)
 }
 
 // BundleReaderWriter provides a mockable reading / writing interface for
@@ -138,13 +138,13 @@ func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *wrapper.B
 	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
 	switch bw.Kind() {
 	case "BundleBuilder":
-		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder())
+		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder(), g.InputFile)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining component data files: %v", err)
 		}
 		return wrapper.FromBundle(newBun), nil
 	case "ComponentBuilder":
-		newComp, err := inliner.ComponentFiles(ctx, bw.ComponentBuilder())
+		newComp, err := inliner.ComponentFiles(ctx, bw.ComponentBuilder(), g.InputFile)
 		if err != nil {
 			return nil, fmt.Errorf("error inlining objects: %v", err)
 		}
