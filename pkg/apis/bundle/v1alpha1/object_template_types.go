@@ -59,7 +59,7 @@ type ObjectTemplate struct {
 	// Template is a template-string that creates a K8S object.
 	Template string `json:"template,omitempty"`
 
-	// TemplateType is requried and indicates how the template should be
+	// TemplateType is required and indicates how the template should be
 	// detemplatized.
 	TemplateType TemplateType `json:"templateType,omitempty"`
 

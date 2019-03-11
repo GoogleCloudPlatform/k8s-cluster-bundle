@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package filter contains commands for filtering components and objects.
 package filter
 
 import (
@@ -22,17 +23,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand filters components or objects from a bundle file
-func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+// GetCommand returns the command for filtering.
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
 	opts := &options{}
 
 	cmd := &cobra.Command{
 		Use:   "filter",
 		Short: "Filter the components or objects in a bundle file",
 		Long:  `Filter the components or objects in a bundle file, returning a new bundle file`,
-		Run: func(cmd *cobra.Command, args[] string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			action(ctx, fio, sio, cmd, opts, gopts)
-		},	
+		},
 	}
 
 	// Optional flags

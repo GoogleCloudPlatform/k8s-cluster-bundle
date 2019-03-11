@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package build contains commands for building components.
 package build
 
 import (
@@ -22,14 +23,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand retrieves command to build bundle files
-func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+// GetCommand returns the command for building.
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
 	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "build",
 		Short: "Build the bundle files",
 		Long:  `Build all the files in the given bundle yaml`,
-		Run: func(cmd *cobra.Command, args[] string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}
