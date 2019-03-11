@@ -399,6 +399,7 @@ spec:
 	}
 
 	if newCompStr == origStr {
-		t.Fatalf("Got equal component strings, but expected them to be different because the component should bo copied")
+		t.Fatalf("Got equal component strings, but expected them to be different because the component should bo copied. "+
+			"Values were new string:\n%s\nOriginal string:\n%s", newCompStr, origStr)
 	}
 }
