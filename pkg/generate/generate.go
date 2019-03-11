@@ -65,13 +65,13 @@ spec:
 
 // Create scaffolds basic set of files to the filesystem
 func Create(filepath string, name string) error {
-	var writeErr error
+  var writeErr error
   if err := os.Mkdir(filepath, 0777); err != nil { 
     writeErr = err 
     return writeErr
   }
 
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
+  if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
     writeErr = err
   }
   replacement := struct {
@@ -83,7 +83,7 @@ func Create(filepath string, name string) error {
   deploymentTemplate, _ := template.New("deployment").Parse(sampleDeployment)
   var deploymentText bytes.Buffer 
   deploymentTemplate.Execute(&deploymentText, replacement)
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
+  if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
     writeErr = err
   }
 
@@ -97,5 +97,5 @@ func Create(filepath string, name string) error {
   if writeErr != nil {
     os.Remove(filepath)
   }
-	return writeErr
+  return writeErr
 }
