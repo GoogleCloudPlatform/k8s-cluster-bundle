@@ -77,6 +77,8 @@ do
   # fixed with controller-tools >= release-1.12 (?)
   sed $'s/googlecloudplatform/GoogleCloudPlatform/' $f > $f.t
   mv $f.t $f
+  sed $'s/github.com\/golang\/glog/k8s.io\/klog/' $f > $f.t
+  mv $f.t $f
 done
 
 # Relies on ../PROJECT file

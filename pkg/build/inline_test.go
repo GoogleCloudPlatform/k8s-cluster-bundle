@@ -560,7 +560,7 @@ objectFiles:
 kind: ObjectTemplateBuilder
 metadata:
   name: obj-tmpl
-templateFile:
+file:
   url: '/path/to/tmpl.yaml'
 optionsSchema:
   properties:
@@ -585,7 +585,7 @@ metadata:
 						subStrings: []string{
 							"name: {{.foo}}",
 							"type: string",
-							"templateType: go-template",
+							"type: go-template",
 						},
 					},
 				},
@@ -605,7 +605,7 @@ objectFiles:
 kind: ObjectTemplateBuilder
 metadata:
   name: obj-tmpl
-templateFile:
+file:
   url: 'manifest/tmpl.yaml'
 optionsSchema:
   properties:
@@ -630,7 +630,7 @@ metadata:
 						subStrings: []string{
 							"name: {{.foo}}",
 							"type: string",
-							"templateType: go-template",
+							"type: go-template",
 						},
 					},
 				},

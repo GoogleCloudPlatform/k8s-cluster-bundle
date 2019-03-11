@@ -46,7 +46,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*
 	return comp, err
 }
 
-func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) (*unstructured.Unstructured, error) {
+func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
 	json, err := converter.FromObject(obj).ToJSON()
 	if err != nil {
 		return nil, fmt.Errorf("error converting object named %q to json: %v", obj.GetName(), err)
@@ -68,7 +68,7 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 		return nil, err
 	}
 
-	return uns, err
+	return []*unstructured.Unstructured{uns}, err
 }
 
 var _ options.ObjHandler = applyOptions

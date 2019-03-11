@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: objecttemplates.bundle.gke.io
+  name: objecttemplatebuilders.bundle.gke.io
 spec:
   group: bundle.gke.io
   names:
-    kind: ObjectTemplate
-    plural: objecttemplates
+    kind: ObjectTemplateBuilder
+    plural: objecttemplatebuilders
   scope: Namespaced
   validation:
     openAPIV3Schema:
@@ -19,6 +19,24 @@ spec:
             of an object. Servers should convert recognized schemas to the latest
             internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
+        file:
+          description: File is references a template file. Files can contain one or
+            more objects. If the object contains more.
+          properties:
+            hash:
+              description: Digest is an optional hash of the file to ensure we are
+                pulling the correct binary/file.
+              type: string
+            url:
+              description: 'URL to find this file; the url string must be parsable
+                via Go''s net/url library. It is generally recommended that a URI
+                scheme be provided in the URL, but it is not required. If a scheme
+                is not provided, it is assumed that the scheme is a file-scheme.  For
+                example, these are all valid: - foo/bar/biff (a relative path) - /foo/bar/biff
+                (an absolute path) - file:///foo/bar/biff (an absolute path with an
+                explicit ''file'' scheme) - http://example.com/foo.yaml'
+              type: string
+          type: object
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
@@ -30,10 +48,6 @@ spec:
           description: OptionsSchema is the schema for the parameters meant to be
             applied to the object template, which includes both defaulting and validation.
           type: object
-        template:
-          description: Template is a template-string that creates one or more Kubernetes
-            object.
-          type: string
         type:
           description: Type indicates how the template should be detemplatized. It
             defaults to Go Templates during build if left unspecified.

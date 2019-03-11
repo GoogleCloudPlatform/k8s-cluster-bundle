@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	log "k8s.io/klog"
 	"github.com/spf13/cobra"
+	log "k8s.io/klog"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"

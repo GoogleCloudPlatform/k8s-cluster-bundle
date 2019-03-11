@@ -29,7 +29,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -43,7 +43,7 @@ spec:
   - kind: ObjectTemplate
     metadata:
       name: logger-pod-no-inline
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -73,7 +73,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -101,7 +101,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -115,8 +115,47 @@ spec:
   - kind: ObjectTemplate
     metadata:
       name: logger-pod-no-inline
-    templateType: go-template
+    type: go-template
     template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.AnotherDNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.AnotherContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":             "FooBarPolicy",
+				"ContainerImage":        "MyContainerImage",
+				"AnotherDNSPolicy":      "BlooBlarPolicy",
+				"AnotherContainerImage": "AnotherContainerImageVal",
+			},
+			notUsedParams: map[string]interface{}{
+				"Foof": "Boof",
+			},
+		},
+		{
+			desc: "multi-doc object templates",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    type: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'
+      ---
       apiVersion: v1
       kind: Pod
       metadata:
@@ -144,7 +183,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: zed
+    type: zed
     template: |
       apiVersion: v1
       kind: Pod
@@ -174,7 +213,7 @@ spec:
     metadata:
       name: derp
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod
@@ -201,7 +240,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     optionsSchema:
       properties:
         ContainerImage:
@@ -232,7 +271,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     optionsSchema:
       properties:
         ContainerImage:
@@ -322,7 +361,7 @@ spec:
   componentName: data-component
   objects:
   - kind: ObjectTemplate
-    templateType: go-template
+    type: go-template
     template: |
       apiVersion: v1
       kind: Pod

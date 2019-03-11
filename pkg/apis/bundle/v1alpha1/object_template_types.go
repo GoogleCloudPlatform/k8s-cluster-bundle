@@ -23,11 +23,11 @@ import (
 type TemplateType string
 
 const (
-	// UndefinedTemplateType represents an undefined template type.
-	UndefinedTemplateType TemplateType = ""
+	// TemplateTypeUndefined represents an undefined template type.
+	TemplateTypeUndefined TemplateType = ""
 
-	// GoTemplate represents a go-template type.
-	GoTemplate TemplateType = "go-template"
+	// TemplateGo represents a go-template, which is assumed to be YAML.
+	TemplateTypeGo TemplateType = "go-template"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -37,12 +37,13 @@ type ObjectTemplateBuilder struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// TemplateFile is references a template file
-	TemplateFile File `json:"templateFile,omitempty"`
+	// File is references a template file. Files can contain one or more objects.
+	// If the object contains more.
+	File File `json:"file,omitempty"`
 
-	// TemplateType indicates how the template should be detemplatized. By
-	// default, it defaults to Go-Templates during build if left unspecified.
-	TemplateType TemplateType `json:"templateType,omitempty"`
+	// Type indicates how the template should be detemplatized. It defaults to Go
+	// Templates during build if left unspecified.
+	Type TemplateType `json:"type,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.
@@ -56,12 +57,11 @@ type ObjectTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Template is a template-string that creates a K8S object.
+	// Template is a template-string that creates one or more Kubernetes object.
 	Template string `json:"template,omitempty"`
 
-	// TemplateType is required and indicates how the template should be
-	// detemplatized.
-	TemplateType TemplateType `json:"templateType,omitempty"`
+	// Type indicates how the template should be detemplatized and is required.
+	Type TemplateType `json:"type,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.
