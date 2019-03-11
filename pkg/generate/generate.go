@@ -67,7 +67,7 @@ spec:
 const patchTemplate = `apiVersion: bundle.gke.io/v1alpha1
 kind: PatchTemplate
 template: |
-  apiVersion: apps/v1beta1
+  apiVersion: apps/v1
   kind: Deployment
   metadata:
     namespace: {{.namespace}}
@@ -92,14 +92,7 @@ func Create(filepath string, name string) error {
 		return writeErr
 	}
 
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
-		writeErr = err
-	}
-	replacement := struct {
-		Name string
-	}{
-		Name: name,
-	}
+	replacement := struct{ Name string }{Name: name}
 
 	deploymentTemplate, _ := template.New("deployment").Parse(sampleDeployment)
 	var deploymentText bytes.Buffer
@@ -109,6 +102,9 @@ func Create(filepath string, name string) error {
 	var serviceText bytes.Buffer
 	serviceTemplate.Execute(&serviceText, replacement)
 
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
+		writeErr = err
+	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
 		writeErr = err
 		goto handleError
