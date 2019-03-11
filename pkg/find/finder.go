@@ -64,6 +64,15 @@ func (f *ComponentFinder) ComponentVersions(name string) []*bundle.Component {
 	return f.nameCompLookup[name]
 }
 
+// Return all the components known by the finder.
+func (f *ComponentFinder) AllComponents() []*bundle.Component {
+	var out []*bundle.Component
+	for _, c := range f.keyCompLookup {
+		out = append(out, c)
+	}
+	return out
+}
+
 // UniqueComponentFromName returns the single component package that matches a
 // string-name. If no component is found, nil is returned. If there are two
 // components that match the name, the method returns an error.
