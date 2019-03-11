@@ -107,28 +107,19 @@ func Create(filepath string, name string) error {
 	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
 		writeErr = err
-		goto handleError
 	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
 		writeErr = err
-		goto handleError
 	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
 		writeErr = err
-		goto handleError
 	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
 		writeErr = err
-		goto handleError
 	}
 	if err := ioutil.WriteFile(path.Join(filepath, "sample-options.yaml"), []byte(patchOptions), 0666); err != nil {
 		writeErr = err
-		goto handleError
 	}
 
-handleError:
-	if writeErr != nil {
-		os.Remove(filepath)
-	}
 	return writeErr
 }
