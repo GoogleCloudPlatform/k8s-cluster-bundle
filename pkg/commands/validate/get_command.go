@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package validate contains commands for validating components and objects.
 package validate
 
 import (
@@ -22,13 +23,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand validates passed in typess for correctness
-func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+// GetCommand returns the command for validating components and objects.
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validate",
 		Short: "Validate a bundle file",
 		Long:  `Validate a bundle file to ensure the bundle file follows the bundle schema and doesn't contain errors.`,
-		Run: func(cmd *cobra.Command, args[] string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			action(ctx, fio, sio, cmd, gopts)
 		},
 	}

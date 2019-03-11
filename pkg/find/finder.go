@@ -64,7 +64,7 @@ func (f *ComponentFinder) ComponentVersions(name string) []*bundle.Component {
 	return f.nameCompLookup[name]
 }
 
-// Return all the components known by the finder.
+// AllComponents return all the components known by the finder.
 func (f *ComponentFinder) AllComponents() []*bundle.Component {
 	var out []*bundle.Component
 	for _, c := range f.keyCompLookup {

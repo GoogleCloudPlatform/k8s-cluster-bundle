@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package export contains commands for exporting components and objects.
 package export
 
 import (
@@ -22,14 +23,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand exports objects from the passed in 
-func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+// GetCommand returns the command for exporting.
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
 	opts := &options{}
 	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Exports all of the objects",
 		Long:  `Exports all objects to STDOUT as YAML delimited by ---`,
-		Run: func(cmd *cobra.Command, args[] string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}

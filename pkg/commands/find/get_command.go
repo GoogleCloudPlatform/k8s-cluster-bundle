@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package export contains commands for finding components and objects.
 package find
 
 import (
@@ -22,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand searches through the bundle and filters objects 
-func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command{
+// GetCommand returns the command for finding.
+func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, gopts *cmdlib.GlobalOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "find",
 		Short: "Search for objects inside the bundle",
@@ -34,7 +35,7 @@ func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.Stdi
 		Use:   "images",
 		Short: "Find images in the bundle",
 		Long:  "Apply all the patches found in a bundle to customize it with the given options custom resources",
-		Run: func(cmd *cobra.Command, args[] string) {
+		Run: func(cmd *cobra.Command, args []string) {
 			findAction(ctx, fio, sio, cmd, gopts)
 		},
 	}
