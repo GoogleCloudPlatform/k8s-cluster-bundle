@@ -51,6 +51,8 @@ func NewApplier() options.Applier {
 // component's object list. The original ConfigMap is not included in the final
 // component.
 func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions) (*bundle.Component, error) {
+	comp := comp.DeepCopy()
+
 	matched, notMatched := options.PartitionObjectTemplates(comp.Spec.Objects, string(bundle.GoTemplate))
 
 	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, applyOptions)
