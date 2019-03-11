@@ -80,14 +80,20 @@ func Create(filepath string, name string) error {
     Name: name,
   }
 
-  deploymentTemplate, _ := template.New("deployment").Parse(sampleDeployment)
+  deploymentTemplate, err := template.New("deployment").Parse(sampleDeployment)
+  if err != nil {
+    writeErr = err
+  }
   var deploymentText bytes.Buffer 
   deploymentTemplate.Execute(&deploymentText, replacement)
   if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
     writeErr = err
   }
 
-  serviceTemplate, _ := template.New("deployment").Parse(sampleService)
+  serviceTemplate, err := template.New("deployment").Parse(sampleService)
+  if err != nil {
+    writeErr = err 
+  }
   var serviceText bytes.Buffer 
   serviceTemplate.Execute(&serviceText, replacement)
   if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
