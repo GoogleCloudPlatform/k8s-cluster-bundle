@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package version contains the version command.
+// Package generate contains the generate command.
 package generate
 
 import (
 	"os"
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/generate"
 )
@@ -25,8 +24,7 @@ import (
 // GetCommand generate placeholder components
 func GetCommand() *cobra.Command {
 	var filepath string
-	var includeTests bool
-
+	var componentName string
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate placeholder components",
@@ -36,14 +34,10 @@ func GetCommand() *cobra.Command {
 				os.Stderr.WriteString("Filepath not specified")
 				os.Exit(1)
 			}
-			fmt.Println("include tests: ", includeTests)
-			generate.GenerateComponent(filepath, includeTests)
+			generate.Create(filepath, componentName)
 		},
 	}
-
 	cmd.Flags().StringVar(&filepath, "path", "", "filepath to create component")
-	cmd.Flags().BoolVarP(&includeTests, "include-test-suite", "", false, "include test suite or not")
-
-
+	cmd.Flags().StringVar(&componentName, "name", "example-component", "name of component to create")
 	return cmd
 }

@@ -1,192 +1,87 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package generate scaffolds components to guide a user for component creation
 package generate
 
 import "io/ioutil"
 import "os"
 import "path"
+import "strings"
 
 const componentBuilder = `apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentBuilder
 componentName: etcd-component
-version: 30.0.2
+version: 1.0.0
 objectFiles:
-- url: /etcd-server.yaml
-- url: /patches.yaml
+- url: /sample-deployment.yaml
+- url: /sample-service.yaml
 `
-
-const etcdServer = `apiVersion: v1
-kind: Pod
+const sampleDeployment = `apiVersion: apps/v1beta1
+kind: Deployment
 metadata:
-  name: etcd-server
+  labels:
+    app: $DEPLOYMENT_NAME
+  name: helloworld
 spec:
-  containers:
-  - command:
-    - /bin/sh
-    - -c
-    - |
-      exec /usr/local/bin/etcd
-      --name etcd-server-primary
-      --listen-peer-urls $(LISTEN_PEER_URLS)
-      --initial-advertise-peer-urls $(INITIAL_ADVERTISE_PEER_URLS)
-      --advertise-client-urls $(CLIENT_URLS)
-      --listen-client-urls $(CLIENT_URLS)
-      --quota-backend-bytes=6442450944
-      --data-dir /var/etcd/data
-      --initial-cluster-state new
-      --initial-cluster etcd-server-primary=$(CLIENT_URLS)
-      1>>/var/log/etcd.log
-      2>&1
-    env:
-    - name: TARGET_STORAGE
-      value: etcd3
-    - name: TARGET_VERSION
-      value: 3.1.11
-    - name: DATA_DIRECTORY
-      value: /var/etcd/data
-    - name: INITIAL_CLUSTER
-      value: etcd-server-primary=http://10.1.1.1:2380
-    - name: LISTEN_PEER_URLS
-      value: http://10.1.1.1:2380
-    - name: INITIAL_ADVERTISE_PEER_URLS
-      value: http://10.1.1.1:2380
-    - name: CLIENT_URLS
-      value: http://127.0.0.1:2379
-    - name: ETCD_CREDS
-      value: ""
-    image: k8s.gcr.io/etcd:3.1.11
-    livenessProbe:
-      httpGet:
-        host: 127.0.0.1
-        path: /health
-        port: 2379
-      initialDelaySeconds: 15
-      timeoutSeconds: 15
-    name: etcd-container
-    ports:
-    - containerPort: 2380
-      hostPort: 2380
-      name: serverport
-    - containerPort: 2379
-      hostPort: 2379
-      name: clientport
-    resources:
-      requests:
-        cpu: 200m
-    volumeMounts:
-    - mountPath: /var/etcd
-      name: varetcd
-      readOnly: false
-    - mountPath: /var/log/etcd.log
-      name: varlogetcd
-      readOnly: false
-    - mountPath: /etc/srv/kubernetes
-      name: etc
-      readOnly: false
-  hostNetwork: true
-  volumes:
-  - hostPath:
-      path: /mnt/disks/master-pd/var/etcd
-    name: varetcd
-  - hostPath:
-      path: /var/log/etcd.log
-      type: FileOrCreate
-    name: varlogetcd
-  - hostPath:
-      path: /etc/srv/kubernetes
-    name: etc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: $DEPLOYMENT_NAME
+      name: $DEPLOYMENT_NAME
+    spec:
+      containers:
+        - name: $DEPLOYMENT_NAME
+          image: gcr.io/google-samples/hello-app:2.0
 `
-
-const patches = `apiVersion: bundle.gke.io/v1alpha1
-kind: PatchTemplate
-template: |
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    namespace: {{.namespace}}
-optionsSchema:
-  required:
-  - namespace
-  properties:
-    namespace:
-      type: string
-      pattern: '^[a-z0-9-]+$'
----
-apiVersion: bundle.gke.io/v1alpha1
-kind: PatchTemplate
+const sampleService = `apiVersion: v1
+kind: Service
 metadata:
-  annotations:
-    build-label-experiment: test
-optionsSchema:
-  properties:
-    buildLabel:
-      type: string
-      default: dev-env
-      pattern: '^[a-z0-9-]+$'
-template: |
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    annotations:
-      build-label: {{.buildLabel}}
-`
-const options = `namespace: foo-namespace
-buildLabel: test-build
+  name: $SERVICE_NAME
+  labels: 
+    app: $SERVICE_NAME
+spec:
+  type: NodePort
+  ports:
+  - name: $SERVICE_NAME
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: $SERVICE_NAME
 `
 
-const testSuite = `componentFile: etcd-component-builder.yaml
-rootDirectory: './'
+// Create scaffolds basic set of files to the filesystem
+func Create(filepath string, name string) error {
+	var writeErr error
+  if err := os.Mkdir(filepath, 0777); err != nil { 
+    writeErr = err 
+    return writeErr
+  }
 
-testCases:
-- description: Success
-  apply:
-    options:
-      namespace: default-ns
-      buildLabel: test-env
-  expect:
-    objects:
-    - kind: Pod
-      name: etcd-server
-      findSubstrs:
-      - 'build-label: test-env'
-      - 'image: k8s.gcr.io/etcd:3.1.11'
-      - 'namespace: default-ns'
-      notFindSubstrs:
-      - 'build-label: dev-env'
+	if err := ioutil.WriteFile(path.Join(filepath, "etcd-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
+    writeErr = err
+  }
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), []byte(strings.Replace(sampleDeployment, "$DEPLOYMENT_NAME", name, -1)), 0666); err != nil {
+    writeErr = err
+  }
+  if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), []byte(strings.Replace(sampleService, "$SERVICE_NAME", name, -1)), 0666); err != nil {
+    writeErr = err
+  }
 
-- description: 'Success: default build label'
-  apply:
-    options:
-      namespace: default-ns
-  expect:
-    objects:
-    - kind: Pod
-      name: etcd-server
-      findSubstrs:
-      - 'build-label: dev-env'
-      - 'namespace: default-ns'
-      notFindSubstrs:
-      - 'build-label: test-env'
-
-- description: 'Fail: parameter missing'
-  expect:
-    applyErrSubstr: 'namespace in body is required'
-
-- description: 'Fail: parameter does not match regex'
-  apply:
-    options:
-      namespace: default-ns
-      buildLabel: '1263[]){'
-  expect:
-    applyErrSubstr: "buildLabel in body should match '^[a-z0-9-]+$'"
-`
-
-func GenerateComponent(filepath string, includeTestSuite bool) error {
-	os.Mkdir(filepath, 0777)
-	ioutil.WriteFile(path.Join(filepath, "etcd-component-builder.yaml"), []byte(componentBuilder), 0666)
-	ioutil.WriteFile(path.Join(filepath, "etcd-server.yaml"), []byte(etcdServer), 0666)
-	ioutil.WriteFile(path.Join(filepath, "patches.yaml"), []byte(patches), 0666)
-	ioutil.WriteFile(path.Join(filepath, "options.yaml"), []byte(options), 0666)
-	if includeTestSuite {
-		ioutil.WriteFile(path.Join(filepath, "test-suite.yaml"), []byte(testSuite), 0666)
-	}
-	return nil
+  if writeErr != nil {
+    os.Remove(filepath)
+  }
+	return writeErr
 }
