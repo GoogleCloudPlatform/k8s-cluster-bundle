@@ -67,6 +67,7 @@ func NewDefaultApplier() options.Applier {
 
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
 func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
+	comp = comp.DeepCopy()
 	patches, objs, err := a.makePatches(comp, p)
 	if err != nil {
 		return nil, err
