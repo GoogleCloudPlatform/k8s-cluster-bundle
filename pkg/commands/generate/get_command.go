@@ -36,7 +36,7 @@ func GetCommand() *cobra.Command {
 			generate.Create(filepath, componentName)
 		},
 	}
-	cmd.Flags().StringVar(&filepath, "path", "", "filepath to create component")
+	cmd.Flags().StringVar(&filepath, "write-to", "", "filepath to create component")
 	cmd.Flags().StringVar(&componentName, "name", "example-component", "name of component to create")
 	return cmd
 }
