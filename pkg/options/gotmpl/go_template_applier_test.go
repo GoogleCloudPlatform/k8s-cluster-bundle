@@ -315,3 +315,51 @@ spec:
 		})
 	}
 }
+
+func TestCopyComponent(t *testing.T) {
+	compStr := `kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    templateType: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`
+
+	comp, err := converter.FromYAMLString(compStr).ToComponent()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	usedParams := map[string]interface{}{
+		"DNSPolicy":      "FooBarPolicy",
+		"ContainerImage": "MyContainerImage",
+	}
+
+	newComp, err := NewApplier().ApplyOptions(comp, usedParams)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	origStr, err := converter.FromObject(comp).ToYAMLString()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newCompStr, err := converter.FromObject(newComp).ToYAMLString()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newCompStr == origStr {
+		t.Fatalf("Got equal component strings, but expected them to be different because the component should bo copied")
+	}
+}
