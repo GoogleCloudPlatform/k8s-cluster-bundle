@@ -65,43 +65,43 @@ spec:
 
 // Create scaffolds basic set of files to the filesystem
 func Create(filepath string, name string) error {
-  var writeErr error
-  if err := os.Mkdir(filepath, 0777); err != nil { 
-    writeErr = err 
-    return writeErr
-  }
+	var writeErr error
+	if err := os.Mkdir(filepath, 0777); err != nil {
+		writeErr = err
+		return writeErr
+	}
 
-  if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
-    writeErr = err
-  }
-  replacement := struct {
-    Name string
-  }{
-    Name: name,
-  }
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
+		writeErr = err
+	}
+	replacement := struct {
+		Name string
+	}{
+		Name: name,
+	}
 
-  deploymentTemplate, err := template.New("deployment").Parse(sampleDeployment)
-  if err != nil {
-    writeErr = err
-  }
-  var deploymentText bytes.Buffer 
-  deploymentTemplate.Execute(&deploymentText, replacement)
-  if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
-    writeErr = err
-  }
+	deploymentTemplate, err := template.New("deployment").Parse(sampleDeployment)
+	if err != nil {
+		writeErr = err
+	}
+	var deploymentText bytes.Buffer
+	deploymentTemplate.Execute(&deploymentText, replacement)
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
+		writeErr = err
+	}
 
-  serviceTemplate, err := template.New("deployment").Parse(sampleService)
-  if err != nil {
-    writeErr = err 
-  }
-  var serviceText bytes.Buffer 
-  serviceTemplate.Execute(&serviceText, replacement)
-  if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
-    writeErr = err
-  }
+	serviceTemplate, err := template.New("deployment").Parse(sampleService)
+	if err != nil {
+		writeErr = err
+	}
+	var serviceText bytes.Buffer
+	serviceTemplate.Execute(&serviceText, replacement)
+	if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
+		writeErr = err
+	}
 
-  if writeErr != nil {
-    os.Remove(filepath)
-  }
-  return writeErr
+	if writeErr != nil {
+		os.Remove(filepath)
+	}
+	return writeErr
 }
