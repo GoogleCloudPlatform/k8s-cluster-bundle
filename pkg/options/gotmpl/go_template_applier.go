@@ -33,7 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var multiDoc = regexp.MustCompile("---(\n|$)")
+var (
+	multiDoc       = regexp.MustCompile("(^|\n)---(\n|$)")
+	onlyWhitespace = regexp.MustCompile(`^\s*$`)
+)
 
 // applier applies options via go-templating for objects stored as raw strings
 // in config maps. This applier only applies to `RawTextFiles` that have been
@@ -100,6 +103,9 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 	if multiDoc.MatchString(yamlStr) {
 		docs := multiDoc.Split(string(yamlStr), -1)
 		for _, doc := range docs {
+			if onlyWhitespace.MatchString(doc) {
+				continue
+			}
 			uns, err := converter.FromYAMLString(doc).ToUnstructured()
 			if err != nil {
 				return nil, err
