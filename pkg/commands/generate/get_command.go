@@ -27,7 +27,7 @@ func GetCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Initialize a placeholder components",
+		Short: "Generate placeholder components",
 		Long:  "Generate placeholder components",
 		Run: func(cmd *cobra.Command, _ []string) {
 			generate.Create(filepath, componentName)
