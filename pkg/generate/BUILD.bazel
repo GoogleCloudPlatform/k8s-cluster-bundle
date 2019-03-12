@@ -5,4 +5,5 @@ go_library(
     srcs = ["generate.go"],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/generate",
     visibility = ["//visibility:public"],
+    deps = ["//vendor/k8s.io/klog:go_default_library"],
 )
