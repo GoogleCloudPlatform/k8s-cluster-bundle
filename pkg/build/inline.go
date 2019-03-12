@@ -76,7 +76,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 		if err != nil {
 			return nil, err
 		}
-		f.URL = n.PathRewriter.RewriteURL(bundleURL, furl).String()
+		f.URL = n.PathRewriter.MakeAbs(bundleURL, furl).String()
 
 		contents, err := n.readFile(ctx, f)
 		if err != nil {
@@ -206,7 +206,7 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 		if err != nil {
 			return nil, nil, err
 		}
-		cf.URL = n.PathRewriter.RewriteURL(componentPath, furl).String()
+		cf.URL = n.PathRewriter.MakeAbs(componentPath, furl).String()
 
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
@@ -274,7 +274,7 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 				return nil, err
 			}
 
-			builder.TemplateFile.URL = n.PathRewriter.RewriteURL(parentURL, furl).String()
+			builder.TemplateFile.URL = n.PathRewriter.MakeAbs(parentURL, furl).String()
 
 			contents, err := n.readFile(ctx, builder.TemplateFile)
 			if err != nil {
@@ -327,7 +327,7 @@ func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGrou
 			if err != nil {
 				return nil, err
 			}
-			cf.URL = n.PathRewriter.RewriteURL(componentPath, furl).String()
+			cf.URL = n.PathRewriter.MakeAbs(componentPath, furl).String()
 
 			text, err := n.readFile(ctx, cf)
 			if err != nil {
