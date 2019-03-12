@@ -168,7 +168,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 // applier function checks whether a patch can be applied, and if so, then
 // applies it.
 func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHandler {
-	return func(obj *unstructured.Unstructured, ref bundle.ComponentReference, _ options.JSONOptions) (*unstructured.Unstructured, error) {
+	return func(obj *unstructured.Unstructured, ref bundle.ComponentReference, _ options.JSONOptions) ([]*unstructured.Unstructured, error) {
 		objJSON, err := converter.FromObject(obj).ToJSON()
 		if err != nil {
 			return nil, fmt.Errorf("while converting to JSON: %v", err)
@@ -206,7 +206,7 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 		if err != nil {
 			return nil, fmt.Errorf("while converting object %s back to unstructured: %v", string(objJSON), err)
 		}
-		return obj, nil
+		return []*unstructured.Unstructured{obj}, nil
 	}
 }
 

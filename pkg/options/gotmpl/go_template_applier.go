@@ -23,6 +23,7 @@ package gotmpl
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -30,6 +31,11 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+var (
+	multiDoc       = regexp.MustCompile("(^|\n)---(\n|$)")
+	onlyWhitespace = regexp.MustCompile(`^\s*$`)
 )
 
 // applier applies options via go-templating for objects stored as raw strings
@@ -54,7 +60,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 	// Make a copy to avoid confusing behavior.
 	comp = comp.DeepCopy()
 
-	matched, notMatched := options.PartitionObjectTemplates(comp.Spec.Objects, string(bundle.GoTemplate))
+	matched, notMatched := options.PartitionObjectTemplates(comp.Spec.Objects, string(bundle.TemplateTypeGo))
 
 	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, applyOptions)
 	if err != nil {
@@ -64,7 +70,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 	return comp, nil
 }
 
-func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) (*unstructured.Unstructured, error) {
+func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
 	// TODO(kashomon): this should probably clone the options for safety.
 	objTmpl := &bundle.ObjectTemplate{}
 	err := converter.FromUnstructured(obj).ToObject(objTmpl)
@@ -90,10 +96,29 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 		return nil, fmt.Errorf("error executing template for component %v: %v", ref, err)
 	}
 
-	uns, err := converter.FromYAMLString(buf.String()).ToUnstructured()
-	if err != nil {
-		return nil, err
+	// TODO(kashomon): It would be better to use YAML-stream decoding, as can be
+	// performed by go-yaml: https://godoc.org/gopkg.in/yaml.v2
+	var out []*unstructured.Unstructured
+	yamlStr := buf.String()
+	if multiDoc.MatchString(yamlStr) {
+		docs := multiDoc.Split(string(yamlStr), -1)
+		for _, doc := range docs {
+			if onlyWhitespace.MatchString(doc) {
+				continue
+			}
+			uns, err := converter.FromYAMLString(doc).ToUnstructured()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, uns)
+		}
+	} else {
+		uns, err := converter.FromYAMLString(yamlStr).ToUnstructured()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, uns)
 	}
 
-	return uns, err
+	return out, err
 }

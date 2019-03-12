@@ -64,6 +64,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ComponentSet{},
 		&ComponentSetList{},
 		&ObjectTemplate{},
+		&ObjectTemplateBuilder{},
 		&PatchTemplate{},
 		&PatchTemplateBuilder{},
 		&Requirements{},

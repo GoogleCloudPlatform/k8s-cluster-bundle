@@ -127,7 +127,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 }
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
-var multiDoc = regexp.MustCompile("---(\n|$)")
+var multiDoc = regexp.MustCompile("(^|\n)---(\n|$)")
 var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 
 // ComponentFiles reads file-references for component builder objects.
@@ -269,14 +269,14 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 				return nil, err
 			}
 
-			furl, err := builder.TemplateFile.ParsedURL()
+			furl, err := builder.File.ParsedURL()
 			if err != nil {
 				return nil, err
 			}
 
-			builder.TemplateFile.URL = n.PathRewriter.MakeAbs(parentURL, furl).String()
+			builder.File.URL = n.PathRewriter.MakeAbs(parentURL, furl).String()
 
-			contents, err := n.readFile(ctx, builder.TemplateFile)
+			contents, err := n.readFile(ctx, builder.File)
 			if err != nil {
 				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
 			}
@@ -290,14 +290,12 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 				OptionsSchema: builder.OptionsSchema,
 				Template:      string(contents),
 			}
-			if objTemplate.ObjectMeta.Annotations == nil {
-				objTemplate.ObjectMeta.Annotations = make(map[string]string)
+
+			tmplType := bundle.TemplateTypeGo
+			if builder.Type != bundle.TemplateTypeUndefined {
+				tmplType = builder.Type
 			}
-			tmplType := bundle.GoTemplate
-			if builder.TemplateType != bundle.UndefinedTemplateType {
-				tmplType = builder.TemplateType
-			}
-			objTemplate.TemplateType = tmplType
+			objTemplate.Type = tmplType
 
 			objJSON, err := converter.FromObject(objTemplate).ToJSON()
 			if err != nil {

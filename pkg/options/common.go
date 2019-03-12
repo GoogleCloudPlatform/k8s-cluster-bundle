@@ -20,7 +20,7 @@ import (
 )
 
 // ObjHandler is a function that can apply options to a Kubernetes object.
-type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts JSONOptions) (*unstructured.Unstructured, error)
+type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts JSONOptions) ([]*unstructured.Unstructured, error)
 
 // ApplyCommon provides common functionality for applying options, deferring
 // the specific object handling logic. The objects will be modified in-place;
@@ -28,11 +28,11 @@ type ObjHandler func(obj *unstructured.Unstructured, ref bundle.ComponentReferen
 func ApplyCommon(ref bundle.ComponentReference, objs []*unstructured.Unstructured, opts JSONOptions, objFn ObjHandler) ([]*unstructured.Unstructured, error) {
 	var newObj []*unstructured.Unstructured
 	for _, obj := range objs {
-		nob, err := objFn(obj, ref, opts)
+		outObjects, err := objFn(obj, ref, opts)
 		if err != nil {
 			return nil, err
 		}
-		newObj = append(newObj, nob)
+		newObj = append(newObj, outObjects...)
 	}
 
 	return newObj, nil
@@ -51,7 +51,7 @@ func PartitionObjectTemplates(allObjects []*unstructured.Unstructured, templateK
 		}
 
 		var templateType string
-		objData := obj.Object["templateType"]
+		objData := obj.Object["type"]
 		templateType, isString := objData.(string)
 		if !isString {
 			notMatch = append(notMatch, obj)

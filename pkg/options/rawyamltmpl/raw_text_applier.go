@@ -91,7 +91,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 			if err != nil {
 				return nil, fmt.Errorf("error rendering object with name %q in component %q: %v", obj.GetName(), ref.ComponentName, err)
 			}
-			newObj = append(newObj, fobj)
+			newObj = append(newObj, fobj...)
 		}
 	}
 
@@ -99,7 +99,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 	return comp, nil
 }
 
-func applyOptions(cfgName, key, data string, opts options.JSONOptions) (*unstructured.Unstructured, error) {
+func applyOptions(cfgName, key, data string, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
 	tmpl, err := template.New(cfgName + "-" + key + "-tmpl").Parse(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template for config map %q, data key %q: %v", cfgName, key, err)
@@ -116,5 +116,6 @@ func applyOptions(cfgName, key, data string, opts options.JSONOptions) (*unstruc
 		return nil, err
 	}
 
-	return uns, err
+	out := []*unstructured.Unstructured{uns}
+	return out, err
 }
