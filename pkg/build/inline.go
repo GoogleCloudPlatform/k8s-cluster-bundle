@@ -17,6 +17,7 @@ package build
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -34,6 +35,8 @@ import (
 type Inliner struct {
 	// Readers reads from the local filesystem.
 	Readers map[files.URLScheme]files.FileObjReader
+
+	PathRewriter *RelativePathRewriter
 }
 
 // NewLocalInliner creates a new inliner that only knows how to read local
@@ -56,15 +59,25 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader)
 		scheme: objReader,
 	}
 	return &Inliner{
-		Readers: rdrMap,
+		Readers:      rdrMap,
+		PathRewriter: DefaultPathRewriter,
 	}
 }
 
 // BundleFiles converts dereferences file-references in for bundle files.
-func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (*bundle.Bundle, error) {
-	var compbs []*bundle.ComponentBuilder
+func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, bundlePath string) (*bundle.Bundle, error) {
+	bundleURL, err := url.Parse(bundlePath)
+	if err != nil {
+		return nil, err
+	}
 	var comps []*bundle.Component
 	for _, f := range data.ComponentFiles {
+		furl, err := f.ParsedURL()
+		if err != nil {
+			return nil, err
+		}
+		f.URL = n.PathRewriter.MakeAbs(bundleURL, furl).String()
+
 		contents, err := n.readFile(ctx, f)
 		if err != nil {
 			return nil, fmt.Errorf("error reading file %q: %v", f.URL, err)
@@ -90,17 +103,15 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder) (
 			if c.GetName() == "" && data.ComponentNamePolicy == "SetAndComponent" {
 				c.ObjectMeta.Name = strings.Join([]string{data.SetName, data.Version, c.ComponentName, c.Version}, "-")
 			}
-			compbs = append(compbs, c)
+			comp, err := n.ComponentFiles(ctx, c, furl.String())
+			if err != nil {
+				return nil, err
+			}
+			comps = append(comps, comp)
 		default:
 			return nil, fmt.Errorf("unsupported kind for component: %q; only supported kinds are Component and ComponentBuilder", kind)
 		}
 	}
-
-	inlComps, err := n.AllComponentFiles(ctx, compbs)
-	if err != nil {
-		return nil, err
-	}
-	comps = append(comps, inlComps...)
 
 	newBundle := &bundle.Bundle{
 		TypeMeta: metav1.TypeMeta{
@@ -121,18 +132,24 @@ var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 
 // ComponentFiles reads file-references for component builder objects.
 // The returned components are copies with the file-references removed.
-func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuilder) (*bundle.Component, error) {
-	newObjs, err := n.objectFiles(ctx, comp.ObjectFiles, comp.ComponentReference())
+func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuilder, componentPath string) (*bundle.Component, error) {
+	componentURL, err := url.Parse(componentPath)
 	if err != nil {
 		return nil, err
 	}
 
-	newObjs, err = n.objectTemplateBuilders(ctx, newObjs, comp.ComponentReference())
+	newObjs, tmplBuilders, err := n.objectFiles(ctx, comp.ObjectFiles, comp.ComponentReference(), componentURL)
 	if err != nil {
 		return nil, err
 	}
 
-	cfgObj, err := n.rawTextFiles(ctx, comp.RawTextFiles, comp.ComponentReference())
+	tmplObjs, err := n.objectTemplateBuilders(ctx, tmplBuilders, comp.ComponentReference())
+	if err != nil {
+		return nil, err
+	}
+	newObjs = append(newObjs, tmplObjs...)
+
+	cfgObj, err := n.rawTextFiles(ctx, comp.RawTextFiles, comp.ComponentReference(), componentURL)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +185,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 func (n *Inliner) AllComponentFiles(ctx context.Context, cbs []*bundle.ComponentBuilder) ([]*bundle.Component, error) {
 	var out []*bundle.Component
 	for _, cb := range cbs {
-		newc, err := n.ComponentFiles(ctx, cb)
+		newc, err := n.ComponentFiles(ctx, cb, "")
 		if err != nil {
 			return nil, err
 		}
@@ -177,13 +194,23 @@ func (n *Inliner) AllComponentFiles(ctx context.Context, cbs []*bundle.Component
 	return out, nil
 }
 
-// objectFiles inlines object files
-func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+// objectFiles inlines object files. in the success case, it returns
+//
+// 1.) The inlined object files.
+// 2.) A map of path-to-ObjectTemplateBuilder
+func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, map[string][]*unstructured.Unstructured, error) {
 	var newObjs []*unstructured.Unstructured
+	objTmplBuilders := make(map[string][]*unstructured.Unstructured)
 	for _, cf := range objFiles {
+		furl, err := cf.ParsedURL()
+		if err != nil {
+			return nil, nil, err
+		}
+		cf.URL = n.PathRewriter.MakeAbs(componentPath, furl).String()
+
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
-			return nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
+			return nil, nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
 		}
 		ext := filepath.Ext(cf.URL)
 		if ext == ".yaml" && multiDoc.Match(contents) {
@@ -194,84 +221,100 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 				}
 				obj, err := converter.FromYAMLString(s).ToUnstructured()
 				if err != nil {
-					return nil, fmt.Errorf("converting multi-doc object number %d for component %v, %v", i, ref, err)
+					return nil, nil, fmt.Errorf("converting multi-doc object number %d for component %v, %v", i, ref, err)
 				}
-				annot := obj.GetAnnotations()
-				if annot == nil {
-					annot = make(map[string]string)
+				if obj.GetKind() == "ObjectTemplateBuilder" {
+					if objTmplBuilders[cf.URL] == nil {
+						objTmplBuilders[cf.URL] = []*unstructured.Unstructured{obj}
+					} else {
+						objTmplBuilders[cf.URL] = append(objTmplBuilders[cf.URL], obj)
+					}
+				} else {
+					newObjs = append(newObjs, obj)
 				}
-				obj.SetAnnotations(annot)
-				newObjs = append(newObjs, obj)
 			}
 		} else {
 			obj, err := converter.FromFileName(cf.URL, contents).ToUnstructured()
 			if err != nil {
-				return nil, fmt.Errorf("for component %q, %v", ref, err)
+				return nil, nil, fmt.Errorf("for component %q, %v", ref, err)
 			}
-			annot := obj.GetAnnotations()
-			if annot == nil {
-				annot = make(map[string]string)
+			if obj.GetKind() == "ObjectTemplateBuilder" {
+				objTmplBuilders[cf.URL] = []*unstructured.Unstructured{obj}
+			} else {
+				newObjs = append(newObjs, obj)
 			}
-			obj.SetAnnotations(annot)
-			newObjs = append(newObjs, obj)
 		}
 	}
-	return newObjs, nil
+	return newObjs, objTmplBuilders, nil
 }
 
 // objectTemplateBuilders builds ObjectTemplates from ObjectTemplateBuilders
-func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects []*unstructured.Unstructured, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string][]*unstructured.Unstructured, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
-	for _, obj := range objects {
-		if obj.GetKind() != "ObjectTemplateBuilder" {
-			outObj = append(outObj, obj)
-			continue
-		}
-		name := obj.GetName()
+	for parentPath, objList := range objects {
+		for _, obj := range objList {
+			if obj.GetKind() != "ObjectTemplateBuilder" {
+				// There shouldn't be any ObjectTemplateBuilders at this point
+				continue
+			}
+			name := obj.GetName()
 
-		builder := &bundle.ObjectTemplateBuilder{}
-		if err := converter.FromUnstructured(obj).ToObject(builder); err != nil {
-			return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
-		}
+			builder := &bundle.ObjectTemplateBuilder{}
+			if err := converter.FromUnstructured(obj).ToObject(builder); err != nil {
+				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+			}
 
-		contents, err := n.readFile(ctx, builder.TemplateFile)
-		if err != nil {
-			return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
-		}
+			parentURL, err := url.Parse(parentPath)
+			if err != nil {
+				return nil, err
+			}
 
-		objTemplate := &bundle.ObjectTemplate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "bundle.gke.io/v1alpha1",
-				Kind:       "ObjectTemplate",
-			},
-			ObjectMeta:    builder.ObjectMeta,
-			OptionsSchema: builder.OptionsSchema,
-			Template:      string(contents),
-		}
-		if objTemplate.ObjectMeta.Annotations == nil {
-			objTemplate.ObjectMeta.Annotations = make(map[string]string)
-		}
-		tmplType := bundle.GoTemplate
-		if builder.TemplateType != bundle.UndefinedTemplateType {
-			tmplType = builder.TemplateType
-		}
-		objTemplate.TemplateType = tmplType
+			furl, err := builder.TemplateFile.ParsedURL()
+			if err != nil {
+				return nil, err
+			}
 
-		objJSON, err := converter.FromObject(objTemplate).ToJSON()
-		if err != nil {
-			return nil, fmt.Errorf("for component %v and object %q, while converting back to JSON: %v", ref, name, err)
-		}
+			builder.TemplateFile.URL = n.PathRewriter.MakeAbs(parentURL, furl).String()
 
-		unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
-		if err != nil {
-			return nil, fmt.Errorf("for component %v and object %q, while converting back to Unstructured: %v", ref, name, err)
+			contents, err := n.readFile(ctx, builder.TemplateFile)
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+			}
+
+			objTemplate := &bundle.ObjectTemplate{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "bundle.gke.io/v1alpha1",
+					Kind:       "ObjectTemplate",
+				},
+				ObjectMeta:    builder.ObjectMeta,
+				OptionsSchema: builder.OptionsSchema,
+				Template:      string(contents),
+			}
+			if objTemplate.ObjectMeta.Annotations == nil {
+				objTemplate.ObjectMeta.Annotations = make(map[string]string)
+			}
+			tmplType := bundle.GoTemplate
+			if builder.TemplateType != bundle.UndefinedTemplateType {
+				tmplType = builder.TemplateType
+			}
+			objTemplate.TemplateType = tmplType
+
+			objJSON, err := converter.FromObject(objTemplate).ToJSON()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and object %q, while converting back to JSON: %v", ref, name, err)
+			}
+
+			unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and object %q, while converting back to Unstructured: %v", ref, name, err)
+			}
+			outObj = append(outObj, unsObj)
 		}
-		outObj = append(outObj, unsObj)
 	}
 	return outObj, nil
 }
 
-func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGroup, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
+func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGroup, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
 	var newObjs []*unstructured.Unstructured
 	for _, fg := range fileGroups {
 		fgName := fg.Name
@@ -280,6 +323,12 @@ func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGrou
 		}
 		m := newConfigMapMaker(fgName)
 		for _, cf := range fg.Files {
+			furl, err := cf.ParsedURL()
+			if err != nil {
+				return nil, err
+			}
+			cf.URL = n.PathRewriter.MakeAbs(componentPath, furl).String()
+
 			text, err := n.readFile(ctx, cf)
 			if err != nil {
 				return nil, fmt.Errorf("error reading raw text file for component %q: %v", ref, err)

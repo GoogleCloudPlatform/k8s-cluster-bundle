@@ -25,7 +25,8 @@ import (
 
 func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 	ctx := context.Background()
-	b, err := ioutil.ReadFile("../../examples/cluster/bundle-builder-example.yaml")
+	bundlePath := "../../examples/cluster/bundle-builder-example.yaml"
+	b, err := ioutil.ReadFile(bundlePath)
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -41,7 +42,7 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 
 	inliner := NewLocalInliner("../../examples/cluster/")
 
-	moreInlined, err := inliner.BundleFiles(ctx, dataFiles)
+	moreInlined, err := inliner.BundleFiles(ctx, dataFiles, bundlePath)
 	if err != nil {
 		t.Fatalf("Error calling BundleFiles(): %v", err)
 	}
@@ -61,7 +62,8 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 
 func TestRealisticDataParseAndInline_Component(t *testing.T) {
 	ctx := context.Background()
-	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
+	dataPath := "../../examples/component/etcd-component-builder.yaml"
+	b, err := ioutil.ReadFile(dataPath)
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -77,7 +79,7 @@ func TestRealisticDataParseAndInline_Component(t *testing.T) {
 
 	inliner := NewLocalInliner("../../examples/component/")
 
-	component, err := inliner.ComponentFiles(ctx, cb)
+	component, err := inliner.ComponentFiles(ctx, cb, dataPath)
 	if err != nil {
 		t.Fatalf("Error calling ComponentFiles(): %v", err)
 	}

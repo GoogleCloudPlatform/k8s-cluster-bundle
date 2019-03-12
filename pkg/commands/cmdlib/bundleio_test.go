@@ -74,7 +74,7 @@ type fakeInliner struct {
 	err          error
 }
 
-func (f *fakeInliner) BundleFiles(_ context.Context, b *bundle.BundleBuilder) (*bundle.Bundle, error) {
+func (f *fakeInliner) BundleFiles(_ context.Context, b *bundle.BundleBuilder, _ string) (*bundle.Bundle, error) {
 	f.bundleIn = b
 	o, err := converter.FromYAMLString(f.bundleOut).ToBundle()
 	if err != nil {
@@ -83,7 +83,7 @@ func (f *fakeInliner) BundleFiles(_ context.Context, b *bundle.BundleBuilder) (*
 	return o, f.err
 }
 
-func (f *fakeInliner) ComponentFiles(_ context.Context, c *bundle.ComponentBuilder) (*bundle.Component, error) {
+func (f *fakeInliner) ComponentFiles(_ context.Context, c *bundle.ComponentBuilder, _ string) (*bundle.Component, error) {
 	f.componentIn = c
 	o, err := converter.FromYAMLString(f.componentOut).ToComponent()
 	if err != nil {

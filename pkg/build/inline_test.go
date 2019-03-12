@@ -99,6 +99,7 @@ func TestInlineBundleFiles(t *testing.T) {
 		desc         string
 		data         string
 		files        map[string][]byte
+		pathToBundle string
 		expErrSubstr string
 		expBun       bundleRef
 		expComps     []compRef
@@ -132,6 +133,33 @@ componentFiles:
 - url: file:///path/to/apiserver-component.yaml`,
 			files:  defaultFiles,
 			expBun: bundleRef{setName: "foo-bundle", version: "1.2.3"},
+			expComps: []compRef{
+				{
+					name: "kube-apiserver-1.2.3",
+					ref: bundle.ComponentReference{
+						ComponentName: "kube-apiserver",
+						Version:       "1.2.3",
+					},
+					obj: []objCheck{
+						{name: "biffbam"},
+					},
+				},
+			},
+		},
+		{
+			desc: "success: inline basic bundle + path rewriting",
+			data: `
+kind: BundleBuilder
+setName: foo-bundle
+version: 1.2.3
+componentFiles:
+- url: path/to/apiserver-component.yaml`,
+			files: map[string][]byte{
+				"/derp/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
+				"/path/to/kube_apiserver.yaml":           []byte(kubeApiserver),
+			},
+			pathToBundle: "/derp/derp.yaml",
+			expBun:       bundleRef{setName: "foo-bundle", version: "1.2.3"},
 			expComps: []compRef{
 				{
 					name: "kube-apiserver-1.2.3",
@@ -319,7 +347,7 @@ objectFiles:
 			}
 
 			inliner := NewInlinerWithScheme(files.FileScheme, &fakeLocalReader{tc.files})
-			got, err := inliner.BundleFiles(ctx, data)
+			got, err := inliner.BundleFiles(ctx, data, tc.pathToBundle)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
 				t.Fatal(cerr)
@@ -347,16 +375,62 @@ func TestInlineComponentFiles(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		desc         string
-		data         string
-		files        map[string][]byte
-		expErrSubstr string
-		expComp      compRef
+		desc            string
+		data            string
+		files           map[string][]byte
+		pathToComponent string
+		expErrSubstr    string
+		expComp         compRef
 	}{
 		{
-			desc:  "success: inline basic component",
-			data:  kubeApiserverComponent,
-			files: defaultFiles,
+			desc: "success: inline basic component",
+			data: kubeApiserverComponent,
+			files: map[string][]byte{
+				"/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
+				"/path/to/kube_apiserver.yaml":      []byte(kubeApiserver),
+			},
+			expComp: compRef{
+				name: "kube-apiserver-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "kube-apiserver",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{name: "biffbam"},
+				},
+			},
+		},
+		{
+			desc: "success: inline basic component, absolute path, no path rewriting",
+			data: kubeApiserverComponent,
+			files: map[string][]byte{
+				"/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
+				"/path/to/kube_apiserver.yaml":      []byte(kubeApiserver),
+			},
+			pathToComponent: "/my/component.yaml",
+			expComp: compRef{
+				name: "kube-apiserver-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "kube-apiserver",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{name: "biffbam"},
+				},
+			},
+		},
+		{
+			desc: "success: inline basic component, path rewriting",
+			data: `kind: ComponentBuilder
+componentName: kube-apiserver
+version: 1.2.3
+objectFiles:
+- url: 'path/to/kube_apiserver.yaml'`,
+			files: map[string][]byte{
+				"/my/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
+				"/my/path/to/kube_apiserver.yaml":      []byte(kubeApiserver),
+			},
+			pathToComponent: "/my/component.yaml",
 			expComp: compRef{
 				name: "kube-apiserver-1.2.3",
 				ref: bundle.ComponentReference{
@@ -409,6 +483,7 @@ rawTextFiles:
 				},
 			},
 		},
+
 		{
 			desc: "success: component, raw text, binary",
 			data: `
@@ -423,6 +498,38 @@ rawTextFiles:
 			files: map[string][]byte{
 				"/path/to/blobby.yaml": []byte("blar"),
 			},
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name: "data-blob",
+						subStrings: []string{
+							base64.StdEncoding.EncodeToString([]byte("blar")),
+						},
+					},
+				},
+			},
+		},
+
+		{
+			desc: "success: component, raw text, binary: relative path",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+rawTextFiles:
+- name: data-blob
+  asBinary: true
+  files:
+  - url: 'path/to/blobby.yaml'`,
+			files: map[string][]byte{
+				"/foo/bar/path/to/blobby.yaml": []byte("blar"),
+			},
+			pathToComponent: "/foo/bar/component.yaml",
 			expComp: compRef{
 				name: "binary-blob-1.2.3",
 				ref: bundle.ComponentReference{
@@ -461,6 +568,51 @@ optionsSchema:
       type: string
 `),
 				"/path/to/tmpl.yaml": []byte(`
+kind: pod
+metadata:
+  name: {{.foo}}
+`),
+			},
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name: "obj-tmpl",
+						subStrings: []string{
+							"name: {{.foo}}",
+							"type: string",
+							"templateType: go-template",
+						},
+					},
+				},
+			},
+		},
+
+		{
+			desc: "success: component, object template builder: relative path",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+objectFiles:
+- url: '/path/to/tmpl-builder.yaml'`,
+			files: map[string][]byte{
+				"/path/to/tmpl-builder.yaml": []byte(`
+kind: ObjectTemplateBuilder
+metadata:
+  name: obj-tmpl
+templateFile:
+  url: 'manifest/tmpl.yaml'
+optionsSchema:
+  properties:
+    foo:
+      type: string
+`),
+				"/path/to/manifest/tmpl.yaml": []byte(`
 kind: pod
 metadata:
   name: {{.foo}}
@@ -573,7 +725,7 @@ objectFiles:
 			}
 
 			inliner := NewInlinerWithScheme(files.FileScheme, &fakeLocalReader{tc.files})
-			got, err := inliner.ComponentFiles(ctx, data)
+			got, err := inliner.ComponentFiles(ctx, data, tc.pathToComponent)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
 				t.Fatal(cerr)
