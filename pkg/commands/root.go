@@ -69,6 +69,7 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 	rootCmd.AddCommand(export.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(filter.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(find.GetCommand(ctx, fio, sio, gopts))
+	// TODO(kashomon): Add deps to init.
 	rootCmd.AddCommand(generate.GetCommand())
 	rootCmd.AddCommand(patch.GetCommand(ctx, fio, sio, gopts))
 	rootCmd.AddCommand(validate.GetCommand(ctx, fio, sio, gopts))

@@ -18,25 +18,24 @@ package generate
 import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/generate"
 	"github.com/spf13/cobra"
-	log "k8s.io/klog"
 )
 
 // GetCommand generate placeholder components
 func GetCommand() *cobra.Command {
 	var filepath string
 	var componentName string
+
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate placeholder components",
+		Short: "Initialize a placeholder components",
 		Long:  "Generate placeholder components",
 		Run: func(cmd *cobra.Command, _ []string) {
-			if filepath == "" {
-				log.Exit("Filepath not specified")
-			}
 			generate.Create(filepath, componentName)
 		},
 	}
-	cmd.Flags().StringVar(&filepath, "write-to", "", "filepath to create component")
+
+	cmd.Flags().StringVar(&filepath, "write-to", "", "filepath to create component. By default uses the current working dir.")
 	cmd.Flags().StringVar(&componentName, "name", "example-component", "name of component to create")
+
 	return cmd
 }

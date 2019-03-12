@@ -15,15 +15,19 @@
 // Package generate scaffolds components to guide a user for component creation
 package generate
 
-import "io/ioutil"
-import "os"
-import "path"
-import "text/template"
-import "bytes"
+import (
+	"bytes"
+	"io/ioutil"
+	"os"
+	"path"
+	"text/template"
+
+	log "k8s.io/klog"
+)
 
 const componentBuilder = `apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentBuilder
-componentName: etcd-component
+componentName: {{.Name}}
 version: 1.0.0
 objectFiles:
 - url: /sample-deployment.yaml
@@ -52,7 +56,7 @@ const sampleService = `apiVersion: v1
 kind: Service
 metadata:
   name: {{.Name}}
-  labels: 
+  labels:
     app: {{.Name}}
 spec:
   type: NodePort
@@ -85,14 +89,16 @@ buildLabel: test-build
 `
 
 // Create scaffolds basic set of files to the filesystem
-func Create(filepath string, name string) error {
-	var writeErr error
-	if err := os.Mkdir(filepath, 0777); err != nil {
-		writeErr = err
-		return writeErr
+func Create(dir string, name string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.MkdirAll(dir, os.ModePerm)
 	}
 
-	replacement := struct{ Name string }{Name: name}
+	replacement := struct {
+		Name string
+	}{
+		Name: name,
+	}
 
 	deploymentTemplate, _ := template.New("deployment").Parse(sampleDeployment)
 	var deploymentText bytes.Buffer
@@ -102,24 +108,26 @@ func Create(filepath string, name string) error {
 	var serviceText bytes.Buffer
 	serviceTemplate.Execute(&serviceText, replacement)
 
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-component-builder.yaml"), []byte(componentBuilder), 0666); err != nil {
-		writeErr = err
-	}
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
-		writeErr = err
-	}
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
-		writeErr = err
-	}
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
-		writeErr = err
-	}
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
-		writeErr = err
-	}
-	if err := ioutil.WriteFile(path.Join(filepath, "sample-options.yaml"), []byte(patchOptions), 0666); err != nil {
-		writeErr = err
-	}
+	compTmpl, _ := template.New("componentbuilder").Parse(componentBuilder)
+	var compText bytes.Buffer
+	compTmpl.Execute(&compText, replacement)
 
-	return writeErr
+	if err := ioutil.WriteFile(path.Join(dir, replacement.Name+"-builder.yaml"), compText.Bytes(), 0666); err != nil {
+		log.Exit(err)
+	}
+	if err := ioutil.WriteFile(path.Join(dir, "sample-deployment.yaml"), deploymentText.Bytes(), 0666); err != nil {
+		log.Exit(err)
+	}
+	if err := ioutil.WriteFile(path.Join(dir, "sample-service.yaml"), serviceText.Bytes(), 0666); err != nil {
+		log.Exit(err)
+	}
+	if err := ioutil.WriteFile(path.Join(dir, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
+		log.Exit(err)
+	}
+	if err := ioutil.WriteFile(path.Join(dir, "sample-patch.yaml"), []byte(patchTemplate), 0666); err != nil {
+		log.Exit(err)
+	}
+	if err := ioutil.WriteFile(path.Join(dir, "sample-options.yaml"), []byte(patchOptions), 0666); err != nil {
+		log.Exit(err)
+	}
 }
