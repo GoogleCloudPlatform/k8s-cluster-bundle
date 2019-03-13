@@ -35,8 +35,8 @@ spec:
             object.
           type: string
         type:
-          description: Type indicates how the template should be detemplatized. It
-            defaults to Go Templates during build if left unspecified.
+          description: Type indicates how the template should be detemplatized and
+            is required.
           type: string
   version: v1alpha1
 status:

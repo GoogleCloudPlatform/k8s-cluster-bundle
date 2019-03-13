@@ -38,20 +38,6 @@ spec:
               spec:
                 description: The specification object for the Component.
                 properties:
-                  appVersion:
-                    description: AppVersion specifies the application version that
-                      the component provides and should have the form X.Y or X.Y.Z
-                      (Major.Minor.Patch). The AppVersion will frequently be related
-                      to the version of the container image used by the application
-                      and need not be updated when a component Version field is updated,
-                      unless the application contract changes.  For example, for an
-                      Etcd component, the version field might be something like 10.9.8,
-                      but the app version would probalby be something like 3.3.10,
-                      representing the version of Etcd application.  In order for
-                      component A to depend on component B, component B must specify
-                      a Requirements object with an AppVersion. Eliding the AppVersion
-                      prevents other components from depending on your component.
-                    type: string
                   componentName:
                     description: ComponentName is the canonical name of this component.
                       For example, 'etcd' or 'kube-proxy'. It must have the same naming

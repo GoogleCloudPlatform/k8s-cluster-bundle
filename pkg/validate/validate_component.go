@@ -39,11 +39,6 @@ var (
 	// TODO(kashomon): Use the K8S version validation for this.
 	// (k8s.io/apimachinery/pkg/util/version) after K8S v1.11
 	versionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s\.%s$`, numPattern, numPattern, numPattern))
-
-	// appVersionPattern matches app version string X.Y.Z or X.Y, where X, Y and
-	// Z are non-negative integers without leading zeros. Also can contain
-	// dangling extra info.
-	appVersionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s(\.%s(%s)?)?$`, numPattern, numPattern, numPattern, extraVersionInfo))
 )
 
 // Components validates a list of components.
@@ -95,10 +90,6 @@ func Component(c *bundle.Component) field.ErrorList {
 
 	if !versionPattern.MatchString(ver) {
 		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
-	}
-
-	if c.Spec.AppVersion != "" && !appVersionPattern.MatchString(c.Spec.AppVersion) {
-		errs = append(errs, field.Invalid(p.Child("Spec", "AppVersion"), ver, "must be of the form X.Y.Z or X.Y"))
 	}
 
 	return errs

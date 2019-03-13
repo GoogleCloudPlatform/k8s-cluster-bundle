@@ -19,24 +19,6 @@ spec:
             of an object. Servers should convert recognized schemas to the latest
             internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
-        exclude:
-          description: Exclude specific versions of a component.
-          items:
-            properties:
-              appVersion:
-                description: AppVersion specifies a specific excluded AppVersion present
-                  in another components Requirements object.
-                type: string
-              componentName:
-                description: ComponentName (required) specifies the name of a component
-                type: string
-              componentVersion:
-                description: ComponentVersion specifies a component's version to exclude.
-                type: string
-            required:
-            - componentVersion
-            type: object
-          type: array
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
@@ -45,21 +27,18 @@ spec:
         metadata:
           type: object
         require:
-          description: Require specific component versions. A component that with
-            an AppVersion >= to the AppVersion specified by a component may satisfy
-            this requirement, using minimal version selection or a similar algorithm.
+          description: Require specific component versions.
           items:
             properties:
-              appVersion:
-                description: AppVersion specifies the minimum required AppVersion
-                  present in another components Requirements object. In otherwords,
-                  the AppVersion given by ComponentName in a Bundle or Set must be
-                  >= to this AppVersion, fixing the major version.  If AppVersion
-                  is not included, then any component with the specified ComponentName
-                  will be considered a valid match.
-                type: string
               componentName:
                 description: ComponentName (required) specifies the name of a component.
+                type: string
+              version:
+                description: Version specifies the minimum required Version present
+                  in another components Requirements object. In otherwords, the Version
+                  given by ComponentName in a Bundle or Set must be >= to this Version.  If
+                  Version is not included, then any component with the specified ComponentName
+                  will be considered a valid match.
                 type: string
             type: object
           type: array

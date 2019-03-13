@@ -34,15 +34,8 @@ type Requirements struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Require specific component versions. A component that with an AppVersion
-	// >= to the AppVersion specified by a component may satisfy this
-	// requirement, using minimal version selection or a similar algorithm.
+	// Require specific component versions.
 	Require []ComponentRequire `json:"require,omitempty"`
-
-	// Exclude specific versions of a component.
-	Exclude []ComponentExclude `json:"exclude,omitempty"`
-
-	// TODO(kashomon): Should we support the Replace directive from Go Modules?
 }
 
 // ComponentRequire is a specifies a minimal component version that will work
@@ -51,27 +44,11 @@ type ComponentRequire struct {
 	// ComponentName (required) specifies the name of a component.
 	ComponentName string `json:"componentName,omitempty"`
 
-	// AppVersion specifies the minimum required AppVersion present in another
-	// components Requirements object. In otherwords, the AppVersion given by
-	// ComponentName in a Bundle or Set must be >= to this AppVersion, fixing the
-	// major version.
+	// Version specifies the minimum required Version present in another
+	// components Requirements object. In otherwords, the Version given by
+	// ComponentName in a Bundle or Set must be >= to this Version.
 	//
-	// If AppVersion is not included, then any component with the specified
+	// If Version is not included, then any component with the specified
 	// ComponentName will be considered a valid match.
-	AppVersion string `json:"appVersion,omitempty"`
-}
-
-// ComponentExclude is a directive to exclude a specific component. If neither
-// AppVersion nor ComponentVersion is specified, then all components with
-// ComponentName are excluded.
-type ComponentExclude struct {
-	// ComponentName (required) specifies the name of a component
-	ComponentName string `json:"componentName,omitempty"`
-
-	// AppVersion specifies a specific excluded AppVersion present in another
-	// components Requirements object.
-	AppVersion string `json:"appVersion,omitempty"`
-
-	// ComponentVersion specifies a component's version to exclude.
-	ComponentVersion string `json:"componentVersion,omitempyt"`
+	Version string `json:"version,omitempty"`
 }

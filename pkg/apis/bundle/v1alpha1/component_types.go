@@ -75,21 +75,6 @@ type ComponentSpec struct {
 	// changes to the component, then the version string must be incremented.
 	Version string `json:"version,omitempty"`
 
-	// AppVersion specifies the application version that the component provides
-	// and should have the form X.Y or X.Y.Z (Major.Minor.Patch). The AppVersion
-	// will frequently be related to the version of the container image used by
-	// the application and need not be updated when a component Version field is
-	// updated, unless the application contract changes.
-	//
-	// For example, for an Etcd component, the version field might be something
-	// like 10.9.8, but the app version would probalby be something like 3.3.10,
-	// representing the version of Etcd application.
-	//
-	// In order for component A to depend on component B, component B must
-	// specify a Requirements object with an AppVersion. Eliding the AppVersion
-	// prevents other components from depending on your component.
-	AppVersion string `json:"appVersion,omitempty"`
-
 	// Structured Kubenetes objects that run as part of this app, whether on the
 	// master, on the nodes, or in some other fashio.  These Kubernetes objects
 	// are inlined and must be YAML/JSON compatible. Each must have `apiVersion`,
