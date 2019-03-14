@@ -17,53 +17,16 @@ package cmdlib
 import (
 	"context"
 	"errors"
-	"os"
 	"strings"
 	"testing"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdtest"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
 )
-
-type fakeStdioRW struct {
-	rdBytes []byte
-	rdErr   error
-
-	wrBytes []byte
-	wrErr   error
-}
-
-func (f *fakeStdioRW) ReadAll() ([]byte, error) {
-	return f.rdBytes, f.rdErr
-}
-
-func (f *fakeStdioRW) Write(b []byte) (int, error) {
-	f.wrBytes = b
-	return len(f.wrBytes), f.wrErr
-}
-
-type fakeFileRW struct {
-	rdPath  string
-	rdBytes []byte
-	rdErr   error
-
-	wrPath  string
-	wrBytes []byte
-	wrError error
-}
-
-func (rw *fakeFileRW) ReadFile(_ context.Context, path string) ([]byte, error) {
-	rw.rdPath = path
-	return rw.rdBytes, rw.rdErr
-}
-
-func (rw *fakeFileRW) WriteFile(_ context.Context, path string, bytes []byte, permissions os.FileMode) error {
-	rw.wrPath = path
-	rw.wrBytes = bytes
-	return rw.wrError
-}
 
 type fakeInliner struct {
 	bundleIn  *bundle.BundleBuilder
@@ -262,11 +225,11 @@ spec:
 			ctx := context.Background()
 
 			brw := &realBundleReaderWriter{
-				rw: &fakeFileRW{
-					rdBytes: []byte(tc.readFile),
+				rw: &testutil.FakeFileReaderWriter{
+					AlwaysRead: tc.readFile,
 				},
-				stdio: &fakeStdioRW{
-					rdBytes: []byte(tc.readStdin),
+				stdio: &cmdtest.FakeStdioReaderWriter{
+					ReadBytes: []byte(tc.readStdin),
 				},
 				makeInlinerFn: func(rw files.FileReaderWriter, inputFile string) fileInliner {
 					return &fakeInliner{
@@ -278,15 +241,11 @@ spec:
 			}
 
 			data, err := brw.ReadBundleData(ctx, tc.opts)
-			if err != nil && tc.expErrSubstr == "" {
-				t.Fatalf("Got error %q but expected no error", err.Error())
-			} else if err == nil && tc.expErrSubstr != "" {
-				t.Fatalf("Got no error but expected error containing %q", tc.expErrSubstr)
-			} else if err != nil && !strings.Contains(err.Error(), tc.expErrSubstr) {
-				t.Fatalf("Got error %q but expected it to contain %q", err.Error(), tc.expErrSubstr)
-			} else if err != nil {
-				// Even though this is a success case, we need to return because we
-				// can't validate any properties of the data
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
+			if err != nil {
 				return
 			}
 
@@ -370,8 +329,10 @@ func TestWriteBundleData(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			ctx := context.Background()
 
-			fileRW := &fakeFileRW{}
-			stdioRW := &fakeStdioRW{}
+			fileRW := &testutil.FakeFileReaderWriter{
+				AlwaysRead: "foo",
+			}
+			stdioRW := &cmdtest.FakeStdioReaderWriter{}
 
 			brw := &realBundleReaderWriter{
 				rw:    fileRW,
@@ -386,20 +347,15 @@ func TestWriteBundleData(t *testing.T) {
 			if err == nil {
 				err = brw.WriteBundleData(ctx, bwrap, tc.opts)
 			}
-
-			if err != nil && tc.expErrSubstr == "" {
-				t.Fatalf("Got error %q but expected no error", err.Error())
-			} else if err == nil && tc.expErrSubstr != "" {
-				t.Fatalf("Got no error but expected error containing %q", tc.expErrSubstr)
-			} else if err != nil && !strings.Contains(err.Error(), tc.expErrSubstr) {
-				t.Fatalf("Got error %q but expected it to contain %q", err.Error(), tc.expErrSubstr)
-			} else if err != nil {
-				// Even though this is a success case, we need to return because we
-				// can't validate any properties of the data
+			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
+			if cerr != nil {
+				t.Fatal(cerr)
+			}
+			if err != nil {
 				return
 			}
 
-			writtenStdio := string(stdioRW.wrBytes)
+			writtenStdio := string(stdioRW.WriteBytes)
 
 			if tc.expStdioSubstr != "" && !strings.Contains(writtenStdio, tc.expStdioSubstr) {
 				t.Errorf("got stdout content %s, but expected it to contain %q", writtenStdio, tc.expStdioSubstr)

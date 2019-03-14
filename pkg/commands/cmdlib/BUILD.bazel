@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bundleio.go",
+        "cmdio.go",
         "doc.go",
         "global_options.go",
     ],
@@ -26,8 +27,10 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/commands/cmdtest:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/files:go_default_library",
+        "//pkg/testutil:go_default_library",
         "//pkg/wrapper:go_default_library",
     ],
 )

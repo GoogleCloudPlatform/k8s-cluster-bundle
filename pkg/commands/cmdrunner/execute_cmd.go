@@ -12,27 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package version contains the version command.
-package version
+// Package cmdrunner is a utility for running integration tests for commands.
+package cmdrunner
 
 import (
+	"context"
+	"flag"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdlib"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/version"
-	"github.com/spf13/cobra"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdtest"
 )
 
-// GetCommand returns the version command.
-func GetCommand(cio *cmdlib.CmdIO) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "List version of bundlectl",
-		Long:  "List version of bundlectl",
-		Run: func(cmd *cobra.Command, _ []string) {
-			_, err := cio.StdIO.Write([]byte(version.BundlectlVersion))
-			if err != nil {
-				cio.ExitIO.Exit(err)
-			}
-		},
+// ExecuteCommand executes a fake command.
+func ExecuteCommand(fakeio *cmdtest.FakeCmdIO, args []string) error {
+	ctx := context.Background()
+
+	cmdio := &cmdlib.CmdIO{
+		StdIO:  fakeio.StdIO,
+		FileIO: fakeio.FileIO,
+		ExitIO: fakeio.ExitIO,
 	}
-	return cmd
+
+	flagset := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
+
+	cmd := commands.AddCommandsInternal(ctx, cmdio, flagset, args)
+	return cmd.Execute()
 }
