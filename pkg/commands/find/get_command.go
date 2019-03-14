@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package export contains commands for finding components and objects.
+// Package find contains commands for finding components and objects.
 package find
 
 import (

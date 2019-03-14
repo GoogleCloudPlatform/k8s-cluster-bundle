@@ -26,7 +26,7 @@ const (
 	// TemplateTypeUndefined represents an undefined template type.
 	TemplateTypeUndefined TemplateType = ""
 
-	// TemplateGo represents a go-template, which is assumed to be YAML.
+	// TemplateTypeGo represents a go-template, which is assumed to be YAML.
 	TemplateTypeGo TemplateType = "go-template"
 )
 

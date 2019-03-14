@@ -33,9 +33,15 @@ import (
 
 // AddCommands adds all subcommands to the root command.
 func AddCommands(ctx context.Context, args []string) *cobra.Command {
-	fio := &files.LocalFileSystemReaderWriter{}
-	sio := &cmdlib.RealStdioReaderWriter{}
-	return AddCommandsInternal(ctx, fio, sio, args)
+	cio := &cmdlib.CmdIO{
+		FileIO: &files.LocalFileSystemReaderWriter{},
+		StdIO:  &cmdlib.RealStdioReaderWriter{},
+		ExitIO: &cmdlib.RealExiter{},
+	}
+
+	flagset := flag.CommandLine
+
+	return AddCommandsInternal(ctx, cio, flagset, args)
 }
 
 // AddCommandsInternal is an internal command that allows for dependency
@@ -43,7 +49,7 @@ func AddCommands(ctx context.Context, args []string) *cobra.Command {
 //
 // Note: This method is only public to allow for sub-commands to define
 // integration tests.
-func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, args []string) *cobra.Command {
+func AddCommandsInternal(ctx context.Context, cio *cmdlib.CmdIO, flagset *flag.FlagSet, args []string) *cobra.Command {
 	gopts := &cmdlib.GlobalOptions{}
 
 	rootCmd := &cobra.Command{
@@ -65,23 +71,23 @@ func AddCommandsInternal(ctx context.Context, fio files.FileReaderWriter, sio cm
 		&(gopts.OutputFormat), "format", "", "", "The output file format. One of either 'json' or 'yaml'. "+
 			"If not specified, it defaults to yaml.")
 
-	rootCmd.AddCommand(build.GetCommand(ctx, fio, sio, gopts))
-	rootCmd.AddCommand(export.GetCommand(ctx, fio, sio, gopts))
-	rootCmd.AddCommand(filter.GetCommand(ctx, fio, sio, gopts))
-	rootCmd.AddCommand(find.GetCommand(ctx, fio, sio, gopts))
+	rootCmd.AddCommand(build.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
+	rootCmd.AddCommand(export.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
+	rootCmd.AddCommand(filter.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
+	rootCmd.AddCommand(find.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
 	// TODO(kashomon): Add deps to init.
 	rootCmd.AddCommand(generate.GetCommand())
-	rootCmd.AddCommand(patch.GetCommand(ctx, fio, sio, gopts))
-	rootCmd.AddCommand(validate.GetCommand(ctx, fio, sio, gopts))
-	rootCmd.AddCommand(version.GetCommand())
+	rootCmd.AddCommand(patch.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
+	rootCmd.AddCommand(validate.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
+	rootCmd.AddCommand(version.GetCommand(cio))
 
 	// This is magic hackery I don't unherdstand but somehow this fixes
 	// errrs of the form 'ERROR: logging before flag.Parse'. See more at:
 	// https://github.com/kubernetes/kubernetes/issues/17162
-	// rootCmd.SetArgs(args)
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+	rootCmd.PersistentFlags().AddGoFlagSet(flagset)
 	// pflag.Parse()
 	flag.CommandLine.Parse([]string{})
+	rootCmd.SetArgs(args)
 
 	return rootCmd
 }
