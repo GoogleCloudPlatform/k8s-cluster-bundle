@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "collate.go",
+        "latest.go",
+        "meta.go",
+        "resolve.go",
+    ],
+    importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/deps",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/converter:go_default_library",
+        "//vendor/github.com/blang/semver:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "collate_test.go",
+        "meta_test.go",
+        "resolve_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/apis/bundle/v1alpha1:go_default_library",
+        "//pkg/converter:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "//vendor/github.com/blang/semver:go_default_library",
+    ],
+)

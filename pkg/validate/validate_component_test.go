@@ -64,8 +64,7 @@ func TestValidateComponents(t *testing.T) {
           name: foo-comp-1.0.2
         spec:
           componentName: foo-comp
-          version: 2.10.1
-          appVersion: 3.10.1`,
+          version: 2.10.1`,
 			expectedErrors: 0,
 			description:    "basic component no refs",
 		},
@@ -77,8 +76,7 @@ func TestValidateComponents(t *testing.T) {
           name: foo-comp-1.0.2
         spec:
           componentName: foo-comp
-          version: 2.10.1
-          appVersion: 3.10`,
+          version: 2.10.1`,
 			expectedErrors: 0,
 			description:    "dot notation app version verification",
 		},
@@ -106,20 +104,6 @@ func TestValidateComponents(t *testing.T) {
 			expectedErrors: 1,
 			description:    "requires kind field to be specified",
 			errorDesc:      "kind must be Component",
-		},
-		{
-			componentConfig: `
-        apiVersion: 'bundle.gke.io/v1alpha1'
-        kind: Component
-        metadata:
-          name: foo-comp-1.0.2
-        spec:
-          componentName: foo-comp
-          version: 2.10.1
-          appVersion: 2.010.1   #invalid`,
-			expectedErrors: 1,
-			description:    "app version validation must be of form X.Y.Z",
-			errorDesc:      "must be of the form X.Y.Z or X.Y",
 		},
 		{
 			componentConfig: `

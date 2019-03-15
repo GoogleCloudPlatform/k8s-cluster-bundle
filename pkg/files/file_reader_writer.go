@@ -104,7 +104,7 @@ func (r *LocalFileObjReader) ReadFileObj(ctx context.Context, file bundle.File) 
 	}
 	path, err := r.extractPath(file.URL)
 	if err != nil {
-		return nil, fmt.Errorf("file %v path could not be parsed: %v", err)
+		return nil, fmt.Errorf("file %v path could not be parsed: %v", file, err)
 	}
 	return r.Rdr.ReadFile(ctx, path)
 }
