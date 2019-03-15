@@ -38,11 +38,6 @@ type Requirements struct {
 	// >= to the AppVersion specified by a component may satisfy this
 	// requirement, using minimal version selection or a similar algorithm.
 	Require []ComponentRequire `json:"require,omitempty"`
-
-	// Exclude specific versions of a component.
-	Exclude []ComponentExclude `json:"exclude,omitempty"`
-
-	// TODO(kashomon): Should we support the Replace directive from Go Modules?
 }
 
 // ComponentRequire is a specifies a minimal component version that will work
@@ -59,19 +54,4 @@ type ComponentRequire struct {
 	// If AppVersion is not included, then any component with the specified
 	// ComponentName will be considered a valid match.
 	AppVersion string `json:"appVersion,omitempty"`
-}
-
-// ComponentExclude is a directive to exclude a specific component. If neither
-// AppVersion nor ComponentVersion is specified, then all components with
-// ComponentName are excluded.
-type ComponentExclude struct {
-	// ComponentName (required) specifies the name of a component
-	ComponentName string `json:"componentName,omitempty"`
-
-	// AppVersion specifies a specific excluded AppVersion present in another
-	// components Requirements object.
-	AppVersion string `json:"appVersion,omitempty"`
-
-	// ComponentVersion specifies a component's version to exclude.
-	ComponentVersion string `json:"componentVersion,omitempyt"`
 }
