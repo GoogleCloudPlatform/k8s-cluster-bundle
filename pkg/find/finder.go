@@ -59,9 +59,14 @@ func (f *ComponentFinder) Component(ref bundle.ComponentReference) *bundle.Compo
 }
 
 // ComponentVersions returns the all the component versions for a given
-// component name.
-func (f *ComponentFinder) ComponentVersions(name string) []*bundle.Component {
-	return f.nameCompLookup[name]
+// component name. The references are not sorted.
+func (f *ComponentFinder) ComponentVersions(name string) []bundle.ComponentReference {
+	comps := f.nameCompLookup[name]
+	var refs []bundle.ComponentReference
+	for _, c := range comps {
+		refs = append(refs, c.ComponentReference())
+	}
+	return refs
 }
 
 // AllComponents return all the components known by the finder.
@@ -83,7 +88,7 @@ func (f *ComponentFinder) UniqueComponentFromName(name string) (*bundle.Componen
 	} else if len(comps) > 1 {
 		return nil, fmt.Errorf("duplicate component found for name %q", name)
 	}
-	return comps[0], nil
+	return f.Component(comps[0]), nil
 }
 
 // Objects returns Component's Cluster objects (given some object
