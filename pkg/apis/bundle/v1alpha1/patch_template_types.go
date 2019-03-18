@@ -21,26 +21,27 @@ import (
 
 // ObjectSelector is used for identifying Objects on which to apply the patch template.
 type ObjectSelector struct {
-        // Kinds represent the Kinds to filter on.
-        Kinds []string
+	// Kinds represent the Kinds to match.
+	Kinds []string `json:"kinds,omitempty"`
 
-        // Names represent the names to filter on. For objects, this is the
-        // metadata.name field. For components, this is the ComponentName.
-        Names []string
+	// Names represent the metadata.names to match.
+	Names []string `json:"names,omitempty"`
 
-        // Annotations contain key/value pairs to filter on. An empty string value matches
-        // all annotation-values for a particular key.
-        Annotations map[string]string
+	// Annotations contain key/value pairs to match. An empty string value matches
+	// all annotation-values for a particular key.
+	Annotations map[string]string `json:"annotations,omitempty"`
 
-        // Labels contain key/value pairs to filter on. An empty string value matches
-        // all label-values for a particular key.
-        Labels map[string]string
+	// Labels contain key/value pairs to match. An empty string value matches
+	// all label-values for a particular key.
+	Labels map[string]string `json:"labels,omitempty"`
 
-        // Namespaces to filter on.
-        Namespaces []string
+	// Namespaces to match.
+	Namespaces []string `json:"namespaces,omitempty"`
 
-        // Invert the match
-        NegativeMatch bool
+	// NegativeMatch invert the match. By default, the ObjectSelector will include
+	// objects matching all of the criteria above. This flag indicates that objects
+	// NOT matching the criteria should be included instead.
+	NegativeMatch *bool `json:"negativeMatch,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
