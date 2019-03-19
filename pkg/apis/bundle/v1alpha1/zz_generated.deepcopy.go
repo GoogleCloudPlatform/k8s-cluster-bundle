@@ -177,7 +177,7 @@ func (in *ComponentExclude) DeepCopy() *ComponentExclude {
 func (in *ComponentList) DeepCopyInto(out *ComponentList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Component, len(*in))
@@ -269,7 +269,7 @@ func (in *ComponentSet) DeepCopyObject() runtime.Object {
 func (in *ComponentSetList) DeepCopyInto(out *ComponentSetList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ComponentSet, len(*in))
