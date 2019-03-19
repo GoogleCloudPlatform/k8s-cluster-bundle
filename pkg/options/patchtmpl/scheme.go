@@ -16,6 +16,8 @@ package patchtmpl
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -40,6 +42,8 @@ func init() {
 	}
 
 	must(appsv1.AddToScheme(k.KubeScheme))
+	must(appsv1beta1.AddToScheme(k.KubeScheme))
+	must(appsv1beta2.AddToScheme(k.KubeScheme))
 	must(corev1.AddToScheme(k.KubeScheme))
 	must(crdext.AddToScheme(k.KubeScheme))
 	must(extv1beta1.AddToScheme(k.KubeScheme))
