@@ -35,7 +35,7 @@ command -v register-gen >/dev/null 2>&1 || {
 
 command -v client-gen >/dev/null 2>&1 || {
   pt1="Error: client-gen tool is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
-  pt2="Then, install with 'go install k8s.io/code-generator/cmd/openapi-gen'"
+  pt2="Then, install with 'go install k8s.io/code-generator/cmd/client-gen'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
 
