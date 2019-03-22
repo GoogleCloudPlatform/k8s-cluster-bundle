@@ -19,6 +19,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ObjectSelector is used for identifying Objects on which to apply the patch template.
+type ObjectSelector struct {
+	// Kinds represent the Kinds to match.
+	Kinds []string `json:"kinds,omitempty"`
+
+	// Names represent the metadata.names to match.
+	Names []string `json:"names,omitempty"`
+
+	// Annotations contain key/value pairs to match. An empty string value matches
+	// all annotation-values for a particular key.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Labels contain key/value pairs to match. An empty string value matches
+	// all label-values for a particular key.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Namespaces to match.
+	Namespaces []string `json:"namespaces,omitempty"`
+
+	// NamespacedOnly matches only if the type of object is namespaced (i.e.,
+	// is not a cluster-wide resource).
+	NamespacedOnly *bool `json:"namespacedOnly,omitempty"`
+
+	// NegativeMatch invert the match. By default, the ObjectSelector will include
+	// objects matching all of the criteria above. This flag indicates that objects
+	// NOT matching the criteria should be included instead.
+	NegativeMatch *bool `json:"negativeMatch,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PatchTemplate contains configuration for patching objects.
@@ -30,6 +59,11 @@ type PatchTemplate struct {
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
 	Template string `json:"template,omitempty"`
+
+	// Selector identifies the objects to which the patch should be applied
+	// For each object selected, the template will have its apiVersion and
+	// kind set to match the object, then be applied to the object.
+	Selector *ObjectSelector `json:"selector,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the patch template.
@@ -47,6 +81,11 @@ type PatchTemplateBuilder struct {
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
 	Template string `json:"template,omitempty"`
+
+	// Selector identifies the objects to which the patch should be applied
+	// For each object selected, the template will have its apiVersion and
+	// kind set to match the object, then be applied to the object.
+	Selector *ObjectSelector `json:"selector,omitempty"`
 
 	// BuildSchema is the schema for the parameters meant to be applied to
 	// the patch template.
