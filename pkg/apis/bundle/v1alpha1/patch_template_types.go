@@ -38,6 +38,10 @@ type ObjectSelector struct {
 	// Namespaces to match.
 	Namespaces []string `json:"namespaces,omitempty"`
 
+	// NamespacedOnly matches only if the type of object is namespaced (i.e.,
+	// is not a cluster-wide resource).
+	NamespacedOnly *bool `json:"namespacedOnly,omitempty"`
+
 	// NegativeMatch invert the match. By default, the ObjectSelector will include
 	// objects matching all of the criteria above. This flag indicates that objects
 	// NOT matching the criteria should be included instead.
@@ -59,7 +63,7 @@ type PatchTemplate struct {
 	// Selector identifies the objects to which the patch should be applied
 	// For each object selected, the template will have its apiVersion and
 	// kind set to match the object, then be applied to the object.
-	Selector ObjectSelector `json:"selector,omitempty"`
+	Selector *ObjectSelector `json:"selector,omitempty"`
 
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the patch template.
@@ -81,7 +85,7 @@ type PatchTemplateBuilder struct {
 	// Selector identifies the objects to which the patch should be applied
 	// For each object selected, the template will have its apiVersion and
 	// kind set to match the object, then be applied to the object.
-	Selector ObjectSelector `json:"selector,omitempty"`
+	Selector *ObjectSelector `json:"selector,omitempty"`
 
 	// BuildSchema is the schema for the parameters meant to be applied to
 	// the patch template.
