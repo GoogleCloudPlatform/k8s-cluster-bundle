@@ -233,7 +233,7 @@ chaining of the bundlectl command.
 bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap
 
 # Keep only config map objects.
-bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap --keep-only
+bundlectl filter -f my-component.yaml --filterType=objects --kind=ConfigMap --invert-match
 ```
 
 ### Component Testing

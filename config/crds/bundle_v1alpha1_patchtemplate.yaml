@@ -39,6 +39,12 @@ spec:
               description: Annotations contain key/value pairs to match. An empty
                 string value matches all annotation-values for a particular key.
               type: object
+            invertMatch:
+              description: InvertMatch inverts the match. By default, the ObjectSelector
+                will include objects matching all of the criteria above. This flag
+                indicates that objects NOT matching the criteria should be included
+                instead.
+              type: boolean
             kinds:
               description: Kinds represent the Kinds to match.
               items:
@@ -53,26 +59,18 @@ spec:
               items:
                 type: string
               type: array
-            namespacedOnly:
-              description: NamespacedOnly matches only if the type of object is namespaced
-                (i.e., is not a cluster-wide resource).
-              type: boolean
             namespaces:
               description: Namespaces to match.
               items:
                 type: string
               type: array
-            negativeMatch:
-              description: NegativeMatch invert the match. By default, the ObjectSelector
-                will include objects matching all of the criteria above. This flag
-                indicates that objects NOT matching the criteria should be included
-                instead.
-              type: boolean
           type: object
         template:
           description: Template is a template that creates a patch for a K8S object.
             In other words, a templated YAML blob that's meant to be applied via strategic-merge-patch.
-            It's currently assumed to be a YAML go-template.
+            It's currently assumed to be a YAML go-template.  If either APIVersion
+            or Kind are present in the Template, they will be removed during patch-appllication
+            and added to the ObjectSelector.
           type: string
   version: v1alpha1
 status:

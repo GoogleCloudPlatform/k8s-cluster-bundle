@@ -17,6 +17,7 @@ package patchtmpl
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -80,12 +81,17 @@ func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*
 // A parsedPatch has had options applied and has been converted both into raw
 // bytes and unstructured.
 type parsedPatch struct {
-	obj *bundle.PatchTemplate
+	// raw parsed patch.
 	raw []byte
-	uns *unstructured.Unstructured
+
+	// the parsed patch as a JSON Map
+	jsonMap map[string]interface{}
+
+	// selector for determining which objects to patch.
+	selector *bundle.ObjectSelector
 }
 
-// String returns the string form of the parsed patch.
+// String returns the string form of the parsedPatch.
 func (p *parsedPatch) String() string {
 	return string(p.raw)
 }
@@ -105,6 +111,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 	if a.includeTemplates {
 		objs = comp.Spec.Objects
 	}
+
 	// First parse the objects back into go-objects.
 	var pts []*bundle.PatchTemplate
 	for _, o := range ptObjs {
@@ -138,27 +145,56 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			}
 		}
 
+		// Detemplatize the patch
 		var buf bytes.Buffer
 		err = tmpl.Execute(&buf, newOpts)
 		if err != nil {
 			return nil, nil, fmt.Errorf("while applying options to patch template %d: %v", j, err)
 		}
 
-		raw := buf.Bytes()
-		uns, err := converter.FromYAML(raw).ToUnstructured()
+		// Convert the patch into a JSONMap to prefer for Strategic Merge Patch.
+		by := buf.Bytes()
+		jsonMap := make(map[string]interface{})
+		err = converter.FromYAML(by).ToObject(&jsonMap)
 		if err != nil {
 			return nil, nil, fmt.Errorf("while converting patch template %d: %v", j, err)
 		}
 
-		rawJSON, err := converter.FromObject(uns).ToJSON()
-		if err != nil {
-			return nil, nil, fmt.Errorf("while converting patch template %d back to json: %v", j, err)
+		// Neither Kind nor APIVersion are allowed as patchable fields in a
+		// PatchTemplate -- we don't want to change the schema of the objects we're
+		// patching. So, instead remove them from the PatchTemplate and add them as
+		// an additional selector parameter (which supports the previous behavior).
+		pKind := ""
+		pAPIVersion := ""
+		if jsonMap["kind"] != nil {
+			var ok bool
+			pKind, ok = jsonMap["kind"].(string)
+			if !ok {
+				return nil, nil, fmt.Errorf("found non-string type %T for Kind field for patch %s", jsonMap["kind"], string(by))
+			}
+			delete(jsonMap, "kind")
+		}
+		if jsonMap["apiVersion"] != nil {
+			var ok bool
+			pAPIVersion, ok = jsonMap["apiVersion"].(string)
+			if !ok {
+				return nil, nil, fmt.Errorf("found a non-string APIVersion field for patch %s", string(by))
+			}
+			delete(jsonMap, "apiVersion")
+		}
+
+		selector := pto.Selector
+		if pKind != "" {
+			if selector == nil {
+				selector = &bundle.ObjectSelector{}
+			}
+			selector.Kinds = append(selector.Kinds, path.Join(pAPIVersion, pKind))
 		}
 
 		patches = append(patches, &parsedPatch{
-			obj: pto,
-			raw: rawJSON,
-			uns: uns,
+			raw:      by,
+			jsonMap:  jsonMap,
+			selector: selector,
 		})
 	}
 	return patches, objs, nil
@@ -169,42 +205,50 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 // applies it.
 func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHandler {
 	return func(obj *unstructured.Unstructured, ref bundle.ComponentReference, _ options.JSONOptions) ([]*unstructured.Unstructured, error) {
-		objJSON, err := converter.FromObject(obj).ToJSON()
-		if err != nil {
-			return nil, fmt.Errorf("while converting to JSON: %v", err)
+		objJSON := obj.Object
+
+		if obj.GetKind() == "PatchTemplate" {
+			// Don't process PatchTemplates (possible if includeTemplates is set).
+			return []*unstructured.Unstructured{obj}, nil
 		}
-		if len(objJSON) == 0 {
-			return nil, fmt.Errorf("converted object JSON was empty")
+
+		// TODO(kashomon): Is there a faster way to convert from JSON-Map to object?
+		objByt, err := converter.FromObject(objJSON).ToJSON()
+		if err != nil {
+			// This would be pretty unlikely
+			return nil, err
 		}
 
 		deserializer := scheme.Codecs.UniversalDeserializer()
+
+		kubeObj, err := runtime.Decode(deserializer, objByt)
+		_, isUnstructured := kubeObj.(*unstructured.Unstructured)
+		if runtime.IsNotRegisteredError(err) || isUnstructured {
+			// Strategic merge patch can't handle unstructured.Unstructured or
+			// unregistered objects, so defer to normal merge-patch.
+			return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
+		}
+
+		objSchema, err := strategicpatch.NewPatchMetaFromStruct(kubeObj)
+		if err != nil {
+			return nil, fmt.Errorf("while getting patch meta from object %s: %v", string(objByt), err)
+		}
+
 		for _, pat := range patches {
 			if !canApplyPatch(pat, obj) {
 				continue
 			}
 
-			kubeObj, err := runtime.Decode(deserializer, objJSON)
-			_, isUnstructured := kubeObj.(*unstructured.Unstructured)
-			var newObjJSON []byte
-			if runtime.IsNotRegisteredError(err) || isUnstructured {
-				// Strategic merge patch can't handle unstructured.Unstructured or
-				// unregistered objects, so defer to normal merge-patch.
-				// TODO(kashomon): Make this configurable
-				// newObjJSON, err = jsonpatch.MergePatch(objJSON, pat.raw)
-				return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
-			} else if err != nil {
-				return nil, fmt.Errorf("while decoding object via scheme: %v", err)
-			} else {
-				newObjJSON, err = strategicpatch.StrategicMergePatch(objJSON, pat.raw, kubeObj)
-			}
+			newObjJSON, err := strategicpatch.StrategicMergeMapPatchUsingLookupPatchMeta(objJSON, pat.jsonMap, objSchema)
 			if err != nil {
 				return nil, fmt.Errorf("while applying patch\n%sto \n%s: %v", pat.raw, objJSON, err)
 			}
+
 			objJSON = newObjJSON
 		}
-		obj, err = converter.FromJSON(objJSON).ToUnstructured()
-		if err != nil {
-			return nil, fmt.Errorf("while converting object %s back to unstructured: %v", string(objJSON), err)
+
+		obj = &unstructured.Unstructured{
+			Object: runtime.DeepCopyJSON(objJSON),
 		}
 		return []*unstructured.Unstructured{obj}, nil
 	}
@@ -213,21 +257,5 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 // canApplyPatch determines whether a patch can be applied to an object. It
 // checks to ensure that if the patch defines a name,
 func canApplyPatch(pat *parsedPatch, obj *unstructured.Unstructured) bool {
-	// TODO(kashomon): Use the filter-library logic for this.
-	if pat.uns.GetAPIVersion() != "" && pat.uns.GetAPIVersion() != obj.GetAPIVersion() {
-		// Patch defined an apiversion , but didn't match the object apiversion.
-		return false
-	}
-
-	if pat.uns.GetKind() != "" && pat.uns.GetKind() != obj.GetKind() {
-		// Patch defined a kind, but didn't match the object kind.
-		return false
-	}
-
-	if pat.uns.GetName() != "" && pat.uns.GetName() != obj.GetName() {
-		// Patch defined a name, but didn't match the object name.
-		return false
-	}
-
-	return true
+	return filter.MatchesObject(obj, filter.OptionsFromObjectSelector(pat.selector))
 }

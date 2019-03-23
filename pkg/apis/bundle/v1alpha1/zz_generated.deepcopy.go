@@ -430,17 +430,8 @@ func (in *ObjectSelector) DeepCopyInto(out *ObjectSelector) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.NamespacedOnly != nil {
-		in, out := &in.NamespacedOnly, &out.NamespacedOnly
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(bool)
-			**out = **in
-		}
-	}
-	if in.NegativeMatch != nil {
-		in, out := &in.NegativeMatch, &out.NegativeMatch
+	if in.InvertMatch != nil {
+		in, out := &in.InvertMatch, &out.InvertMatch
 		if *in == nil {
 			*out = nil
 		} else {
