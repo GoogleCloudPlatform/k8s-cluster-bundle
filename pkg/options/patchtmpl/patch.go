@@ -152,7 +152,7 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			return nil, nil, fmt.Errorf("while applying options to patch template %d: %v", j, err)
 		}
 
-		// Convert the patch into a JSONMap to prefer for Strategic Merge Patch.
+		// Convert the patch into a JSONMap to prepare for Strategic Merge Patch.
 		by := buf.Bytes()
 		jsonMap := make(map[string]interface{})
 		err = converter.FromYAML(by).ToObject(&jsonMap)
@@ -208,11 +208,13 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 		objJSON := obj.Object
 
 		if obj.GetKind() == "PatchTemplate" {
-			// Don't process PatchTemplates (possible if includeTemplates is set).
+			// Don't process PatchTemplates (possible if includeTemplates is set). In
+			// other words, it's not allowed to apply patch templates to patch
+			// templates.
 			return []*unstructured.Unstructured{obj}, nil
 		}
 
-		// TODO(kashomon): Is there a faster way to convert from JSON-Map to object?
+		// TODO(kashomon): Is there a faster way to convert from JSON-Map to string?
 		objByt, err := converter.FromObject(objJSON).ToJSON()
 		if err != nil {
 			// This would be pretty unlikely
@@ -225,7 +227,8 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 		_, isUnstructured := kubeObj.(*unstructured.Unstructured)
 		if runtime.IsNotRegisteredError(err) || isUnstructured {
 			// Strategic merge patch can't handle unstructured.Unstructured or
-			// unregistered objects, so defer to normal merge-patch.
+			// unregistered objects, so return an error. Previously, we deferred
+			// to normal JSON Merge-patch, but this behavior was confusing.
 			return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
 		}
 
