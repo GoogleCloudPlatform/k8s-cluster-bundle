@@ -246,7 +246,7 @@ func matches(d *objectData, o *Options) bool {
 			objKind := d.kind
 			if strings.ContainsRune(optk, ',') {
 				// Assume this is a Qualified Kind match of the form
-				// "apps/v1beta1,Deployment"
+				// "apps/v1beta1,Deployment". Commas shouldn't be normally in a kind.
 				objKind = d.apiVersion + "," + d.kind
 			}
 			if optk == objKind {

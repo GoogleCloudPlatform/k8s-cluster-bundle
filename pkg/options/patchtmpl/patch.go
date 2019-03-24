@@ -17,7 +17,6 @@ package patchtmpl
 import (
 	"bytes"
 	"fmt"
-	"path"
 	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -188,7 +187,10 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 			if selector == nil {
 				selector = &bundle.ObjectSelector{}
 			}
-			selector.Kinds = append(selector.Kinds, path.Join(pAPIVersion, pKind))
+			if pAPIVersion != "" {
+				pKind = pAPIVersion + "," + pKind
+			}
+			selector.Kinds = append(selector.Kinds, pKind)
 		}
 
 		patches = append(patches, &parsedPatch{
