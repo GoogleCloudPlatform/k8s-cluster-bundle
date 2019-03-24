@@ -17,7 +17,6 @@
 package filter
 
 import (
-	"path"
 	"strings"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -38,8 +37,9 @@ func NewFilter() *Filter {
 // the relevant component or object is removed. If InvertMatch is set, then the
 // objects are kept instead of removed.
 type Options struct {
-	// Kinds represent the Kinds to filter on. Can either be unqualified ("Pod")
-	// or qualified ("v1/Pod")
+	// Kinds represent the Kinds to filter on. Can either be unqualified ("Deployment")
+	// or qualified ("apps/v1beta1,Pod"). Qualified kinds are often called
+	// GroupVersionKind in the Kubernetes Schema.
 	Kinds []string
 
 	// Names represent the names to filter on. For objects, this is the
@@ -244,9 +244,10 @@ func matches(d *objectData, o *Options) bool {
 		matchesKinds = false
 		for _, optk := range o.Kinds {
 			objKind := d.kind
-			if strings.ContainsRune(optk, '/') {
-				// Assume this is a Qualified Kind match of the form "v1/Pod"
-				objKind = path.Join(d.apiVersion, d.kind)
+			if strings.ContainsRune(optk, ',') {
+				// Assume this is a Qualified Kind match of the form
+				// "apps/v1beta1,Deployment"
+				objKind = d.apiVersion + "," + d.kind
 			}
 			if optk == objKind {
 				matchesKinds = true

@@ -141,7 +141,7 @@ func TestFilterObjects(t *testing.T) {
 		{
 			desc: "filter-success: qualified kind filter",
 			opt: &Options{
-				Kinds: []string{"v1beta1/Pod"},
+				Kinds: []string{"v1beta1,Pod"},
 			},
 			fil:         fil,
 			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
@@ -210,7 +210,7 @@ func TestFilterObjects(t *testing.T) {
 		{
 			desc: "filter-success: qualified kind filter",
 			opt: &Options{
-				Kinds: []string{"v1beta1/Pod"},
+				Kinds: []string{"v1beta1,Pod"},
 			},
 			fil:         sel,
 			expObjNames: []string{"nog-pod"},
