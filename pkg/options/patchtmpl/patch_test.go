@@ -72,11 +72,10 @@ spec:
     kind: Pod
   - kind: PatchTemplate
     template: |
-      kind: Pod
       metadata:
-        namespace: foo
-`,
+        namespace: foo`,
 			expMatchSubstrs: []string{"metadata:\n      namespace: foo"},
+			removeTemplates: true,
 		},
 		{
 			desc: "success: patch, no options, remove",
@@ -90,8 +89,7 @@ spec:
     template: |
       kind: Pod
       metadata:
-        namespace: foo
-`,
+        namespace: foo`,
 			removeTemplates:   true,
 			expMatchSubstrs:   []string{"metadata:\n      namespace: foo"},
 			expNoMatchSubstrs: []string{"PatchTemplate"},
@@ -111,8 +109,7 @@ spec:
     template: |
       kind: Pod
       metadata:
-        namespace: {{.Name}}
-`,
+        namespace: {{.Name}}`,
 			expMatchSubstrs: []string{"namespace: zed"},
 		},
 		{
@@ -155,7 +152,6 @@ spec:
       namespace: derpper
   - kind: PatchTemplate
     template: |
-      kind: Pod
       metadata:
         namespace: {{.Name}}
 `,
@@ -175,12 +171,67 @@ spec:
     kind: Pod
     metadata:
       namespace: dorp
-  - apiVersion: v1
+  - apiVersion: apps/v1beta1
     kind: Deployment
     metadata:
       namespace: derpper
   - kind: PatchTemplate
     template: |
+      metadata:
+        namespace: {{.Name}}
+    selector:
+      kinds:
+      - Pod
+`,
+			expMatchSubstrs:   []string{"namespace: zed", "namespace: derpper"},
+			expNoMatchSubstrs: []string{"namespace: dorp"},
+		},
+		{
+			desc: "success: patch, two objects, one match: kind from Template",
+			opts: map[string]interface{}{
+				"Name": "zed",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      namespace: dorp
+  - apiVersion: apps/v1beta1
+    kind: Deployment
+    metadata:
+      namespace: derpper
+  - kind: PatchTemplate
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+`,
+			expMatchSubstrs:   []string{"namespace: zed", "namespace: derpper"},
+			expNoMatchSubstrs: []string{"namespace: dorp"},
+		},
+		{
+			desc: "success: patch, two objects, one match: qualified kind from Template",
+			opts: map[string]interface{}{
+				"Name": "zed",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      namespace: dorp
+  - apiVersion: apps/v1beta1
+    kind: Deployment
+    metadata:
+      namespace: derpper
+  - kind: PatchTemplate
+    template: |
+      apiVersion: v1
       kind: Pod
       metadata:
         namespace: {{.Name}}
@@ -208,10 +259,13 @@ spec:
       namespace: derpper
   - kind: PatchTemplate
     template: |
-      kind: Pod
       metadata:
-        name: foof
         namespace: {{.Name}}
+    selector:
+      kinds:
+      - Pod
+      names:
+      - foof
 `,
 			expMatchSubstrs:   []string{"namespace: zed", "namespace: dorp"},
 			expNoMatchSubstrs: []string{"namespace: derper"},
@@ -373,9 +427,9 @@ spec:
     template: |
       kind: Pod
       spec:
-        containers:
-        - name: kube-derp
-          $patch: delete
+      containers:
+      - name: kube-derp
+        $patch: delete
 `,
 			expNoMatchSubstrs: []string{"image: gcr.io/google_containers/derp:v1.9.7"},
 		},
@@ -415,21 +469,6 @@ spec:
         namespace: {{.Foo}}
 `,
 			expErrSubstr: "map has no entry for key \"Foo\"",
-		},
-		{
-			desc: "fail: patch template must have kind",
-			component: `
-kind: Component
-spec:
-  objects:
-  - apiVersion: v1
-    kind: Pod
-  - kind: PatchTemplate
-    template: |
-      metadata:
-        namespace: zed
-`,
-			expErrSubstr: "Object 'Kind' is missing",
 		},
 	}
 

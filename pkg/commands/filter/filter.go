@@ -49,8 +49,8 @@ type options struct {
 	// Example: foo=bar,biff=bam
 	labels string
 
-	// Whether to keep matches rather then remove them.
-	keepOnly bool
+	// Whether to perform the opposite match.
+	invertMatch bool
 }
 
 func action(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.StdioReaderWriter, cmd *cobra.Command, opts *options, gopt *cmdlib.GlobalOptions) {
@@ -82,17 +82,17 @@ func run(ctx context.Context, o *options, brw cmdlib.BundleReaderWriter, gopt *c
 	if o.labels != "" {
 		fopts.Labels = cmdlib.ParseStringMap(o.labels)
 	}
-	fopts.KeepOnly = o.keepOnly
+	fopts.InvertMatch = o.invertMatch
 
 	if o.filterType == "components" && bw.Bundle() != nil {
-		bw.Bundle().Components = filter.NewFilter().Components(bw.Bundle().Components, fopts)
+		bw.Bundle().Components = filter.NewFilter().FilterComponents(bw.Bundle().Components, fopts)
 	} else if o.filterType == "objects" && bw.Bundle() != nil {
 		for i, c := range bw.Bundle().Components {
 			bw.Bundle().Components[i].Spec.Objects =
-				filter.NewFilter().Objects(c.Spec.Objects, fopts)
+				filter.NewFilter().FilterObjects(c.Spec.Objects, fopts)
 		}
 	} else if o.filterType == "objects" && bw.Component() != nil {
-		bw.Component().Spec.Objects = filter.NewFilter().Objects(bw.Component().Spec.Objects, fopts)
+		bw.Component().Spec.Objects = filter.NewFilter().FilterObjects(bw.Component().Spec.Objects, fopts)
 	} else {
 		return fmt.Errorf("unknown filter type: %s", o.filterType)
 	}

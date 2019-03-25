@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package filter contains methods for selecting and filtering lists of
+// components and objects.
 package filter
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"strings"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Filter filters the components and objects to produce a new set of components.
-type Filter struct {
-	// ChangeInPlace controls whether to change the objects in place or to make
-	// copies. By default, the Filter returns deep copies of objects.
-	ChangeInPlace bool
-}
+type Filter struct{}
 
 // NewFilter creates a new Filter.
 func NewFilter() *Filter {
@@ -35,10 +34,12 @@ func NewFilter() *Filter {
 }
 
 // Options for filtering bundles. By default, if any of the options match, then
-// the relevant component or object is removed. If KeepOnly is set, then the
+// the relevant component or object is removed. If InvertMatch is set, then the
 // objects are kept instead of removed.
 type Options struct {
-	// Kinds represent the Kinds to filter on.
+	// Kinds represent the Kinds to filter on. Can either be unqualified ("Deployment")
+	// or qualified ("apps/v1beta1,Pod"). Qualified kinds are often called
+	// GroupVersionKind in the Kubernetes Schema.
 	Kinds []string
 
 	// Names represent the names to filter on. For objects, this is the
@@ -56,60 +57,102 @@ type Options struct {
 	// Namespaces to filter on.
 	Namespaces []string
 
-	// KeepOnly means that instead of removing the found objects.
-	KeepOnly bool
+	// InvertMatch indicates wether to return the opposite match.
+	InvertMatch bool
 }
 
-// Components filters components based on the ObjectMeta properties of
-// the components, returning a new cluster bundle with just filtered
-// components. By default components are removed, unless KeepOnly is set, and
-// then the opposite is true. Filtering for components doesn't take into
-// account the properties of the object-children of the components.
-func (f *Filter) Components(data []*bundle.Component, o *Options) []*bundle.Component {
-	if !f.ChangeInPlace {
-		var newData []*bundle.Component
-		for _, cp := range data {
-			newData = append(newData, cp.DeepCopy())
-		}
-		data = newData
+// OptionsFromObjectSelector creates an Options Object from a
+func OptionsFromObjectSelector(sel *bundle.ObjectSelector) *Options {
+	// TODO(kashomon): Should probably make a copy.
+	if sel == nil {
+		return nil
 	}
+
+	opts := &Options{
+		Kinds:       sel.Kinds,
+		Names:       sel.Names,
+		Annotations: sel.Annotations,
+		Labels:      sel.Labels,
+		Namespaces:  sel.Namespaces,
+	}
+	if sel.InvertMatch != nil {
+		opts.InvertMatch = *sel.InvertMatch
+	}
+	return opts
+}
+
+// FilterComponents removes components based on the ObjectMeta properties of
+// the components, returning a new cluster bundle with just filtered
+// components. Filtering for components doesn't take into account the
+// properties of the object-children of the components. This is the opposite
+// matching from SelectComponents.
+func (f *Filter) FilterComponents(data []*bundle.Component, o *Options) []*bundle.Component {
+	matched, notMatched := f.PartitionComponents(data, o)
+	if o.InvertMatch {
+		return matched
+	}
+	return notMatched
+}
+
+// SelectComponents picks components based on the ObjectMeta properties of the
+// components, returning a new cluster bundle with just filtered components.
+// Filtering for components doesn't take into account the properties of the
+// object-children of the components. This performs the opposte matching from
+// FilterComponents.
+func (f *Filter) SelectComponents(data []*bundle.Component, o *Options) []*bundle.Component {
+	matched, notMatched := f.PartitionComponents(data, o)
+	if o.InvertMatch {
+		return notMatched
+	}
+	return matched
+}
+
+// PartitionComponents splits the components into matched and not matched sets.
+// PartitionComponents ignores the InvertMatch option, since both matched and
+// unmatched objects are returned. Thus, the options to partition are always
+// treated as options for matching objects.
+func (f *Filter) PartitionComponents(data []*bundle.Component, o *Options) ([]*bundle.Component, []*bundle.Component) {
+	var newData []*bundle.Component
+	for _, cp := range data {
+		newData = append(newData, cp.DeepCopy())
+	}
+	data = newData
+
 	// nil options should not imply any change.
 	if o == nil {
-		return data
+		return data, nil
 	}
 
 	var matched []*bundle.Component
 	var notMatched []*bundle.Component
 	for _, c := range data {
-		od := &objectData{
-			kind: c.Kind,
-			name: c.Spec.ComponentName,
-			meta: &c.ObjectMeta,
-		}
-		matches := filterMeta(od, o)
-		if matches {
+		if MatchesComponent(c, o) {
 			matched = append(matched, c)
 		} else {
 			notMatched = append(notMatched, c)
 		}
 	}
-	if o.KeepOnly {
+	return matched, notMatched
+}
+
+// FilterObjects removes objects based on the ObjectMeta properties of the objects,
+// returning a new list with just filtered objects. This performs the opposite match from SelectObjects.
+func (f *Filter) FilterObjects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
+	matched, notMatched := f.PartitionObjects(data, o)
+	if o.InvertMatch {
 		return matched
 	}
 	return notMatched
 }
 
-// Objects filters objects based on the ObjectMeta properties of the objects,
-// returning a new list with just filtered objects. By default objects are
-// removed, unless KeepOnly is set, and then the opposite is true.
-func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
+// SelectObjects picks objects based on the ObjectMeta properties of the objects,
+// returning a new list with just filtered objects.
+func (f *Filter) SelectObjects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
 	matched, notMatched := f.PartitionObjects(data, o)
-
-	if o == nil || o.KeepOnly {
-		return matched
+	if o.InvertMatch {
+		return notMatched
 	}
-
-	return notMatched
+	return matched
 }
 
 // PartitionObjects splits the objects into matched and not matched sets.
@@ -117,28 +160,21 @@ func (f *Filter) Objects(data []*unstructured.Unstructured, o *Options) []*unstr
 // unmatched objects are returned. Thus, the options to partition are always
 // treated as options for matching objects.
 func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
-	if !f.ChangeInPlace {
-		var newData []*unstructured.Unstructured
-		for _, oj := range data {
-			newData = append(newData, oj.DeepCopy())
-		}
-		data = newData
+	var newData []*unstructured.Unstructured
+	for _, oj := range data {
+		newData = append(newData, oj.DeepCopy())
 	}
+	data = newData
+
 	// nil options should not imply any change.
 	if o == nil {
-		return data, data
+		return data, nil
 	}
 
 	var matched []*unstructured.Unstructured
 	var notMatched []*unstructured.Unstructured
 	for _, cp := range data {
-		od := &objectData{
-			kind: cp.GetKind(),
-			name: cp.GetName(),
-			meta: converter.FromUnstructured(cp).ExtractObjectMeta(),
-		}
-		matches := filterMeta(od, o)
-		if matches {
+		if MatchesObject(cp, o) {
 			matched = append(matched, cp)
 		} else {
 			notMatched = append(notMatched, cp)
@@ -149,23 +185,71 @@ func (f *Filter) PartitionObjects(data []*unstructured.Unstructured, o *Options)
 
 // objectData contains data about the object being filtered.
 type objectData struct {
-	// Kind of the object
+	// APIVersion of the object.
+	apiVersion string
+
+	// Kind of the object.
 	kind string
 
 	// name of the object. For unstructured objects, this is is metadata.name.
 	// For components, this is ComponentName
 	name string
 
+	// meta is the ObjectMeta for an object.
 	meta *metav1.ObjectMeta
 }
 
-// filterMeta returns whether an object matches the given
-func filterMeta(d *objectData, o *Options) bool {
+// objectDataFromComponent returns ObjectData created from a component.
+func objectDataFromComponent(c *bundle.Component) *objectData {
+	return &objectData{
+		apiVersion: c.APIVersion,
+		kind:       c.Kind,
+		name:       c.Spec.ComponentName,
+		meta:       c.ObjectMeta.DeepCopy(),
+	}
+}
+
+// newObjectData returns ObjectData created from an unstructured Object.
+func newObjectData(uns *unstructured.Unstructured) *objectData {
+	return &objectData{
+		apiVersion: uns.GetAPIVersion(),
+		kind:       uns.GetKind(),
+		name:       uns.GetName(),
+		meta:       converter.FromUnstructured(uns).ExtractObjectMeta(),
+	}
+}
+
+// MatchesComponent returns true if the conditions match a Component.
+func MatchesComponent(c *bundle.Component, o *Options) bool {
+	return matches(objectDataFromComponent(c), o)
+}
+
+// MatchesObject returns true if the conditions match an object.
+func MatchesObject(obj *unstructured.Unstructured, o *Options) bool {
+	return matches(newObjectData(obj), o)
+}
+
+// Matches returns whether an object matches the given. The match functions
+// does an AND of ORS. In otherwords:
+//
+// (name1 OR name2 OR name3) AND
+// (kind2 OR kind2 OR kind3) AND etc.
+func matches(d *objectData, o *Options) bool {
+	if o == nil {
+		return true
+	}
+
 	matchesKinds := true
 	if len(o.Kinds) > 0 {
 		matchesKinds = false
 		for _, optk := range o.Kinds {
-			if optk == d.kind {
+			objKind := d.kind
+			if strings.ContainsRune(optk, ',') {
+				// Assume this is a Qualified Kind match of the form
+				// "apps/v1beta1,Deployment". Commas shouldn't be normally in a kind.
+				objKind = d.apiVersion + "," + d.kind
+			}
+			if optk == objKind {
 				matchesKinds = true
 				break
 			}

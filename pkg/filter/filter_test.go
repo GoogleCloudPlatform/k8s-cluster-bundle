@@ -24,6 +24,13 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 )
 
+type filterType string
+
+const (
+	sel filterType = "select"
+	fil filterType = "filter"
+)
+
 var example = `
 components:
 - spec:
@@ -53,7 +60,7 @@ components:
 - spec:
     componentName: nog
     objects:
-    - apiVersion: v1
+    - apiVersion: v1beta1
       kind: Pod
       metadata:
         name: nog-pod
@@ -79,17 +86,20 @@ func TestFilterObjects(t *testing.T) {
 	testcases := []struct {
 		desc        string
 		opt         *Options
+		fil         filterType
 		expObjNames []string
 	}{
 		{
 			desc: "filter-success: matches everything",
 			opt:  &Options{},
+			fil:  fil,
 		},
 		{
 			desc: "filter-success: name filter",
 			opt: &Options{
 				Names: []string{"zap-pod"},
 			},
+			fil:         fil,
 			expObjNames: []string{"bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
@@ -99,6 +109,7 @@ func TestFilterObjects(t *testing.T) {
 					"component": "bork",
 				},
 			},
+			fil:         fil,
 			expObjNames: []string{"zap-pod", "nog-pod", "zog-dep"},
 		},
 		{
@@ -108,6 +119,7 @@ func TestFilterObjects(t *testing.T) {
 					"foof": "narf",
 				},
 			},
+			fil:         fil,
 			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
 		},
 		{
@@ -115,6 +127,7 @@ func TestFilterObjects(t *testing.T) {
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 			},
+			fil:         fil,
 			expObjNames: []string{"nog-pod", "zog-dep"},
 		},
 		{
@@ -122,73 +135,107 @@ func TestFilterObjects(t *testing.T) {
 			opt: &Options{
 				Kinds: []string{"Pod"},
 			},
+			fil:         fil,
 			expObjNames: []string{"zog-dep"},
 		},
-
-		// KeepOnly
 		{
-			desc: "filter-success keeponly: empty",
+			desc: "filter-success: qualified kind filter",
 			opt: &Options{
-				KeepOnly: true,
+				Kinds: []string{"v1beta1,Pod"},
 			},
+			fil:         fil,
+			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
+		},
+		{
+			desc: "filter-success: kind filter, invert",
+			opt: &Options{
+				Kinds:       []string{"Pod"},
+				InvertMatch: true,
+			},
+			fil:         fil,
+			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod"},
+		},
+
+		// Select
+		{
+			desc:        "filter-success select: empty",
+			opt:         &Options{},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "filter-success keeponly: name filter",
+			desc: "filter-success select: name filter",
 			opt: &Options{
-				Names:    []string{"zap-pod"},
-				KeepOnly: true,
+				Names: []string{"zap-pod"},
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod"},
 		},
 		{
-			desc: "filter-success keeponly: labels filter",
+			desc: "filter-success select: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
 				},
-				KeepOnly: true,
 			},
+			fil:         sel,
 			expObjNames: []string{"bog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: annotations filter",
+			desc: "filter-success select: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
 				},
-				KeepOnly: true,
 			},
+			fil:         sel,
 			expObjNames: []string{"nog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: namespace filter",
+			desc: "filter-success select: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
-				KeepOnly:   true,
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: kind filter",
+			desc: "filter-success select: kind filter",
 			opt: &Options{
-				Kinds:    []string{"Pod"},
-				KeepOnly: true,
+				Kinds: []string{"Pod"},
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod"},
+		},
+		{
+			desc: "filter-success: qualified kind filter",
+			opt: &Options{
+				Kinds: []string{"v1beta1,Pod"},
+			},
+			fil:         sel,
+			expObjNames: []string{"nog-pod"},
+		},
+		{
+			desc: "filter-success: kind filter",
+			opt: &Options{
+				Kinds:       []string{"Pod"},
+				InvertMatch: true,
+			},
+			fil:         sel,
+			expObjNames: []string{"zog-dep"},
 		},
 
 		// Multiple-options filter
 		{
-			desc: "filter-success keeponly: kind filter",
+			desc: "filter-success select: kind filter",
 			opt: &Options{
 				Kinds: []string{"Pod", "Deployment"}, // Pod or Deployment
 				Annotations: map[string]string{
 					"foof": "yar",
 					"foo":  "bar",
 				},
-				KeepOnly: true,
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 	}
@@ -199,7 +246,15 @@ func TestFilterObjects(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			newData := NewFilter().Objects(flatten(data.Components), tc.opt)
+			var newData []*unstructured.Unstructured
+			if tc.fil == fil {
+				newData = NewFilter().FilterObjects(flatten(data.Components), tc.opt)
+			} else if tc.fil == sel {
+				newData = NewFilter().SelectObjects(flatten(data.Components), tc.opt)
+			} else {
+				t.Errorf("unknown filter type %q", tc.fil)
+				return
+			}
 			onames := getObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("Filter.Objects(): got %v but wanted %v", onames, tc.expObjNames)
@@ -265,17 +320,20 @@ func TestFilterComponents(t *testing.T) {
 	testcases := []struct {
 		desc        string
 		opt         *Options
+		fil         filterType
 		expObjNames []string
 	}{
 		{
 			desc: "filter-success: matches everything",
 			opt:  &Options{},
+			fil:  fil,
 		},
 		{
 			desc: "filter-success: name filter",
 			opt: &Options{
 				Names: []string{"zap-pod"},
 			},
+			fil:         fil,
 			expObjNames: []string{"bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
@@ -285,6 +343,7 @@ func TestFilterComponents(t *testing.T) {
 					"component": "bork",
 				},
 			},
+			fil:         fil,
 			expObjNames: []string{"zap-pod", "nog-pod", "zog-dep"},
 		},
 		{
@@ -294,13 +353,26 @@ func TestFilterComponents(t *testing.T) {
 					"foof": "narf",
 				},
 			},
+			fil:         fil,
 			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
+		},
+		{
+			desc: "filter-success: annotations filter",
+			opt: &Options{
+				Annotations: map[string]string{
+					"foof": "narf",
+				},
+				InvertMatch: true,
+			},
+			fil:         fil,
+			expObjNames: []string{"nog-pod"},
 		},
 		{
 			desc: "filter-success: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
 			},
+			fil:         fil,
 			expObjNames: []string{"nog-pod", "zog-dep"},
 		},
 		{
@@ -308,58 +380,69 @@ func TestFilterComponents(t *testing.T) {
 			opt: &Options{
 				Kinds: []string{"Component"},
 			},
+			fil: fil,
 		},
 
-		// KeepOnly
+		// Select
 		{
-			desc: "filter-success keeponly: matches everything",
-			opt: &Options{
-				KeepOnly: true,
-			},
+			desc:        "filter-success select: matches everything",
+			opt:         &Options{},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
 		},
 		{
-			desc: "filter-success keeponly: name filter",
+			desc: "filter-success select: name filter",
 			opt: &Options{
-				Names:    []string{"zap-pod"},
-				KeepOnly: true,
+				Names: []string{"zap-pod"},
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod"},
 		},
 		{
-			desc: "filter-success keeponly: labels filter",
+			desc: "filter-success select: labels filter",
 			opt: &Options{
 				Labels: map[string]string{
 					"component": "bork",
 				},
-				KeepOnly: true,
 			},
+			fil:         sel,
 			expObjNames: []string{"bog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: annotations filter",
+			desc: "filter-success select: annotations filter",
 			opt: &Options{
 				Annotations: map[string]string{
 					"foof": "narf",
 				},
-				KeepOnly: true,
 			},
+			fil:         sel,
 			expObjNames: []string{"nog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: namespace filter",
+			desc: "filter-success select: annotations filter, invert",
+			opt: &Options{
+				Annotations: map[string]string{
+					"foof": "narf",
+				},
+				InvertMatch: true,
+			},
+			fil:         sel,
+			expObjNames: []string{"zap-pod", "bog-pod", "zog-dep"},
+		},
+		{
+			desc: "filter-success select: namespace filter",
 			opt: &Options{
 				Namespaces: []string{"kube-system"},
-				KeepOnly:   true,
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod"},
 		},
 		{
-			desc: "filter-success keeponly: kind filter",
+			desc: "filter-success select: kind filter",
 			opt: &Options{
-				Kinds:    []string{"Component"},
-				KeepOnly: true,
+				Kinds: []string{"Component"},
 			},
+			fil:         sel,
 			expObjNames: []string{"zap-pod", "bog-pod", "nog-pod", "zog-dep"},
 		},
 	}
@@ -370,7 +453,15 @@ func TestFilterComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			newData := NewFilter().Components(data.Components, tc.opt)
+			var newData []*bundle.Component
+			if tc.fil == fil {
+				newData = NewFilter().FilterComponents(data.Components, tc.opt)
+			} else if tc.fil == sel {
+				newData = NewFilter().SelectComponents(data.Components, tc.opt)
+			} else {
+				t.Errorf("unknown filter type %q", tc.fil)
+				return
+			}
 			onames := getCompObjNames(newData)
 			if !reflect.DeepEqual(onames, tc.expObjNames) {
 				t.Errorf("FilterComponents(): got %v but wanted %v", onames, tc.expObjNames)
@@ -403,15 +494,6 @@ func TestPartitionObjects(t *testing.T) {
 			desc: "match single pod: name filter",
 			opt: &Options{
 				Names: []string{"zap-pod"},
-			},
-			expMatch:    []string{"zap-pod"},
-			expNotMatch: []string{"bog-pod", "nog-pod", "zog-dep"},
-		},
-		{
-			desc: "keep only doesn't change result",
-			opt: &Options{
-				Names:    []string{"zap-pod"},
-				KeepOnly: true,
 			},
 			expMatch:    []string{"zap-pod"},
 			expNotMatch: []string{"bog-pod", "nog-pod", "zog-dep"},

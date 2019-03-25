@@ -38,14 +38,10 @@ type ObjectSelector struct {
 	// Namespaces to match.
 	Namespaces []string `json:"namespaces,omitempty"`
 
-	// NamespacedOnly matches only if the type of object is namespaced (i.e.,
-	// is not a cluster-wide resource).
-	NamespacedOnly *bool `json:"namespacedOnly,omitempty"`
-
-	// NegativeMatch invert the match. By default, the ObjectSelector will include
+	// InvertMatch inverts the match. By default, the ObjectSelector will include
 	// objects matching all of the criteria above. This flag indicates that objects
 	// NOT matching the criteria should be included instead.
-	NegativeMatch *bool `json:"negativeMatch,omitempty"`
+	InvertMatch *bool `json:"invertMatch,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -58,6 +54,9 @@ type PatchTemplate struct {
 	// Template is a template that creates a patch for a K8S object. In other
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
+	//
+	// If either APIVersion or Kind are present in the Template, they will be
+	// removed during patch-appllication and added to the ObjectSelector.
 	Template string `json:"template,omitempty"`
 
 	// Selector identifies the objects to which the patch should be applied

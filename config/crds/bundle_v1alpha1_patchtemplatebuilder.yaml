@@ -39,6 +39,12 @@ spec:
               description: Annotations contain key/value pairs to match. An empty
                 string value matches all annotation-values for a particular key.
               type: object
+            invertMatch:
+              description: InvertMatch inverts the match. By default, the ObjectSelector
+                will include objects matching all of the criteria above. This flag
+                indicates that objects NOT matching the criteria should be included
+                instead.
+              type: boolean
             kinds:
               description: Kinds represent the Kinds to match.
               items:
@@ -53,21 +59,11 @@ spec:
               items:
                 type: string
               type: array
-            namespacedOnly:
-              description: NamespacedOnly matches only if the type of object is namespaced
-                (i.e., is not a cluster-wide resource).
-              type: boolean
             namespaces:
               description: Namespaces to match.
               items:
                 type: string
               type: array
-            negativeMatch:
-              description: NegativeMatch invert the match. By default, the ObjectSelector
-                will include objects matching all of the criteria above. This flag
-                indicates that objects NOT matching the criteria should be included
-                instead.
-              type: boolean
           type: object
         targetSchema:
           description: TargetSchema is the schema for the parameters after the build-phase.
