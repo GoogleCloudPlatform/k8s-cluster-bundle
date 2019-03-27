@@ -43,7 +43,7 @@ var (
 // inlined as part of the component inlining process.
 type applier struct{}
 
-// NewApplier creates a new optionts applier instance.
+// NewApplier creates a new options applier instance.
 func NewApplier() options.Applier {
 	return &applier{}
 }
