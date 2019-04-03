@@ -68,7 +68,11 @@ func NewDefaultApplier() options.Applier {
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
 func (a *applier) ApplyOptions(comp *bundle.Component, p options.JSONOptions) (*bundle.Component, error) {
 	comp = comp.DeepCopy()
-	patches, objs, err := a.makePatches(comp, p)
+	patchTemplates, objects := a.getPatchTemplates(comp)
+	if len(patchTemplates) < 1 {
+		return comp, nil
+	}
+	patches, objs, err := a.makePatches(patchTemplates, objects, p)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +99,8 @@ func (p *parsedPatch) String() string {
 	return string(p.raw)
 }
 
-func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) ([]*parsedPatch, []*unstructured.Unstructured, error) {
+// getPatchTemplates returns all patch templates fom particular component
+func (a *applier) getPatchTemplates(comp *bundle.Component) ([]*unstructured.Unstructured, []*unstructured.Unstructured) {
 	tfil := a.tmplFilter
 	if tfil == nil {
 		tfil = &filter.Options{}
@@ -111,6 +116,10 @@ func (a *applier) makePatches(comp *bundle.Component, opts options.JSONOptions) 
 		objs = comp.Spec.Objects
 	}
 
+	return ptObjs, objs
+}
+
+func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts options.JSONOptions) ([]*parsedPatch, []*unstructured.Unstructured, error) {
 	// First parse the objects back into go-objects.
 	var pts []*bundle.PatchTemplate
 	for _, o := range ptObjs {
