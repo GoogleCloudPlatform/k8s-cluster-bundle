@@ -17,5 +17,5 @@ kind: ComponentBuilder
 componentName: etcd-component
 version: 30.0.2
 objectFiles:
-- url: /etcd-server.yaml
-- url: /patches.yaml
+- url: ./etcd-server.yaml
+- url: ./patches.yaml
