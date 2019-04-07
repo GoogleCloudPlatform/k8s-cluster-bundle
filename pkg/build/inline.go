@@ -290,6 +290,11 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 				OptionsSchema: builder.OptionsSchema,
 				Template:      string(contents),
 			}
+			objTemplate.ObjectMeta.Annotations = make(map[string]string)
+			for key, value := range builder.ObjectMeta.Annotations {
+				objTemplate.ObjectMeta.Annotations[key] = value
+			}
+			objTemplate.ObjectMeta.Annotations[string(bundle.InlinePathIdentifier)] = builder.File.URL
 
 			tmplType := bundle.TemplateTypeGo
 			if builder.Type != bundle.TemplateTypeUndefined {

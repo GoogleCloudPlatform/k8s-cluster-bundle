@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 )
@@ -99,12 +99,34 @@ type LocalFileObjReader struct {
 // ReadFileObj reads a file object from the local filesystem by deferring to a
 // local file reader.
 func (r *LocalFileObjReader) ReadFileObj(ctx context.Context, file bundle.File) ([]byte, error) {
-	url := file.URL
-	if url == "" {
+	if file.URL == "" {
 		return nil, fmt.Errorf("file %v was specified but no file url was provided", file)
 	}
-	if strings.HasPrefix(url, "file://") {
-		url = strings.TrimPrefix(url, "file://")
+	path, err := r.extractPath(file.URL)
+	if err != nil {
+		return nil, fmt.Errorf("file %v path could not be parsed: %v", err)
 	}
-	return r.Rdr.ReadFile(ctx, filepath.Join(r.WorkingDir, url))
+	return r.Rdr.ReadFile(ctx, path)
+}
+
+// extractPath extracts a final path from a URL preserving legacy behavior
+// while we figure out how to make things consistent.
+//
+// TODO(kashomon): Get rid of this. Path manipulation should happen in the
+// downstream libraries.
+func (r *LocalFileObjReader) extractPath(fileURL string) (string, error) {
+	u, err := url.Parse(fileURL)
+	if err != nil {
+		return "", err
+	}
+	if u.Host != "" {
+		return "", fmt.Errorf("unexpected host in url %q", u.Host)
+	}
+	if scheme := URLScheme(u.Scheme); scheme != EmptyScheme && scheme != FileScheme {
+		return "", fmt.Errorf("unsupported scheme %q (local object reader supports only 'file://' scheme)", scheme)
+	}
+	if u.Scheme == "file" || !filepath.IsAbs(u.Path) {
+		u.Path = filepath.Clean(filepath.Join(r.WorkingDir, u.Path))
+	}
+	return u.Path, nil
 }

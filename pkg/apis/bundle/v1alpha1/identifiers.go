@@ -22,6 +22,10 @@ const (
 	// InlineTypeIdentifier is an identifier used to identify how an object in a
 	// component was inlined.
 	InlineTypeIdentifier Identifier = "bundle.gke.io/inline-type"
+
+	// InlinePathIdentifier is an identifier used to preserve the path where an
+	// object was inlined from.
+	InlinePathIdentifier Identifier = "bundle.gke.io/inline-path"
 )
 
 // InlineType is a value that the InlineTypeIdentifier can take.
