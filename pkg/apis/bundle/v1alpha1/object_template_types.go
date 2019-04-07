@@ -28,6 +28,9 @@ const (
 
 	// TemplateTypeGo represents a go-template, which is assumed to be YAML.
 	TemplateTypeGo TemplateType = "go-template"
+
+	// JsonnetTemplate represents a jsonnet type.
+	TemplateTypeJsonnet TemplateType = "jsonnet"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

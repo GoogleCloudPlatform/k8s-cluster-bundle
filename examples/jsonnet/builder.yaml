@@ -1,0 +1,8 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: ComponentBuilder
+componentName: kubecore
+version: 11.0.0
+objectFiles:
+- url: ./pod.builder.yaml
+- url: ./multi-pods.builder.yaml
+- url: ./pod-with-imports.builder.yaml

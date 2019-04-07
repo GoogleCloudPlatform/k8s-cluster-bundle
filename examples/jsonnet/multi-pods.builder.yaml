@@ -1,0 +1,5 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: ObjectTemplateBuilder
+type: jsonnet
+file:
+  url: ./multi-pods.jsonnet

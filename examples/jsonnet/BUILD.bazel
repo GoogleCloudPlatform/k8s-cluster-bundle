@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:private"])
+
+filegroup(
+    name = "jsonnet",
+    srcs = [
+        "builder.yaml",
+        "multi-pods.builder.yaml",
+        "multi-pods.jsonnet",
+        "pod.builder.yaml",
+        "pod.jsonnet",
+        "pod-with-imports.builder.yaml",
+        "pod-with-imports.jsonnet",
+    ],
+    visibility = [
+        "//pkg/options/jsonnet:__subpackages__",
+    ],
+)
