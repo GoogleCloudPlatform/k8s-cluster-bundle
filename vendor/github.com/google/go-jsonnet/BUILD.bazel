@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "builtins.go",
+        "desugarer.go",
+        "doc.go",
+        "error_formatter.go",
+        "imports.go",
+        "interpreter.go",
+        "runtime_error.go",
+        "static_analyzer.go",
+        "thunks.go",
+        "value.go",
+        "vm.go",
+    ],
+    importmap = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/vendor/github.com/google/go-jsonnet",
+    importpath = "github.com/google/go-jsonnet",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/google/go-jsonnet/ast:go_default_library",
+        "//vendor/github.com/google/go-jsonnet/parser:go_default_library",
+    ],
+)

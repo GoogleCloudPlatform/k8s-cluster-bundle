@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "context.go",
+        "lexer.go",
+        "literalfield_set.go",
+        "parser.go",
+        "static_error.go",
+    ],
+    importmap = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/vendor/github.com/google/go-jsonnet/parser",
+    importpath = "github.com/google/go-jsonnet/parser",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/google/go-jsonnet/ast:go_default_library"],
+)
