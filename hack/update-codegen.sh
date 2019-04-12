@@ -66,6 +66,23 @@ client-gen --clientset-name=versioned \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
+deepcopy-gen \
+  -h hack/boilerplate.go.txt \
+  -O zz_generated.deepcopy \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1beta1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1beta1
+
+register-gen \
+  -h hack/boilerplate.go.txt \
+  --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1beta1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1beta1
+
+client-gen --clientset-name=versioned \
+  -h hack/boilerplate.go.txt \
+  --input-base "" \
+  --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1beta1 \
+  --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
+
 clientsetpattern="*clientset_generated.go"
 files=$(find ./pkg/clientset -type f -name *.go)
 for f in $files

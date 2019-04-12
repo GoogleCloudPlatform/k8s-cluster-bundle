@@ -18,7 +18,7 @@ package versioned
 
 import (
 	glog "k8s.io/klog"
-	bundlev1alpha1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1alpha1"
+	bundlev1beta1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -26,27 +26,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface
+	BundleV1beta1() bundlev1beta1.BundleV1beta1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Bundle() bundlev1alpha1.BundleV1alpha1Interface
+	Bundle() bundlev1beta1.BundleV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	bundleV1alpha1 *bundlev1alpha1.BundleV1alpha1Client
+	bundleV1beta1 *bundlev1beta1.BundleV1beta1Client
 }
 
-// BundleV1alpha1 retrieves the BundleV1alpha1Client
-func (c *Clientset) BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface {
-	return c.bundleV1alpha1
+// BundleV1beta1 retrieves the BundleV1beta1Client
+func (c *Clientset) BundleV1beta1() bundlev1beta1.BundleV1beta1Interface {
+	return c.bundleV1beta1
 }
 
 // Deprecated: Bundle retrieves the default version of BundleClient.
 // Please explicitly pick a version.
-func (c *Clientset) Bundle() bundlev1alpha1.BundleV1alpha1Interface {
-	return c.bundleV1alpha1
+func (c *Clientset) Bundle() bundlev1beta1.BundleV1beta1Interface {
+	return c.bundleV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -65,7 +65,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.bundleV1alpha1, err = bundlev1alpha1.NewForConfig(&configShallowCopy)
+	cs.bundleV1beta1, err = bundlev1beta1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.bundleV1alpha1 = bundlev1alpha1.NewForConfigOrDie(c)
+	cs.bundleV1beta1 = bundlev1beta1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -91,7 +91,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.bundleV1alpha1 = bundlev1alpha1.New(c)
+	cs.bundleV1beta1 = bundlev1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

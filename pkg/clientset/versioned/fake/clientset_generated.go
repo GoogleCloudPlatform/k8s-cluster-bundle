@@ -18,8 +18,8 @@ package fake
 
 import (
 	clientset "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned"
-	bundlev1alpha1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1alpha1"
-	fakebundlev1alpha1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1alpha1/fake"
+	bundlev1beta1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1beta1"
+	fakebundlev1beta1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -68,12 +68,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// BundleV1alpha1 retrieves the BundleV1alpha1Client
-func (c *Clientset) BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface {
-	return &fakebundlev1alpha1.FakeBundleV1alpha1{Fake: &c.Fake}
+// BundleV1beta1 retrieves the BundleV1beta1Client
+func (c *Clientset) BundleV1beta1() bundlev1beta1.BundleV1beta1Interface {
+	return &fakebundlev1beta1.FakeBundleV1beta1{Fake: &c.Fake}
 }
 
-// Bundle retrieves the BundleV1alpha1Client
-func (c *Clientset) Bundle() bundlev1alpha1.BundleV1alpha1Interface {
-	return &fakebundlev1alpha1.FakeBundleV1alpha1{Fake: &c.Fake}
+// Bundle retrieves the BundleV1beta1Client
+func (c *Clientset) Bundle() bundlev1beta1.BundleV1beta1Interface {
+	return &fakebundlev1beta1.FakeBundleV1beta1{Fake: &c.Fake}
 }
