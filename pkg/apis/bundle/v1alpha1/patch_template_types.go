@@ -53,7 +53,8 @@ const (
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
 	StrategicMergePatch PatchType = "StrategicMergePatch"
 
-	// Use JSON patch for non-kubernetes types, such as custom resources.
+	// JSONPatch relies on RFC6902 JSON Patching to apply patches and is useful
+	// for when objects are not rendered in the patcher runtime schema.
 	JSONPatch PatchType = "JSONPatch"
 )
 

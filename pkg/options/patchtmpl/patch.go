@@ -145,7 +145,7 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 		patchType := bundle.PatchType(pto.PatchType)
 		switch patchType {
 		case bundle.StrategicMergePatch, bundle.JSONPatch:
-			// good types
+			// known types
 
 		case "":
 			// use default
@@ -262,17 +262,19 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 			}
 
 			var newObjJSON map[string]interface{}
-			if pat.patchType == bundle.JSONPatch {
-				if objByt, err := converter.FromObject(objJSON).ToJSON(); err != nil {
+			switch pat.patchType {
+			case bundle.JSONPatch:
+				if oByt, err := converter.FromObject(objJSON).ToJSON(); err != nil {
 					return nil, fmt.Errorf("while converting JSON obj\n%s to bytes: %v", objJSON, err)
 				} else if pByt, err := converter.FromObject(pat.jsonMap).ToJSON(); err != nil {
 					return nil, fmt.Errorf("while converting patch JSON obj\n%s to bytes: %v", pat.jsonMap, err)
-				} else if newObjByt, err := jsonpatch.MergePatch(objByt, pByt); err != nil {
-					return nil, fmt.Errorf("while applying JSON merge patch\n%s to \n%s: %v", pat.raw, objByt, err)
+				} else if newObjByt, err := jsonpatch.MergePatch(oByt, pByt); err != nil {
+					return nil, fmt.Errorf("while applying JSON merge patch\n%s to \n%s: %v", pat.raw, oByt, err)
 				} else if newObjJSON, err = converter.FromJSON(newObjByt).ToJSONMap(); err != nil {
 					return nil, fmt.Errorf("while converting bytes\n%s to JSON: %v", newObjByt, err)
 				}
-			} else {
+
+			case bundle.StrategicMergePatch:
 				if strategicWillFail {
 					// Strategic merge patch can't handle unstructured.Unstructured or
 					// unregistered objects, so return an error.
@@ -284,6 +286,9 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 				if newObjJSON, err = strategicpatch.StrategicMergeMapPatchUsingLookupPatchMeta(objJSON, pat.jsonMap, objSchema); err != nil {
 					return nil, fmt.Errorf("while applying strategic merge patch\n%sto \n%s: %v", pat.raw, objJSON, err)
 				}
+
+			default:
+				return nil, fmt.Errorf("unkown patch type: %s", pat.patchType)
 			}
 
 			objJSON = newObjJSON
