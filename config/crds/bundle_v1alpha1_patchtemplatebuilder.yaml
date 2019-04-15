@@ -30,6 +30,10 @@ spec:
           type: string
         metadata:
           type: object
+        patchType:
+          description: PatchType represents how patches are applied. If not specified,
+            use StrategicMergePatch.
+          type: string
         selector:
           description: Selector identifies the objects to which the patch should be
             applied For each object selected, the template will have its apiVersion
