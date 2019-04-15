@@ -433,6 +433,61 @@ spec:
 `,
 			expNoMatchSubstrs: []string{"image: gcr.io/google_containers/derp:v1.9.7"},
 		},
+		{
+			desc: "success: patch with StrategicMergePatch patch type",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    patchType: StrategicMergePatch
+    template: |
+      metadata:
+        namespace: foo`,
+			expMatchSubstrs: []string{"metadata:\n      namespace: foo"},
+			removeTemplates: true,
+		},
+		{
+			desc: "success: unknown type, patch with JSONPatch patch type",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: TestCustomResource
+  - kind: PatchTemplate
+    patchType: JSONPatch
+    template: |
+      metadata:
+        namespace: foo`,
+			expMatchSubstrs: []string{
+				"apiVersion: v1\n    kind: TestCustomResource\n    metadata:\n      namespace: foo",
+			},
+			removeTemplates: true,
+		},
+		{
+			desc: "success: unknown type, patch with JSONPatch patch type, with options",
+			opts: map[string]interface{}{
+				"Name": "zed",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: TestCustomResource
+  - kind: PatchTemplate
+    patchType: JSONPatch
+    template: |
+      metadata:
+        namespace: {{.Name}}`,
+			expMatchSubstrs: []string{
+				"apiVersion: v1\n    kind: TestCustomResource\n    metadata:\n      namespace: zed",
+			},
+			removeTemplates: true,
+		},
 
 		// Errors
 		{
@@ -469,6 +524,35 @@ spec:
         namespace: {{.Foo}}
 `,
 			expErrSubstr: "map has no entry for key \"Foo\"",
+		},
+		{
+			desc: "failure: unknown type, patch without JSONPatch patch type",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: TestCustomResource
+  - kind: PatchTemplate
+    template: |
+      metadata:
+        namespace: foo`,
+			expErrSubstr: "kind \"TestCustomResource\" and apiVersion \"v1\": type not registered in scheme",
+		},
+		{
+			desc: "failure: unknown type, patch with bad patch type",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: TestCustomResource
+  - kind: PatchTemplate
+    patchType: PatchyMcPatchface
+    template: |
+      metadata:
+        namespace: foo`,
+			expErrSubstr: "bad patch type",
 		},
 	}
 

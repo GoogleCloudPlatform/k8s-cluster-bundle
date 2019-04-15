@@ -52,6 +52,9 @@ const (
 	// Merge Patch to apply patches. See more at:
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
 	StrategicMergePatch PatchType = "StrategicMergePatch"
+
+	// Use JSON patch for non-kubernetes types, such as custom resources.
+	JSONPatch PatchType = "JSONPatch"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
