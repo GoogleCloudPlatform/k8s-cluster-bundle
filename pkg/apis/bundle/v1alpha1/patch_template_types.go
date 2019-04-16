@@ -52,6 +52,10 @@ const (
 	// Merge Patch to apply patches. See more at:
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
 	StrategicMergePatch PatchType = "StrategicMergePatch"
+
+	// JSONPatch relies on RFC6902 JSON Patching to apply patches and is useful
+	// for when object types are not available in the patcher runtime schema.
+	JSONPatch PatchType = "JSONPatch"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

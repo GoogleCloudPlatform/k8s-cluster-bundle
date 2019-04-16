@@ -34,6 +34,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:f1f2bd73c025d24c3b93abf6364bccb802cf2fdedaa44360804c67800e8fab8d"
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "72bf35d0ff611848c1dc9df0f976c81192392fa5"
+  version = "v4.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:326b3646f45752b2917058d66f5a6921cf72fdf820d57576a11c8fc062f8ad4f"
   name = "github.com/ghodss/yaml"
@@ -178,6 +186,18 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "4030bb1f1f0c35b30ca7009e9ebd06849dd45306"
+
+[[projects]]
+  digest = "1:3c5f5fc950ba4a220b02388e40f2ff6d386e5464efa402288427cc7bccb475de"
+  name = "github.com/google/go-jsonnet"
+  packages = [
+    ".",
+    "ast",
+    "parser",
+  ]
+  pruneopts = "UT"
+  revision = "493c45a403d25435774370ddfa6363906a65c23c"
+  version = "v0.12.1"
 
 [[projects]]
   branch = "master"
@@ -518,13 +538,17 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
     "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/validate",
     "github.com/go-openapi/validate/post",
+    "github.com/google/go-jsonnet",
     "github.com/spf13/cobra",
     "k8s.io/api/apps/v1",
+    "k8s.io/api/apps/v1beta1",
+    "k8s.io/api/apps/v1beta2",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
     "k8s.io/api/policy/v1beta1",
