@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,20 @@ type ObjectSelector struct {
 	InvertMatch *bool `json:"invertMatch,omitempty"`
 }
 
+// PatchType represents
+type PatchType string
+
+const (
+	// StrategicMergePatch is the default patch type. Use Kubernetes Strategic
+	// Merge Patch to apply patches. See more at:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
+	StrategicMergePatch PatchType = "StrategicMergePatch"
+
+	// JSONPatch relies on RFC6902 JSON Patching to apply patches and is useful
+	// for when object types are not available in the patcher runtime schema.
+	JSONPatch PatchType = "JSONPatch"
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PatchTemplate contains configuration for patching objects.
@@ -58,6 +72,10 @@ type PatchTemplate struct {
 	// If either APIVersion or Kind are present in the Template, they will be
 	// removed during patch-appllication and added to the ObjectSelector.
 	Template string `json:"template,omitempty"`
+
+	// PatchType represents how patches are applied. If not specified, use
+	// StrategicMergePatch.
+	PatchType string `json:"patchType,omitempty"`
 
 	// Selector identifies the objects to which the patch should be applied
 	// For each object selected, the template will have its apiVersion and
@@ -80,6 +98,10 @@ type PatchTemplateBuilder struct {
 	// words, a templated YAML blob that's meant to be applied via
 	// strategic-merge-patch. It's currently assumed to be a YAML go-template.
 	Template string `json:"template,omitempty"`
+
+	// PatchType represents how patches are applied. If not specified, use
+	// StrategicMergePatch.
+	PatchType string `json:"patchType,omitempty"`
 
 	// Selector identifies the objects to which the patch should be applied
 	// For each object selected, the template will have its apiVersion and
