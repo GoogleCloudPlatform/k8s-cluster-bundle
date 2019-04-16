@@ -24,6 +24,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
+	jsonpatch "github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -92,6 +93,9 @@ type parsedPatch struct {
 
 	// selector for determining which objects to patch.
 	selector *bundle.ObjectSelector
+
+	// type of merging logic to use for the patch
+	patchType bundle.PatchType
 }
 
 // String returns the string form of the parsedPatch.
@@ -138,6 +142,19 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 	// Next, de-templatize the templates.
 	var patches []*parsedPatch
 	for j, pto := range pts {
+		patchType := bundle.PatchType(pto.PatchType)
+		switch patchType {
+		case bundle.StrategicMergePatch, bundle.JSONPatch:
+			// known types
+
+		case "":
+			// use default
+			patchType = bundle.StrategicMergePatch
+
+		default:
+			return nil, nil, fmt.Errorf("bad patch type: %s", patchType)
+		}
+
 		tmpl, err := template.New(fmt.Sprintf("patch-tmpl-%d", j)).Parse(pto.Template)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
@@ -203,9 +220,10 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 		}
 
 		patches = append(patches, &parsedPatch{
-			raw:      by,
-			jsonMap:  jsonMap,
-			selector: selector,
+			raw:       by,
+			jsonMap:   jsonMap,
+			selector:  selector,
+			patchType: patchType,
 		})
 	}
 	return patches, objs, nil
@@ -234,28 +252,43 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 
 		deserializer := scheme.Codecs.UniversalDeserializer()
 
-		kubeObj, err := runtime.Decode(deserializer, objByt)
+		kubeObj, decodeErr := runtime.Decode(deserializer, objByt)
 		_, isUnstructured := kubeObj.(*unstructured.Unstructured)
-		if runtime.IsNotRegisteredError(err) || isUnstructured {
-			// Strategic merge patch can't handle unstructured.Unstructured or
-			// unregistered objects, so return an error. Previously, we deferred
-			// to normal JSON Merge-patch, but this behavior was confusing.
-			return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
-		}
-
-		objSchema, err := strategicpatch.NewPatchMetaFromStruct(kubeObj)
-		if err != nil {
-			return nil, fmt.Errorf("while getting patch meta from object %s: %v", string(objByt), err)
-		}
-
+		strategicWillFail := runtime.IsNotRegisteredError(decodeErr) || isUnstructured
+		objSchema, objSchemaErr := strategicpatch.NewPatchMetaFromStruct(kubeObj)
 		for _, pat := range patches {
 			if !canApplyPatch(pat, obj) {
 				continue
 			}
 
-			newObjJSON, err := strategicpatch.StrategicMergeMapPatchUsingLookupPatchMeta(objJSON, pat.jsonMap, objSchema)
-			if err != nil {
-				return nil, fmt.Errorf("while applying patch\n%sto \n%s: %v", pat.raw, objJSON, err)
+			var newObjJSON map[string]interface{}
+			switch pat.patchType {
+			case bundle.JSONPatch:
+				if oByt, err := converter.FromObject(objJSON).ToJSON(); err != nil {
+					return nil, fmt.Errorf("while converting JSON obj\n%s to bytes: %v", objJSON, err)
+				} else if pByt, err := converter.FromObject(pat.jsonMap).ToJSON(); err != nil {
+					return nil, fmt.Errorf("while converting patch JSON obj\n%s to bytes: %v", pat.jsonMap, err)
+				} else if newObjByt, err := jsonpatch.MergePatch(oByt, pByt); err != nil {
+					return nil, fmt.Errorf("while applying JSON merge patch\n%s to \n%s: %v", pat.raw, oByt, err)
+				} else if newObjJSON, err = converter.FromJSON(newObjByt).ToJSONMap(); err != nil {
+					return nil, fmt.Errorf("while converting bytes\n%s to JSON: %v", newObjByt, err)
+				}
+
+			case bundle.StrategicMergePatch:
+				if strategicWillFail {
+					// Strategic merge patch can't handle unstructured.Unstructured or
+					// unregistered objects, so return an error.
+					return nil, fmt.Errorf("while converting object %q of kind %q and apiVersion %q: type not registered in scheme", obj.GetName(), obj.GetKind(), obj.GetAPIVersion())
+				}
+				if objSchemaErr != nil {
+					return nil, fmt.Errorf("while getting patch meta from object %s: %v", string(objByt), objSchemaErr)
+				}
+				if newObjJSON, err = strategicpatch.StrategicMergeMapPatchUsingLookupPatchMeta(objJSON, pat.jsonMap, objSchema); err != nil {
+					return nil, fmt.Errorf("while applying strategic merge patch\n%sto \n%s: %v", pat.raw, objJSON, err)
+				}
+
+			default:
+				return nil, fmt.Errorf("unkown patch type: %s", pat.patchType)
 			}
 
 			objJSON = newObjJSON
