@@ -54,7 +54,7 @@ const (
 	StrategicMergePatch PatchType = "StrategicMergePatch"
 
 	// JSONPatch relies on RFC6902 JSON Patching to apply patches and is useful
-	// for when objects are not rendered in the patcher runtime schema.
+	// for when object types are not available in the patcher runtime schema.
 	JSONPatch PatchType = "JSONPatch"
 )
 
