@@ -27,21 +27,20 @@ spec:
         metadata:
           type: object
         require:
-          description: Require specific component versions. A component that with
-            an AppVersion >= to the AppVersion specified by a component may satisfy
-            this requirement, using minimal version selection or a similar algorithm.
+          description: Require specifies components that must be packaged with this
+            component.
           items:
             properties:
-              appVersion:
-                description: AppVersion specifies the minimum required AppVersion
-                  present in another components Requirements object. In otherwords,
-                  the AppVersion given by ComponentName in a Bundle or Set must be
-                  >= to this AppVersion, fixing the major version.  If AppVersion
-                  is not included, then any component with the specified ComponentName
-                  will be considered a valid match.
-                type: string
               componentName:
                 description: ComponentName (required) specifies the name of a component.
+                type: string
+              version:
+                description: Version specifies the minimum required version present
+                  in another components Requirements object. In otherwords, the Version
+                  given by ComponentName in a Bundle or Set must be >= to this version,
+                  fixing the major version.  If version is not included, then any
+                  component with the specified ComponentName will be considered a
+                  valid match.
                 type: string
             type: object
           type: array
