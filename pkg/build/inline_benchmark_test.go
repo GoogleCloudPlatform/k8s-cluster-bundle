@@ -28,11 +28,20 @@ func BenchmarkBuildAndInline_Component(t *testing.B) {
 	dataPath := "../../examples/component/etcd-component-builder.yaml"
 
 	for i := 0; i < t.N; i++ {
-		cb, _ := converter.FromYAML(b).ToComponentBuilder()
+		cb, err := converter.FromYAML(b).ToComponentBuilder()
+		if err != nil {
+			panic("error converting component")
+		}
 		inliner := NewLocalInliner("../../examples/component/")
-		component, _:= inliner.ComponentFiles(context.Background(), cb, dataPath)
-		_, _ = converter.FromObject(component).ToYAML()
-		validate.Component(component)	
+		component, err:= inliner.ComponentFiles(context.Background(), cb, dataPath)
+		if err != nil {
+			panic("error inlining components")
+		}
+		_, err = converter.FromObject(component).ToYAML()
+		if err != nil {
+			panic("error converting component")
+		}
+		validate.Component(component)
 	}
 
 }
