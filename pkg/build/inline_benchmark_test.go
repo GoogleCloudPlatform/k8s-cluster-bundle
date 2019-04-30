@@ -26,7 +26,7 @@ import (
 func BenchmarkBuildAndInline_Component(t *testing.B) {
 	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
 	if err != nil {
-		panic("error reading file")
+		t.Fatal("error reading file")
 	}
 
 	dataPath := "../../examples/component/etcd-component-builder.yaml"
@@ -34,16 +34,16 @@ func BenchmarkBuildAndInline_Component(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		cb, err := converter.FromYAML(b).ToComponentBuilder()
 		if err != nil {
-			panic("error converting component")
+			t.Fatal("error converting component")
 		}
 		inliner := NewLocalInliner("../../examples/component/")
 		component, err := inliner.ComponentFiles(context.Background(), cb, dataPath)
 		if err != nil {
-			panic("error inlining components")
+			t.Fatal("error inlining components")
 		}
 		_, err = converter.FromObject(component).ToYAML()
 		if err != nil {
-			panic("error converting component")
+			t.Fatal("error converting component")
 		}
 		validate.Component(component)
 	}

@@ -36,17 +36,17 @@ spec:
 	for i := 0; i < t.N; i++ {
 		c, err := converter.FromYAMLString(component).ToComponent()
 		if err != nil {
-			panic("error parsing component")
+			t.Fatal("error parsing component")
 		}
 		newComp, err := ComponentPatchTemplates(c, &filter.Options{}, map[string]interface{}{
 			"Namespace": "foo",
 		})
 		if err != nil {
-			panic("error patching component")
+			t.Fatal("error patching component")
 		}
 		_, err = converter.FromObject(newComp).ToYAML()
 		if err != nil {
-			panic("error converting object")
+			t.Fatal("error converting object")
 		}
 	}
 
