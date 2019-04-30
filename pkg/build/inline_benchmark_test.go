@@ -24,7 +24,11 @@ import (
 )
 
 func BenchmarkBuildAndInline_Component(t *testing.B) {
-	b, _ := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
+	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
+	if err != nil {
+		panic("error reading file")
+	}
+	
 	dataPath := "../../examples/component/etcd-component-builder.yaml"
 
 	for i := 0; i < t.N; i++ {
