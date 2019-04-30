@@ -28,7 +28,7 @@ func BenchmarkBuildAndInline_Component(t *testing.B) {
 	if err != nil {
 		panic("error reading file")
 	}
-	
+
 	dataPath := "../../examples/component/etcd-component-builder.yaml"
 
 	for i := 0; i < t.N; i++ {
@@ -37,7 +37,7 @@ func BenchmarkBuildAndInline_Component(t *testing.B) {
 			panic("error converting component")
 		}
 		inliner := NewLocalInliner("../../examples/component/")
-		component, err:= inliner.ComponentFiles(context.Background(), cb, dataPath)
+		component, err := inliner.ComponentFiles(context.Background(), cb, dataPath)
 		if err != nil {
 			panic("error inlining components")
 		}
