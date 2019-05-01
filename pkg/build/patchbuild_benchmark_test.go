@@ -15,10 +15,10 @@
 package build
 
 import (
+	"testing"
+
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
-
-	"testing"
 )
 
 func BenchmarkBuildAndPatch_Component(t *testing.B) {
