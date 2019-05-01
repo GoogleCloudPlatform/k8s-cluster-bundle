@@ -33,7 +33,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["patch_test.go"],
+    srcs = [
+        "patch_benchmark_test.go",
+        "patch_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//pkg/converter:go_default_library",
