@@ -32,8 +32,10 @@ go_test(
     srcs = [
         "bazel_init_test.go",
         "config_map_maker_test.go",
+        "inline_benchmark_test.go",
         "inline_integration_test.go",
         "inline_test.go",
+        "patchbuild_benchmark_test.go",
         "patchbuild_test.go",
     ],
     data = ["//examples:testdata"],

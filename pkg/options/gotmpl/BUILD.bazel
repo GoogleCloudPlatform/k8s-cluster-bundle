@@ -16,7 +16,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["go_template_applier_test.go"],
+    srcs = [
+        "go_template_applier_benchmark_test.go",
+        "go_template_applier_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//pkg/converter:go_default_library",
