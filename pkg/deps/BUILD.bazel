@@ -3,8 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "annotation_matcher.go",
         "collate.go",
         "latest.go",
+        "matcher.go",
         "meta.go",
         "resolve.go",
     ],
@@ -20,6 +22,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "annotation_matcher_test.go",
         "collate_test.go",
         "meta_test.go",
         "resolve_test.go",

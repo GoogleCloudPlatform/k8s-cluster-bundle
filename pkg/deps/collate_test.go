@@ -154,14 +154,14 @@ func TestLatest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sorted, _, err := sortedMapFromComponents(comps)
+	sorted, _, err := sortedMapFromComponents(comps, AnnotationProcessor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testCases := []struct {
 		desc          string
 		componentName string
-		opts          *searchOpts
+		matcher       Matcher
 
 		expOut       string
 		expErrSubstr string
@@ -191,104 +191,75 @@ func TestLatest(t *testing.T) {
 			desc:          "annotations, match criteria all",
 			componentName: "ann",
 			expOut:        "1.2.0",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"cool-component": []string{"true"},
 				},
-			},
+			}),
 		},
 		{
 			desc:          "annotations, match criteria subset",
 			componentName: "ann",
 			expOut:        "1.1.0",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"qualified": []string{"true"},
 				},
-			},
+			}),
 		},
 		{
 			desc:          "annotations, match exactly one channel",
 			componentName: "ann",
 			expOut:        "1.0.0",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"channel": []string{"stable"},
 				},
-			},
+			}),
 		},
 		{
 			desc:          "annotations, match one of two channels",
 			componentName: "ann",
 			expOut:        "1.1.0",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"channel": []string{"stable", "beta"},
 				},
-			},
+			}),
 		},
 		{
 			desc:          "annotations, match and exclude criteria",
 			componentName: "ann",
 			expOut:        "1.0.0",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"qualified": []string{"true"},
 				},
-				exclude: map[string][]string{
+				Exclude: map[string][]string{
 					"bad-component": []string{"true"},
 				},
-			},
+			}),
 		},
-		{
-			desc:          "annotations, match if present: not present is fine",
-			componentName: "ann",
-			expOut:        "1.2.0",
-			opts: &searchOpts{
-				matchIfPresent: map[string][]string{
-					"qualified": []string{"true"},
-				},
-			},
-		},
-		{
-			desc:          "annotations, match if present: multiple options",
-			componentName: "ann",
-			expOut:        "1.2.0",
-			opts: &searchOpts{
-				matchIfPresent: map[string][]string{
-					"qualified": []string{"true", "zork"},
-				},
-			},
-		},
-		{
-			desc:          "annotations, match if present: exclude latest",
-			componentName: "ann",
-			expOut:        "1.1.0",
-			opts: &searchOpts{
-				matchIfPresent: map[string][]string{
-					"feature": []string{"biff", "zed"},
-				},
-			},
-		},
+
 		// errors
 		{
 			desc:          "annotations, exclude all",
 			componentName: "ann",
-			opts: &searchOpts{
-				exclude: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Exclude: map[string][]string{
 					"cool-component": []string{"true"},
 				},
-			},
+			}),
 			expErrSubstr: "no latest version",
 		},
 		{
 			desc:          "annotations, non-existent annotation",
 			componentName: "ann",
-			opts: &searchOpts{
-				match: map[string][]string{
+			matcher: AnnotationMatcher(&AnnotationCriteria{
+				Match: map[string][]string{
 					"dorp": []string{"true"},
 				},
-			},
+			}),
 			expErrSubstr: "no latest version",
 		},
 	}
@@ -299,7 +270,7 @@ func TestLatest(t *testing.T) {
 			if !ok {
 				t.Fatalf("no component found for %q", tc.componentName)
 			}
-			latest, err := vers.latest(tc.opts)
+			latest, err := vers.latest(tc.matcher)
 			if cerr := testutil.CheckErrorCases(err, tc.expErrSubstr); cerr != nil {
 				t.Fatal(cerr)
 			}
@@ -319,7 +290,7 @@ func TestPrevious(t *testing.T) {
 		comps         []string
 		componentName string
 		version       string
-		opts          *searchOpts
+		matcher       Matcher
 
 		expOut       string
 		expErrSubstr string
@@ -421,7 +392,7 @@ func TestPrevious(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sorted, _, err := sortedMapFromComponents(comps)
+			sorted, _, err := sortedMapFromComponents(comps, AnnotationProcessor)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -434,7 +405,7 @@ func TestPrevious(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			previous, err := vers.previous(ver, tc.opts)
+			previous, err := vers.previous(ver, tc.matcher)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
 				t.Fatal(cerr)

@@ -30,7 +30,7 @@ func TestConvertMeta(t *testing.T) {
 		expName       string
 		expVersion    string
 		expVisibility []string
-		expAnnot      map[string]string
+		expMatchMeta  MatchMetadata
 		expErrSubstr  string
 		expRequire    bool
 	}{
@@ -101,9 +101,11 @@ spec:
 `,
 			expName:    "foo",
 			expVersion: "0.2.0",
-			expAnnot: map[string]string{
-				"foo":  "bar",
-				"biff": "bazz",
+			expMatchMeta: &AnnotationMetadata{
+				Annotations: map[string]string{
+					"foo":  "bar",
+					"biff": "bazz",
+				},
 			},
 		},
 
@@ -168,7 +170,7 @@ spec:
 				t.Fatal(err)
 			}
 
-			m, err := metaFromComponent(comp)
+			m, err := metaFromComponent(comp, AnnotationProcessor)
 			expErr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if expErr != nil {
 				t.Fatal(expErr)
@@ -195,8 +197,8 @@ spec:
 			if !reflect.DeepEqual(expVisMap, m.visibility) {
 				t.Errorf("got visibility %v but expected %v", m.visibility, expVisMap)
 			}
-			if len(tc.expAnnot) > 0 && !reflect.DeepEqual(tc.expAnnot, m.annotations) {
-				t.Errorf("got annotations %v but expected %v", m.annotations, expVisMap)
+			if tc.expMatchMeta != nil && !reflect.DeepEqual(tc.expMatchMeta, m.matchMeta) {
+				t.Errorf("got matchMeta %v but expected %v", m.matchMeta, tc.expMatchMeta)
 			}
 		})
 	}

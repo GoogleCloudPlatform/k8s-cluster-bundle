@@ -609,9 +609,11 @@ spec:
 				{ComponentName: "kubernetes"},
 			},
 			opts: &ResolveOptions{
-				Match: map[string][]string{
-					"cool-component": []string{"true"},
-				},
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Match: map[string][]string{
+						"cool-component": []string{"true"},
+					},
+				}),
 			},
 			expComps: []bundle.ComponentReference{
 				{ComponentName: "kubernetes", Version: "1.11.0"},
@@ -625,10 +627,12 @@ spec:
 				{ComponentName: "kubernetes"},
 			},
 			opts: &ResolveOptions{
-				Match: map[string][]string{
-					"cool-component": []string{"true"},
-					"qualified":      []string{"true"},
-				},
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Match: map[string][]string{
+						"cool-component": []string{"true"},
+						"qualified":      []string{"true"},
+					},
+				}),
 			},
 			expComps: []bundle.ComponentReference{
 				{ComponentName: "kubernetes", Version: "1.11.0"},
@@ -642,13 +646,15 @@ spec:
 				{ComponentName: "kubernetes"},
 			},
 			opts: &ResolveOptions{
-				Match: map[string][]string{
-					"cool-component": []string{"true"},
-					"qualified":      []string{"true"},
-				},
-				Exclude: map[string][]string{
-					"bad-component": []string{"true"},
-				},
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Match: map[string][]string{
+						"cool-component": []string{"true"},
+						"qualified":      []string{"true"},
+					},
+					Exclude: map[string][]string{
+						"bad-component": []string{"true"},
+					},
+				}),
 			},
 			expComps: []bundle.ComponentReference{
 				{ComponentName: "kubernetes", Version: "1.11.0"},
@@ -747,11 +753,13 @@ spec:
 				{ComponentName: "kubernetes"},
 			},
 			opts: &ResolveOptions{
-				Match: map[string][]string{
-					"bad-component": []string{"true"},
-				},
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Match: map[string][]string{
+						"bad-component": []string{"true"},
+					},
+				}),
 			},
-			expErrSubstr: "no latest version matching criteria",
+			expErrSubstr: "no latest version",
 		},
 		{
 			desc:     "annotations: can't match any",
@@ -760,11 +768,13 @@ spec:
 				{ComponentName: "kubernetes"},
 			},
 			opts: &ResolveOptions{
-				Match: map[string][]string{
-					"zorp": []string{"true"},
-				},
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Match: map[string][]string{
+						"zorp": []string{"true"},
+					},
+				}),
 			},
-			expErrSubstr: "no latest version matching criteria",
+			expErrSubstr: "no latest version",
 		},
 	}
 
@@ -779,7 +789,7 @@ spec:
 				parsedComps = append(parsedComps, comp)
 			}
 
-			resolver, err := NewResolver(parsedComps)
+			resolver, err := NewResolver(parsedComps, AnnotationProcessor)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -789,7 +799,7 @@ spec:
 				expMap[ec.ComponentName] = ec.Version
 			}
 
-			got, err := resolver.ResolveLatest(tc.comps, tc.opts)
+			got, err := resolver.Resolve(tc.comps, tc.opts)
 			if cerr := testutil.CheckErrorCases(err, tc.expErrSubstr); cerr != nil {
 				t.Fatal(cerr)
 			}

@@ -22,19 +22,6 @@ import (
 	"github.com/blang/semver"
 )
 
-// searchOpts are options for searching for latest or previous versions. For a
-// more detailed discussion, see the ResolveOptions.
-type searchOpts struct {
-	match          map[string][]string
-	matchIfPresent map[string][]string
-	exclude        map[string][]string
-}
-
-// String returns the stringified search options.
-func (s *searchOpts) String() string {
-	return fmt.Sprintf("{%+v, %+v}", s.match, s.exclude)
-}
-
 // sortedVersions contain all the component versions for a single component,
 // sorted by version. It should be considered immutable and must not be changed
 // once created.
@@ -49,107 +36,50 @@ type sortedVersions struct {
 // String prints the stringified components.
 func (s *sortedVersions) String() string {
 	out := fmt.Sprintf("{%s", s.componentName)
+	out += "["
 	for i, v := range s.versions {
-		out += " "
-		if i == 0 {
-			out += "["
+		if i != 0 {
+			out += " "
 		}
 		out += v.version.String()
-		if i == len(s.versions)-1 {
-			out += "]"
-		}
 	}
-	return out + "}"
-}
-
-// useComponent evaluates whether, based on the searchOpts, the component
-// should be used.
-func (s *sortedVersions) useComponent(m *depMeta, opts *searchOpts) bool {
-	if opts == nil {
-		return true
-	}
-
-	match := true
-	for k, vals := range opts.match {
-		matchesOne := false
-		for i := range vals {
-			if m.annotations[k] == vals[i] {
-				matchesOne = true
-				break
-			}
-		}
-		if !matchesOne {
-			match = false
-			break
-		}
-	}
-
-	matchIfPresent := true
-	for k, vals := range opts.matchIfPresent {
-		matchesOne := false
-		for i := range vals {
-			if val, ok := m.annotations[k]; !ok || val == vals[i] {
-				matchesOne = true
-				break
-			}
-		}
-		if !matchesOne {
-			matchIfPresent = false
-			break
-		}
-	}
-
-	exclude := false
-	for k, vals := range opts.exclude {
-		matchesOne := false
-		for i := range vals {
-			if m.annotations[k] == vals[i] {
-				matchesOne = true
-				break
-			}
-		}
-		if matchesOne {
-			exclude = true
-			break
-		}
-	}
-	return match && matchIfPresent && !exclude
+	return out + "] }"
 }
 
 // latest gets the latest depMeta version for a component, given some
 // annotation criteria, or returns an error if no latest version is
 // available.
-func (s *sortedVersions) latest(opts *searchOpts) (*depMeta, error) {
+func (s *sortedVersions) latest(matcher Matcher) (*depMeta, error) {
 	for i := len(s.versions) - 1; i >= 0; i-- {
 		ver := s.versions[i]
-		if s.useComponent(ver, opts) {
+		if matcher == nil || matcher(ver.ref(), ver.matchMeta) {
 			return ver, nil
 		}
 	}
-	return nil, fmt.Errorf("for component %s, no latest version matching criteria %v", s.componentName, opts)
+	return nil, fmt.Errorf("for component %s, no latest version", s.componentName)
 }
 
 // Previous gets the version previous to a specific version, given some
 // annotation criteria, or returns an error if no previous version is
 // available.
-func (s *sortedVersions) previous(ver semver.Version, opts *searchOpts) (*depMeta, error) {
+func (s *sortedVersions) previous(ver semver.Version, matcher Matcher) (*depMeta, error) {
 	// This is currently a linear search for clarity. Given the filtering
 	// options, it's not clear if it could be made significantly faster.
 	for i := len(s.versions) - 1; i >= 0; i-- {
 		m := s.versions[i]
-		if m.version.LT(ver) && s.useComponent(m, opts) {
+		if m.version.LT(ver) && (matcher == nil || matcher(m.ref(), m.matchMeta)) {
 			return m, nil
 		}
 	}
-	return nil, fmt.Errorf("for component %s, no previous version to %v matching criteria %v", s.componentName, ver, opts)
+	return nil, fmt.Errorf("for component %s, no previous version to %v", s.componentName, ver)
 }
 
 // sortedMapFromComponents creates a map from component name to meta.
-func sortedMapFromComponents(comps []*bundle.Component) (map[string]*sortedVersions, map[bundle.ComponentReference]*depMeta, error) {
+func sortedMapFromComponents(comps []*bundle.Component, mp MatchProcessor) (map[string]*sortedVersions, map[bundle.ComponentReference]*depMeta, error) {
 	allMetas := make(map[string][]*depMeta)
 	lookupMap := make(map[bundle.ComponentReference]*depMeta)
 	for _, c := range comps {
-		m, err := metaFromComponent(c)
+		m, err := metaFromComponent(c, mp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -166,9 +96,10 @@ func sortedMapFromComponents(comps []*bundle.Component) (map[string]*sortedVersi
 
 	sortedMap := make(map[string]*sortedVersions)
 	for name, metas := range allMetas {
+		orderByVersion(metas)
 		sortedMap[name] = &sortedVersions{
 			componentName: name,
-			versions:      orderByVersion(metas),
+			versions:      metas,
 		}
 	}
 	return sortedMap, lookupMap, nil
@@ -179,10 +110,8 @@ func sortedMapFromComponents(comps []*bundle.Component) (map[string]*sortedVersi
 //
 // This method assumes that the list of metas is already been
 // collated so it contains just the metas for a single component.
-func orderByVersion(m []*depMeta) []*depMeta {
-	m = m[:]
+func orderByVersion(m []*depMeta) {
 	sort.Slice(m, func(i, j int) bool {
 		return m[i].version.LT(m[j].version)
 	})
-	return m
 }

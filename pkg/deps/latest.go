@@ -33,7 +33,9 @@ type node struct {
 
 	meta *depMeta
 
-	// Maximum of the min requirements placed on this node.
+	// Maximum of the min requirements placed on this node. The idea here is that
+	// multiple components may depend on this node. We use this as a way to track
+	// the maximum of all the minimum version requirements placed on this node.
 	maxOfMinReq semver.Version
 
 	// fixed determines whether this is fixed, meaning it cannot be downgraded.
@@ -46,10 +48,10 @@ func (n *node) String() string {
 	return fmt.Sprintf("{meta:%v, fixed:%t, maxOfMinReq:%v}", n.meta, n.fixed, n.maxOfMinReq)
 }
 
-func (r *Resolver) findLatest(exact, latest []*depMeta, opts *searchOpts) ([]bundle.ComponentReference, error) {
+func (r *Resolver) findLatest(exact, latest []*depMeta, matcher Matcher) ([]bundle.ComponentReference, error) {
 	root := &node{}
 	toVisit := []*node{}
-	inQueue := make(map[string]bool)
+	inQueue := make(map[string]*node)
 
 	initAdd := func(m *depMeta, isExact bool) {
 		n := &node{
@@ -58,7 +60,7 @@ func (r *Resolver) findLatest(exact, latest []*depMeta, opts *searchOpts) ([]bun
 		}
 		root.children = append(root.children, n)
 		toVisit = append(toVisit, n)
-		inQueue[n.meta.componentName] = true
+		inQueue[n.meta.componentName] = n
 	}
 
 	for _, m := range exact {
@@ -69,7 +71,7 @@ func (r *Resolver) findLatest(exact, latest []*depMeta, opts *searchOpts) ([]bun
 	}
 
 	graphBuilder := &graphBuilder{
-		searchOpts: opts,
+		matcher: matcher,
 		picked: map[string]*node{
 			rootNodeName: root,
 		},
@@ -87,11 +89,23 @@ func (r *Resolver) findLatest(exact, latest []*depMeta, opts *searchOpts) ([]bun
 		if err != nil {
 			return nil, err
 		}
+
+		curNode.children = children
 		for _, c := range children {
 			_, alreadyPicked := graphBuilder.picked[c.meta.componentName]
-			_, alreadyInQueue := inQueue[c.meta.componentName]
+			n, alreadyInQueue := inQueue[c.meta.componentName]
 			if !alreadyPicked && !alreadyInQueue {
-				toVisit = append(toVisit, c)
+				if alreadyInQueue {
+					// We haven't visited the node yet. However, we want to make sure
+					// that we're tracking the minimum version requirements placed on
+					// this component.
+					if c.maxOfMinReq.GT(n.maxOfMinReq) {
+						n.maxOfMinReq = c.maxOfMinReq
+					}
+				} else {
+					// This means that some node depends
+					toVisit = append(toVisit, c)
+				}
 			}
 		}
 		graphBuilder.picked[curNode.meta.componentName] = curNode
@@ -111,7 +125,7 @@ type graphBuilder struct {
 	picked            map[string]*node
 	componentVersions map[string]*sortedVersions
 	metaLookup        map[bundle.ComponentReference]*depMeta
-	searchOpts        *searchOpts
+	matcher           Matcher
 }
 
 func shiftNode(ns []*node) (*node, []*node) {
@@ -121,9 +135,15 @@ func shiftNode(ns []*node) (*node, []*node) {
 // visitNode constructs the latest graph for a single node. It returns the
 // nodes that need to be visited next or an error if things didn't work out.
 func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
+	var candidateChildren []*node
+
 	for success := false; !success; {
 		// We'll assume that adding the deps went swimmingly.
 		success = true
+
+		if curNode.meta.version.LT(curNode.maxOfMinReq) {
+			return nil, fmt.Errorf("couldn't find version of component %q; the maximum of all the minimum requirements was %v and found no suitable version after that version", curNode.meta.componentName, curNode.maxOfMinReq)
+		}
 
 		for _, dep := range curNode.meta.reqDeps {
 			picked, alreadyPicked := r.picked[dep.componentName]
@@ -133,7 +153,7 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 				// We already picked a component with the same component name. Check to
 				// make sure the version works with this component's dependency
 				// requirements
-				successfulPick, err := r.processPicked(dep, curNode, picked)
+				successfulPick, err := processPicked(dep, curNode, picked)
 				if err != nil {
 					return nil, err
 				}
@@ -143,13 +163,22 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 				}
 				newChild = picked
 			} else {
+				sorted, ok := r.componentVersions[dep.componentName]
+				if !ok {
+					return nil, fmt.Errorf("could not find sorted component versions for component name %q", dep.componentName)
+				}
 				// Do selection for the first time. We'll pick the latest component
 				// version of the component that satisfies the requirements.
-				latest, err := r.pickLatest(dep, curNode)
+				latest, err := pickLatest(dep, curNode, sorted, r.matcher)
 				if err != nil {
 					return nil, err
 				}
-				if latest == nil {
+				if latest.meta.version.LT(dep.version) {
+					// This is a special error case: the latest version version of the dep
+					// doesn't work with the curNode
+					//
+					// If the latest version of the dependency is less than the requested
+					// version, our only option is to try to downgrade the parent node.
 					success = false
 					break
 				}
@@ -158,22 +187,32 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 			if !newChild.meta.visibleTo(curNode.meta) {
 				return nil, fmt.Errorf("component %v is not visible to component %v", newChild.meta, curNode.meta)
 			}
-			curNode.children = append(curNode.children, newChild)
+			candidateChildren = append(candidateChildren, newChild)
 		}
 
 		if !success {
-			err := r.tryDowngrade(curNode)
+			candidateChildren = nil
+			sortedVersions, ok := r.componentVersions[curNode.meta.componentName]
+			if !ok {
+				return nil, fmt.Errorf("couldn't find component versions for component name %q", curNode.meta.componentName)
+			}
+			previous, err := tryDowngrade(curNode, sortedVersions, r.matcher)
 			if err != nil {
 				return nil, err
 			}
+			if previous.version.LT(curNode.maxOfMinReq) {
+				return nil, fmt.Errorf("while trying to downgrade component %v, found incompatibility; previous version %v is less than the min version %v required by other components",
+					curNode.meta, previous, curNode.maxOfMinReq)
+			}
+			curNode.meta = previous
 		}
 	}
-	return curNode.children, nil
+	return candidateChildren, nil
 }
 
 // processPicked checks to make sure an already picked component works with the
 // existing constraints
-func (r *graphBuilder) processPicked(dep *requestedDep, curNode, picked *node) (bool, error) {
+func processPicked(dep *requestedDep, curNode, picked *node) (bool, error) {
 	if picked.meta.version.GTE(dep.version) {
 		// It works!
 		return true, nil
@@ -185,30 +224,17 @@ func (r *graphBuilder) processPicked(dep *requestedDep, curNode, picked *node) (
 	return false, nil
 }
 
-// pickLatest picks the latest component for a given dependency requirement.
-func (r *graphBuilder) pickLatest(dep *requestedDep, curNode *node) (*node, error) {
-	sorted, ok := r.componentVersions[dep.componentName]
-	if !ok {
-		return nil, fmt.Errorf("could not find sorted component versions for component name %q", dep.componentName)
-	}
-	latest, err := sorted.latest(r.searchOpts)
+// pickLatest picks the latest component for a given dependency requirement,
+// returning a proposed child
+func pickLatest(dep *requestedDep, curNode *node, sorted *sortedVersions, matcher Matcher) (*node, error) {
+	latest, err := sorted.latest(matcher)
 	if err != nil {
 		return nil, err
 	}
-	if latest.version.LT(dep.version) {
-		// This is a special error case: the latest version version of the dep
-		// doesn't work with the curNode
-		//
-		// If the latest version of the dependency is less than the requested
-		// version, our only option is to try to downgrade the parent node. We pass
-		// back nil to indicate as such.
-		return nil, nil
-	}
-	newChild := &node{
+	return &node{
 		meta:        latest,
 		maxOfMinReq: dep.version,
-	}
-	return newChild, nil
+	}, nil
 }
 
 // tryDowngrade tries to downgrade the current node version, in-place.
@@ -218,27 +244,15 @@ func (r *graphBuilder) pickLatest(dep *requestedDep, curNode *node) (*node, erro
 // we don't have the option to upgrade the picked version. Instead, we can try
 // to downgrade current node and start the dependency process over for the
 // current node.
-func (r *graphBuilder) tryDowngrade(curNode *node) error {
+func tryDowngrade(curNode *node, sorted *sortedVersions, matcher Matcher) (*depMeta, error) {
 	if curNode.fixed {
 		// The current node is fixed because it was one of the components
 		// originally passed in. We're stuck.
-		return fmt.Errorf("attempting to downgrade component %v, but component was fixed (explicitly specified as one of the initial components)", curNode.meta.ref())
+		return nil, fmt.Errorf("attempting to downgrade component %v, but component was fixed (explicitly specified as one of the initial components)", curNode.meta.ref())
 	}
-	sorted, ok := r.componentVersions[curNode.meta.componentName]
-	if !ok {
-		return fmt.Errorf("could not find component versions for component name %q", curNode.meta.componentName)
-	}
-	previous, err := sorted.previous(curNode.meta.version, r.searchOpts)
+	previous, err := sorted.previous(curNode.meta.version, matcher)
 	if err != nil {
-		return fmt.Errorf("while trying to downgrade component %v, got error: %v", curNode.meta, err)
+		return nil, fmt.Errorf("while trying to downgrade component %v, got error: %v", curNode.meta, err)
 	}
-	if previous.version.LT(curNode.maxOfMinReq) {
-		return fmt.Errorf("while trying to downgrade component %v, found incompatibility; previous version %v is less than the min version %v required by other components",
-			curNode.meta, previous, curNode.maxOfMinReq)
-	}
-
-	// Clear out the children and try again.
-	curNode.children = nil
-	curNode.meta = previous
-	return nil
+	return previous, nil
 }

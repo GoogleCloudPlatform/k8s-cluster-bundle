@@ -30,8 +30,11 @@ type Resolver struct {
 }
 
 // NewResolver takes in a list of components that make up the universe.
-func NewResolver(components []*bundle.Component) (*Resolver, error) {
-	svm, lup, err := sortedMapFromComponents(components)
+func NewResolver(components []*bundle.Component, mp MatchProcessor) (*Resolver, error) {
+	if mp == nil {
+		mp = NoOpMatchProcessor
+	}
+	svm, lup, err := sortedMapFromComponents(components, mp)
 	if err != nil {
 		return nil, err
 	}
@@ -62,22 +65,13 @@ func (r *Resolver) HasComponent(ref bundle.ComponentReference) bool {
 	return r.componentLookup[ref] != nil
 }
 
-// Add adds components to the resolver, returning a new resolver or
-// an error if it fails. If one of the new components provided has the same
-// name/version, it overwrites the existing component map.
-func (r *Resolver) Add(newComps []*bundle.Component) (*Resolver, error) {
-	m := make(map[bundle.ComponentReference]*bundle.Component)
-	for k, c := range r.componentLookup {
-		m[k] = c
+// AllComponents returns all the componenst known by the resolver
+func (r *Resolver) AllComponents() []*bundle.Component {
+	var out []*bundle.Component
+	for _, val := range r.componentLookup {
+		out = append(out, val.DeepCopy())
 	}
-	for _, c := range newComps {
-		m[c.ComponentReference()] = c
-	}
-	var cs []*bundle.Component
-	for _, c := range m {
-		cs = append(cs, c)
-	}
-	return NewResolver(cs)
+	return out
 }
 
 // ComponentVersions gets the versions for a particular component
@@ -98,44 +92,28 @@ func (r *Resolver) ComponentVersions(comp string) ([]bundle.ComponentReference, 
 
 // ResolveOptions are options for resolving dependencies
 type ResolveOptions struct {
-	// Match are component annotations that must to be present. This is useful
-	// for matching positive characteristics of a component (example: this
-	// component passed qualification). Only one of the list of values need
-	// be present.
-	//
-	// In other words, this is a logical AND operation of the passed in Annotation and
-	// the component Annotation.
-	Match map[string][]string
-
-	// MatchIfPresent are component annotations that are analyzed if they are
-	// present on the component. This is useful for synchronizing values between
-	// the universe of components and the caller.
-	MatchIfPresent map[string][]string
-
-	// Exclude are component annotations that must not be present.  This is
-	// useful for matching positive characteristics of a component (this
-	// component passed qualification). If any of the the list of values match,
-	// the component is excluded.
-	//
-	// In other words, this is a logical NAND operation of the passed in
-	// Annotation and the component Annotation.
-	Exclude map[string][]string
+	// Matcher is a boolean matcher for applying additional unconditional criteria to
+	// componenst during the pick-process.
+	Matcher Matcher
 }
 
-// ResolveLatest resolves dependencies for several components, returning
-// the components references that correspond to that version selection.
+// Resolve resolves dependencies for several components, returning the
+// components references that correspond to that version selection. In general,
+// the latest versions of components are preferred
 //
 // These components must exist within the Resolver's set of components. If a
 // version is not specified for a component reference, the latest version is
 // used.
-func (r *Resolver) ResolveLatest(refs []bundle.ComponentReference, opts *ResolveOptions) ([]bundle.ComponentReference, error) {
+func (r *Resolver) Resolve(refs []bundle.ComponentReference, opts *ResolveOptions) ([]bundle.ComponentReference, error) {
 	var exact []*depMeta
 	var latest []*depMeta
-	sopts := &searchOpts{}
-	if opts != nil {
-		sopts.match = opts.Match
-		sopts.exclude = opts.Exclude
-		sopts.matchIfPresent = opts.MatchIfPresent
+	if opts == nil {
+		opts = &ResolveOptions{}
+	}
+
+	matcher := opts.Matcher
+	if matcher == nil {
+		matcher = NoOpMatcher
 	}
 	for _, ref := range refs {
 		cv, ok := r.componentVersions[ref.ComponentName]
@@ -146,7 +124,7 @@ func (r *Resolver) ResolveLatest(refs []bundle.ComponentReference, opts *Resolve
 			return nil, fmt.Errorf("no versions found for component %q", ref.ComponentName)
 		}
 		if ref.Version == "" {
-			ver, err := cv.latest(sopts)
+			ver, err := cv.latest(matcher)
 			if err != nil {
 				return nil, err
 			}
@@ -163,5 +141,5 @@ func (r *Resolver) ResolveLatest(refs []bundle.ComponentReference, opts *Resolve
 			exact = append(exact, m)
 		}
 	}
-	return r.findLatest(exact, latest, sopts)
+	return r.findLatest(exact, latest, matcher)
 }

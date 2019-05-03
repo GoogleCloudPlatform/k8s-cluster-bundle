@@ -41,7 +41,7 @@ type depMeta struct {
 	version       semver.Version
 	reqDeps       []*requestedDep
 	visibility    map[string]bool
-	annotations   map[string]string
+	matchMeta     MatchMetadata
 }
 
 // String prints a stringified version of the depMeta object.
@@ -77,7 +77,7 @@ func (m *depMeta) visibleTo(other *depMeta) bool {
 }
 
 // metaFromComponent creates the depMeta object from a component.
-func metaFromComponent(c *bundle.Component) (*depMeta, error) {
+func metaFromComponent(c *bundle.Component, proc MatchProcessor) (*depMeta, error) {
 	if c.Spec.ComponentName == "" || c.Spec.Version == "" {
 		return nil, fmt.Errorf("both componentName and version must be defined for each component, but found componentName:%s, version:%s", c.Spec.ComponentName, c.Spec.Version)
 	}
@@ -85,7 +85,6 @@ func metaFromComponent(c *bundle.Component) (*depMeta, error) {
 	m := &depMeta{
 		componentName: c.Spec.ComponentName,
 		visibility:    make(map[string]bool),
-		annotations:   make(map[string]string),
 	}
 
 	ver, err := semver.Parse(c.Spec.Version)
@@ -94,10 +93,12 @@ func metaFromComponent(c *bundle.Component) (*depMeta, error) {
 	}
 	m.version = ver
 
-	if len(c.ObjectMeta.Annotations) > 0 {
-		for k, v := range c.ObjectMeta.Annotations {
-			m.annotations[k] = v
+	if proc != nil {
+		matchMeta, err := proc(c)
+		if err != nil {
+			return nil, err
 		}
+		m.matchMeta = matchMeta
 	}
 
 	var req *bundle.Requirements
@@ -131,6 +132,7 @@ func metaFromComponent(c *bundle.Component) (*depMeta, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	m.reqDeps = reqDeps
 	return m, nil
 }
