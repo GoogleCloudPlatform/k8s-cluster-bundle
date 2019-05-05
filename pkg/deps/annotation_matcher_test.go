@@ -126,6 +126,15 @@ func TestAnnotationMatcher(t *testing.T) {
 		expMatch bool
 	}{
 		{
+			desc: "ann-1.0.0, no criteria match",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{},
+			expMatch: true,
+		},
+		{
 			desc: "ann-1.0.0, match",
 			ref: bundle.ComponentReference{
 				ComponentName: "ann",
@@ -137,6 +146,138 @@ func TestAnnotationMatcher(t *testing.T) {
 				},
 			},
 			expMatch: true,
+		},
+		{
+			desc: "ann-1.0.0, no match",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel": []string{"unstable"},
+				},
+			},
+			expMatch: false,
+		},
+		{
+			desc: "ann-1.0.0, multi match",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel": []string{"stable", "unstable"},
+				},
+			},
+			expMatch: true,
+		},
+		{
+			desc: "ann-1.0.0, both match",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel":   []string{"stable", "unstable"},
+					"qualified": []string{"true"},
+				},
+			},
+			expMatch: true,
+		},
+		{
+			desc: "ann-1.0.0, both match",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel":   []string{"stable", "unstable"},
+					"qualified": []string{"true"},
+				},
+			},
+			expMatch: true,
+		},
+		{
+			desc: "ann-none-1.0.0, match, no annotations",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann-none",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{},
+			expMatch: true,
+		},
+		{
+			desc: "ann-none-1.0.0, no match, no annotations",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann-none",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel": []string{"stable"},
+				},
+			},
+			expMatch: false,
+		},
+		{
+			desc: "ann-none-1.0.0, no exclude, no annotations",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann-none",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Exclude: map[string][]string{
+					"channel": []string{"stable"},
+				},
+			},
+			expMatch: true,
+		},
+		{
+			desc: "ann-1.0.0, exclude, annotations",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Exclude: map[string][]string{
+					"channel": []string{"stable"},
+				},
+			},
+			expMatch: false,
+		},
+		{
+			desc: "ann-1.0.0, multi exclude - only one required",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Exclude: map[string][]string{
+					"channel": []string{"stable"},
+					"zorp":    []string{"derp"},
+				},
+			},
+			expMatch: false,
+		},
+		{
+			desc: "ann-1.0.0, both exclude and match: exclude wins ",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel": []string{"stable"},
+				},
+				Exclude: map[string][]string{
+					"channel": []string{"stable"},
+				},
+			},
+			expMatch: false,
 		},
 	}
 	comps := make(map[bundle.ComponentReference]*bundle.Component)

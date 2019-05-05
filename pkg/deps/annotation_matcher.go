@@ -46,8 +46,9 @@ type AnnotationCriteria struct {
 	// present. In other words, given values A, B, C for Annotation K, the logic
 	// is equivalent to A || B || C).
 	//
-	// In other words, this is a logical AND operation of the passed in Annotation and
-	// the component Annotation.
+	// If there are multiple keys (annotations) specified, then all annotations
+	// must match.  In other words, this is a logical AND operation of the passed
+	// in Annotation and the component Annotation.
 	Match map[string][]string
 
 	// Exclude are component annotations that must not be present.  This is
@@ -55,8 +56,9 @@ type AnnotationCriteria struct {
 	// component passed qualification). If any of the the list of values match,
 	// the component is excluded.
 	//
-	// In other words, this is a logical NAND operation of the passed in
-	// Annotation and the component Annotation.
+	// Unlike Match, if a there are multiple keys (annotations) specified, then
+	// only one of the annotations need be matched in order for the component to
+	// be excluded.
 	Exclude map[string][]string
 }
 
