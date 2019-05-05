@@ -362,7 +362,7 @@ We rely heavily on Kubernetes code generation. To regenerate the code,
 run:
 
 ```shell
-hacke/update-codegen.sh
+hack/update-codegen.sh
 ```
 
 If new files are added, you will need to re-run Gazelle (see above).
