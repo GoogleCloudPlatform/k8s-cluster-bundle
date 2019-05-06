@@ -13,5 +13,6 @@ filegroup(
     ],
     visibility = [
         "//pkg/options/jsonnet:__subpackages__",
+        "//examples:__pkg__",
     ],
 )
