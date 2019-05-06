@@ -18,7 +18,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["jsonnet_applier_test.go"],
-    data = ["//examples/jsonnet"],
+    data = ["//examples:testdata"],
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
