@@ -212,9 +212,6 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 func processPicked(dep *requestedDep, curNode, picked *node) bool {
 	if picked.meta.version.GTE(dep.version) {
 		// It works!
-		if dep.version.GT(picked.minSatisfyingVersion) {
-			picked.minSatisfyingVersion = dep.version
-		}
 		return true
 	}
 	// It doesn't work. Indicate to the caller that a downgrade needs to be performed.
