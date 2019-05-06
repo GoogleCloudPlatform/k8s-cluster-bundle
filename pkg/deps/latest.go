@@ -36,7 +36,7 @@ type node struct {
 	// Maximum of the min requirements placed on this node. The idea here is that
 	// multiple components may depend on this node. We use this as a way to track
 	// the maximum of all the minimum version requirements placed on this node.
-	maxOfMinReq semver.Version
+	minSatisfyingVersion semver.Version
 
 	// fixed determines whether this is fixed, meaning it cannot be downgraded.
 	// In other words, this is one of the components initially passed-in.
@@ -45,7 +45,7 @@ type node struct {
 
 // String formats the data for the current node.
 func (n *node) String() string {
-	return fmt.Sprintf("{meta:%v, fixed:%t, maxOfMinReq:%v}", n.meta, n.fixed, n.maxOfMinReq)
+	return fmt.Sprintf("{meta:%v, fixed:%t, minSatisfyingVersion:%v}", n.meta, n.fixed, n.minSatisfyingVersion)
 }
 
 func (r *Resolver) findLatest(exact, latest []*depMeta, matcher Matcher) ([]bundle.ComponentReference, error) {
@@ -99,8 +99,8 @@ func (r *Resolver) findLatest(exact, latest []*depMeta, matcher Matcher) ([]bund
 					// We haven't visited the node yet. However, we want to make sure
 					// that we're tracking the minimum version requirements placed on
 					// this component.
-					if c.maxOfMinReq.GT(n.maxOfMinReq) {
-						n.maxOfMinReq = c.maxOfMinReq
+					if c.minSatisfyingVersion.GT(n.minSatisfyingVersion) {
+						n.minSatisfyingVersion = c.minSatisfyingVersion
 					}
 				} else {
 					// This means that some node depends
@@ -141,8 +141,8 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 		// We'll assume that adding the deps went swimmingly.
 		success = true
 
-		if curNode.meta.version.LT(curNode.maxOfMinReq) {
-			return nil, fmt.Errorf("couldn't find version of component %q; the maximum of all the minimum requirements was %v and found no suitable version after that version", curNode.meta.componentName, curNode.maxOfMinReq)
+		if curNode.meta.version.LT(curNode.minSatisfyingVersion) {
+			return nil, fmt.Errorf("couldn't find version of component %q; the maximum of all the minimum requirements was %v and found no suitable version after that version", curNode.meta.componentName, curNode.minSatisfyingVersion)
 		}
 
 		for _, dep := range curNode.meta.reqDeps {
@@ -153,10 +153,7 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 				// We already picked a component with the same component name. Check to
 				// make sure the version works with this component's dependency
 				// requirements
-				successfulPick, err := processPicked(dep, curNode, picked)
-				if err != nil {
-					return nil, err
-				}
+				successfulPick := processPicked(dep, curNode, picked)
 				if !successfulPick {
 					success = false
 					break
@@ -200,9 +197,9 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 			if err != nil {
 				return nil, err
 			}
-			if previous.version.LT(curNode.maxOfMinReq) {
+			if previous.version.LT(curNode.minSatisfyingVersion) {
 				return nil, fmt.Errorf("while trying to downgrade component %v, found incompatibility; previous version %v is less than the min version %v required by other components",
-					curNode.meta, previous, curNode.maxOfMinReq)
+					curNode.meta, previous, curNode.minSatisfyingVersion)
 			}
 			curNode.meta = previous
 		}
@@ -212,16 +209,16 @@ func (r *graphBuilder) visitNode(curNode *node) ([]*node, error) {
 
 // processPicked checks to make sure an already picked component works with the
 // existing constraints
-func processPicked(dep *requestedDep, curNode, picked *node) (bool, error) {
+func processPicked(dep *requestedDep, curNode, picked *node) bool {
 	if picked.meta.version.GTE(dep.version) {
 		// It works!
-		return true, nil
-	}
-	if dep.version.GT(picked.maxOfMinReq) {
-		picked.maxOfMinReq = dep.version
+		if dep.version.GT(picked.minSatisfyingVersion) {
+			picked.minSatisfyingVersion = dep.version
+		}
+		return true
 	}
 	// It doesn't work. Indicate to the caller that a downgrade needs to be performed.
-	return false, nil
+	return false
 }
 
 // pickLatest picks the latest component for a given dependency requirement,
@@ -232,8 +229,8 @@ func pickLatest(dep *requestedDep, curNode *node, sorted *sortedVersions, matche
 		return nil, err
 	}
 	return &node{
-		meta:        latest,
-		maxOfMinReq: dep.version,
+		meta:                 latest,
+		minSatisfyingVersion: dep.version,
 	}, nil
 }
 
