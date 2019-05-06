@@ -174,7 +174,6 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		Spec: bundle.ComponentSpec{
 			ComponentName: comp.ComponentName,
 			Version:       comp.Version,
-			AppVersion:    comp.AppVersion,
 			Objects:       newObjs,
 		},
 	}

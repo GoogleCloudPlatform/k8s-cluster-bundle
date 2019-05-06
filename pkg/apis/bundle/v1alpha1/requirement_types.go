@@ -23,20 +23,39 @@ import (
 // Requirements specifies the packaging-time dependencies for an encapsulating
 // Component object. The term 'packaging-time' is meant to distinguish from
 // compile or runtime dependencies, and refers to the idea that when building a
-// set of components, the Requirements are checked to ensure that the set
+// collection of components, the Requirements are checked to ensure that the set
 // of components is valid. Additionally, the Requirements may be used to
-// construct the set of copmonents by selecting the appropriate components
+// construct the set of components by selecting the appropriate components
 // from a universe of available components.
 //
-// The structure and terminology is based on Go Modules. For a detailed
-// discussion of Go Modules see: https://github.com/golang/go/wiki/Module.
+// Only one requirements object can be specified in a component.
 type Requirements struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Require specific component versions. A component that with an AppVersion
-	// >= to the AppVersion specified by a component may satisfy this
-	// requirement, using minimal version selection or a similar algorithm.
+	// Visibility indicates which components can depend on this component.
+	//
+	// If not specified, the component defaults to being 'private' -- other
+	// components cannot depend on this component.
+	//
+	// There are several reserved names (which are anyways illegal as component names):
+	//
+	//    @public: visible to all components.
+	//    @private: not visible for other components to depend on. This is the default.
+	//
+	// If either @public or @private are specified, these rules override all
+	// other component rules.
+	//
+	// Visibility can be broadened with new versions of components, for example,
+	// by going from private to granting visibility to specific components or
+	// event to public. However, it's it's not supported to narrow visibility,
+	// for example, by going from public to private. Doing so may result in
+	// previous component versions not being accessible based on the new
+	// visibility rules.  To narrow visibility, it's recommended to create a
+	// new component -- my-component-v2.
+	Visibility []string `json:"visibility,omitempty`
+
+	// Require specifies components that must be packaged with this component.
 	Require []ComponentRequire `json:"require,omitempty"`
 }
 
@@ -46,12 +65,12 @@ type ComponentRequire struct {
 	// ComponentName (required) specifies the name of a component.
 	ComponentName string `json:"componentName,omitempty"`
 
-	// AppVersion specifies the minimum required AppVersion present in another
-	// components Requirements object. In otherwords, the AppVersion given by
-	// ComponentName in a Bundle or Set must be >= to this AppVersion, fixing the
+	// Version specifies the minimum required version present in another
+	// components Requirements object. In otherwords, the Version given by
+	// ComponentName in a Bundle or Set must be >= to this version, fixing the
 	// major version.
 	//
-	// If AppVersion is not included, then any component with the specified
+	// If version is not included, then any component with the specified
 	// ComponentName will be considered a valid match.
-	AppVersion string `json:"appVersion,omitempty"`
+	Version string `json:"version,omitempty"`
 }

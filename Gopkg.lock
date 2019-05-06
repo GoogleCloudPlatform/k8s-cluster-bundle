@@ -26,6 +26,14 @@
   version = "v9"
 
 [[projects]]
+  digest = "1:705c40022f5c03bf96ffeb6477858d88565064485a513abcd0f11a0911546cb6"
+  name = "github.com/blang/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
+  version = "v3.5.1"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -539,6 +547,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/evanphx/json-patch",
+    "github.com/blang/semver",
     "github.com/ghodss/yaml",
     "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",

@@ -620,6 +620,11 @@ func (in *Requirements) DeepCopyInto(out *Requirements) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	if in.Visibility != nil {
+		in, out := &in.Visibility, &out.Visibility
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Require != nil {
 		in, out := &in.Require, &out.Require
 		*out = make([]ComponentRequire, len(*in))
