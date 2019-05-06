@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:private"])
 
 filegroup(
-    name = "jsonnet",
+    name = "testdata",
     srcs = [
         "builder.yaml",
         "multi-pods.builder.yaml",
@@ -13,5 +13,6 @@ filegroup(
     ],
     visibility = [
         "//pkg/options/jsonnet:__subpackages__",
+        "//examples:__pkg__",
     ],
 )
