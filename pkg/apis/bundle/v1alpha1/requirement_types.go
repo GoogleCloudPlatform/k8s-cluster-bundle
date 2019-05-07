@@ -53,7 +53,7 @@ type Requirements struct {
 	// previous component versions not being accessible based on the new
 	// visibility rules.  To narrow visibility, it's recommended to create a
 	// new component -- my-component-v2.
-	Visibility []string `json:"visibility,omitempty`
+	Visibility []string `json:"visibility,omitempty"`
 
 	// Require specifies components that must be packaged with this component.
 	Require []ComponentRequire `json:"require,omitempty"`
