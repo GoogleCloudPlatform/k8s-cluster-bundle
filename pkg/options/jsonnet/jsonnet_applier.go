@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package jsonnet renders jsonnet files.
 package jsonnet
 
 import (
@@ -44,12 +45,12 @@ func NewApplier(importer jsonnet.Importer) options.Applier {
 	return &applier{importer}
 }
 
-func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions) (*bundle.Component, error) {
+func (a *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions) (*bundle.Component, error) {
 	comp = comp.DeepCopy()
 
 	matched, notMatched := options.PartitionObjectTemplates(comp.Spec.Objects, string(bundle.TemplateTypeJsonnet))
 
-	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, m.applyOptions)
+	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, a.applyOptions)
 	if err != nil {
 		return comp, err
 	}

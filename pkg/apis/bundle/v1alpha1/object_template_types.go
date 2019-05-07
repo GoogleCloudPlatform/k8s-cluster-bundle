@@ -29,7 +29,7 @@ const (
 	// TemplateTypeGo represents a go-template, which is assumed to be YAML.
 	TemplateTypeGo TemplateType = "go-template"
 
-	// JsonnetTemplate represents a jsonnet type.
+	// TemplateTypeJsonnet represents a jsonnet type.
 	TemplateTypeJsonnet TemplateType = "jsonnet"
 )
 

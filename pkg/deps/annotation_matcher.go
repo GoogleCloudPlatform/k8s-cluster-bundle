@@ -53,7 +53,7 @@ type AnnotationCriteria struct {
 
 	// Exclude are component annotations that must not be present.  This is
 	// useful for matching positive characteristics of a component (this
-	// component passed qualification). If any of the the list of values match,
+	// component passed qualification). If any of the list of values match,
 	// the component is excluded.
 	//
 	// Unlike Match, if a there are multiple keys (annotations) specified, then

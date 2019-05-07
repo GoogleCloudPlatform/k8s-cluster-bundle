@@ -288,7 +288,7 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 				}
 
 			default:
-				return nil, fmt.Errorf("unkown patch type: %s", pat.patchType)
+				return nil, fmt.Errorf("unknown patch type: %s", pat.patchType)
 			}
 
 			objJSON = newObjJSON
