@@ -18,27 +18,13 @@ import (
 	"fmt"
 	"regexp"
 
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	"github.com/blang/semver"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 var (
 	apiVersionPattern = regexp.MustCompile(`^bundle.gke.io/\w+$`)
-
-	// numPattern is a regexp string for numbers without leading zeros.
-	numPattern = `([1-9]\d*|0)`
-
-	// extraVersionInfo represents extra Sem Ver information (sometimes called
-	// extensions), such as release tags and build information (rc-foo,
-	// 12eha3+alpha).
-	extraVersionInfo = `-[a-zA-Z0-9_.+-]+`
-
-	// versionPattern matches version string X.Y.Z, where X, Y and Z are non-negative integers
-	// without leading zeros.
-	// TODO(kashomon): Use the K8S version validation for this.
-	// (k8s.io/apimachinery/pkg/util/version) after K8S v1.11
-	versionPattern = regexp.MustCompile(fmt.Sprintf(`^%s\.%s\.%s$`, numPattern, numPattern, numPattern))
 )
 
 // Components validates a list of components.
@@ -88,9 +74,8 @@ func Component(c *bundle.Component) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("Kind"), k, "kind must be Component"))
 	}
 
-	// TODO(kashomon): replace with semver library
-	if !versionPattern.MatchString(ver) {
-		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, "must be of the form X.Y.Z"))
+	if _, err := semver.Parse(ver); err != nil {
+		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, fmt.Sprintf("must be a SemVer version: %v", err)))
 	}
 
 	return errs
@@ -133,8 +118,8 @@ func ComponentSet(cs *bundle.ComponentSet) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("Kind"), k, "must be ComponentSet"))
 	}
 
-	if !versionPattern.MatchString(ver) {
-		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, `must be of the form X.Y.Z`))
+	if _, err := semver.Parse(ver); err != nil {
+		errs = append(errs, field.Invalid(p.Child("Spec", "Version"), ver, fmt.Sprintf("must be a SemVer version: %v", err)))
 	}
 
 	return errs
