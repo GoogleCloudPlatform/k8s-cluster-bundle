@@ -91,7 +91,7 @@ func TestValidateComponents(t *testing.T) {
           version: 2.010.1             #invalid`,
 			expectedErrors: 1,
 			description:    "version notation is incorrect",
-			errorDesc:      "must be of the form X.Y.Z",
+			errorDesc:      "must be a SemVer version",
 		},
 		{
 			componentConfig: `     # no kind field
@@ -205,7 +205,7 @@ func TestValidateComponentSets(t *testing.T) {
             version: 1.0.2`,
 			expectedErrors: 1,
 			description:    "invalid spec version must be of form X.Y.Z",
-			errorDesc:      "must be of the form X.Y.Z",
+			errorDesc:      "must be a SemVer version",
 		},
 		{
 			componentSetConfig: `
