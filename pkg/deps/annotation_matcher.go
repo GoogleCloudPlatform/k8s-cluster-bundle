@@ -49,6 +49,9 @@ type AnnotationCriteria struct {
 	// If there are multiple keys (annotations) specified, then all annotations
 	// must match.  In other words, this is a logical AND operation of the passed
 	// in Annotation and the component Annotation.
+	//
+	// If the list of values is empty, then the annotation is matched for any
+	// annotation value.
 	Match map[string][]string
 
 	// Exclude are component annotations that must not be present.  This is
@@ -59,6 +62,9 @@ type AnnotationCriteria struct {
 	// Unlike Match, if a there are multiple keys (annotations) specified, then
 	// only one of the annotations need be matched in order for the component to
 	// be excluded.
+	//
+	// If the list of values is empty, then the annotation is matched
+	// for any annotation value.
 	Exclude map[string][]string
 }
 
@@ -75,9 +81,12 @@ func AnnotationMatcher(criteria *AnnotationCriteria) Matcher {
 		}
 
 		matchesAnnot := func(key string, vals []string, annots map[string]string) bool {
+			if _, ok := annots[key]; ok && len(vals) == 0 {
+				return true
+			}
 			matchesAny := false
 			for _, val := range vals {
-				if m.Annotations[key] == val {
+				if annots[key] == val {
 					matchesAny = true
 					break
 				}

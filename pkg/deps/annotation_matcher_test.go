@@ -264,7 +264,7 @@ func TestAnnotationMatcher(t *testing.T) {
 			expMatch: false,
 		},
 		{
-			desc: "ann-1.0.0, both exclude and match: exclude wins ",
+			desc: "ann-1.0.0, both exclude and match: exclude wins",
 			ref: bundle.ComponentReference{
 				ComponentName: "ann",
 				Version:       "1.0.0",
@@ -275,6 +275,32 @@ func TestAnnotationMatcher(t *testing.T) {
 				},
 				Exclude: map[string][]string{
 					"channel": []string{"stable"},
+				},
+			},
+			expMatch: false,
+		},
+		{
+			desc: "ann-1.0.0, empty vals matches whenever an annotation exists",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Match: map[string][]string{
+					"channel": []string{},
+				},
+			},
+			expMatch: true,
+		},
+		{
+			desc: "ann-1.0.0, empty vals excludes whenever an annotation exists",
+			ref: bundle.ComponentReference{
+				ComponentName: "ann",
+				Version:       "1.0.0",
+			},
+			criteria: &AnnotationCriteria{
+				Exclude: map[string][]string{
+					"channel": []string{},
 				},
 			},
 			expMatch: false,
