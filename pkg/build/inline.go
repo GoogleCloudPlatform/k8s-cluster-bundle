@@ -127,7 +127,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 }
 
 var onlyWhitespace = regexp.MustCompile(`^\s*$`)
-var multiDoc = regexp.MustCompile("(^|\n)---(\n|$)")
+var multiDoc = regexp.MustCompile("(^|\n)---")
 var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 
 // ComponentFiles reads file-references for component builder objects.
