@@ -762,6 +762,21 @@ spec:
 			expErrSubstr: "no latest version",
 		},
 		{
+			desc:     "annotations: bad fixed version",
+			universe: annotationSet,
+			comps: []bundle.ComponentReference{
+				{ComponentName: "ann", Version: "1.1.0"},
+			},
+			opts: &ResolveOptions{
+				Matcher: AnnotationMatcher(&AnnotationCriteria{
+					Exclude: map[string][]string{
+						"bad-component": []string{"true"},
+					},
+				}),
+			},
+			expErrSubstr: "does not match the matcher conditions",
+		},
+		{
 			desc:     "annotations: can't match any",
 			universe: annotationSet,
 			comps: []bundle.ComponentReference{
