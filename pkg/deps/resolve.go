@@ -74,11 +74,12 @@ func (r *Resolver) AllComponents() []*bundle.Component {
 	return out
 }
 
-// ComponentVersions gets the versions for a particular component
-func (r *Resolver) ComponentVersions(comp string) ([]bundle.ComponentReference, error) {
+// ComponentVersions gets the versions for a particular component, returning an
+// empty list of component references if the component cannot be found.
+func (r *Resolver) ComponentVersions(comp string) []bundle.ComponentReference {
 	cv, ok := r.componentVersions[comp]
 	if !ok {
-		return nil, fmt.Errorf("unknown component %q", comp)
+		return nil
 	}
 	var versions []bundle.ComponentReference
 	for _, ver := range cv.versions {
@@ -87,7 +88,7 @@ func (r *Resolver) ComponentVersions(comp string) ([]bundle.ComponentReference, 
 			Version:       ver.version.String(),
 		})
 	}
-	return versions, nil
+	return versions
 }
 
 // ResolveOptions are options for resolving dependencies
@@ -132,11 +133,7 @@ func (r *Resolver) Resolve(refs []bundle.ComponentReference, opts *ResolveOption
 		} else {
 			m, ok := r.metaLookup[ref]
 			if !ok {
-				versions, err := r.ComponentVersions(ref.ComponentName)
-				if err != nil {
-					return nil, err
-				}
-				return nil, fmt.Errorf("unknown component %v; known versions are %v", ref, versions)
+				return nil, fmt.Errorf("unknown component %v; known versions are %v", ref, r.ComponentVersions(ref.ComponentName))
 			}
 			exact = append(exact, m)
 		}
