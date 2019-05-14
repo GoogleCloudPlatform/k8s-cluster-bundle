@@ -84,18 +84,18 @@ func AnnotationMatcher(criteria *AnnotationCriteria) Matcher {
 			if _, ok := annots[key]; ok && len(vals) == 0 {
 				return true
 			}
-			matchesAny := false
 			for _, val := range vals {
 				if annots[key] == val {
-					matchesAny = true
+					return true
 					break
 				}
 			}
-			return matchesAny
+			return false
 		}
 
 		match := true
 		for key, vals := range criteria.Match {
+			// match must match all; stop when it doesn't.
 			if !matchesAnnot(key, vals, m.Annotations) {
 				match = false
 				break
@@ -104,6 +104,7 @@ func AnnotationMatcher(criteria *AnnotationCriteria) Matcher {
 
 		exclude := false
 		for key, vals := range criteria.Exclude {
+			// exclude matches any; stop when you match
 			if matchesAnnot(key, vals, m.Annotations) {
 				exclude = true
 				break
