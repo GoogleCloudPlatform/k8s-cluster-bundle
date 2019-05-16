@@ -262,11 +262,14 @@ metadata:
   name: foobar
 foo: bar
 ---
+---
+---
 apiVersion: v1
 kind: Zork
 metadata:
   name: biffbam
-biff: bam`),
+biff: bam
+---`),
 			},
 			expBun: bundleRef{setName: "multi-bundle", version: "2.2.3"},
 			expComps: []compRef{
