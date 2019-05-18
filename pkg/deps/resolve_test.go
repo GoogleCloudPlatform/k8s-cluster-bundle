@@ -315,6 +315,19 @@ spec:
     visibility:
     - '@public'
 `,
+	`
+kind: Component
+metadata:
+  annotations:
+    bad-component: true
+spec:
+  componentName: bad-component
+  version: 1.2.0
+  objects:
+  - kind: Requirements
+    visibility:
+    - '@public'
+`,
 }
 
 func TestResolveLatest(t *testing.T) {
@@ -765,7 +778,7 @@ spec:
 			desc:     "annotations: bad fixed version",
 			universe: annotationSet,
 			comps: []bundle.ComponentReference{
-				{ComponentName: "ann", Version: "1.1.0"},
+				{ComponentName: "bad-component", Version: "1.2.0"},
 			},
 			opts: &ResolveOptions{
 				Matcher: AnnotationMatcher(&AnnotationCriteria{
