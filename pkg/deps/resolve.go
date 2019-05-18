@@ -135,6 +135,9 @@ func (r *Resolver) Resolve(refs []bundle.ComponentReference, opts *ResolveOption
 			if !ok {
 				return nil, fmt.Errorf("unknown component %v; known versions are %v", ref, r.ComponentVersions(ref.ComponentName))
 			}
+			if !matcher(m.ref(), m.matchMeta) {
+				return nil, fmt.Errorf("specified component %v does not match the matcher conditions", ref)
+			}
 			exact = append(exact, m)
 		}
 	}
