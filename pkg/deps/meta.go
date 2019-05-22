@@ -102,7 +102,10 @@ func metaFromComponent(c *bundle.Component, proc MatchProcessor) (*depMeta, erro
 	}
 
 	var req *bundle.Requirements
-	for _, o := range c.Spec.Objects {
+	for i, o := range c.Spec.Objects {
+		if o == nil {
+			return nil, fmt.Errorf("component %v contained a nil object at index %d", m.ref(), i)
+		}
 		if o.GetKind() != "Requirements" {
 			continue
 		}
