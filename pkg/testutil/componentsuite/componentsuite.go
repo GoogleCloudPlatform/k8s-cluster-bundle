@@ -55,14 +55,23 @@ func Run(t *testing.T, testSuiteFile string) {
 
 	os.Chdir(filepath.Join(filepath.Dir(testSuiteFile), ts.RootDirectory))
 
-	cdata, err := ioutil.ReadFile(ts.ComponentFile)
+	// Inlining expects an absolute parent path, so make the path absolute now.
+	cfile := ts.ComponentFile
+	if !filepath.IsAbs(cfile) {
+		cfile, err = filepath.Abs(cfile)
+		if err != nil {
+			t.Fatalf("While making an absolute path out of %s: %v", cfile, err)
+		}
+	}
+
+	cdata, err := ioutil.ReadFile(cfile)
 	if err != nil {
-		t.Fatalf("while reading component file %q, %v", ts.ComponentFile, err)
+		t.Fatalf("While reading component file %q, %v", cfile, err)
 	}
 
 	bw, err := wrapper.FromRaw(string(converter.YAML), cdata)
 	if err != nil {
-		t.Fatalf("while converting component file %q, %v", ts.ComponentFile, err)
+		t.Fatalf("While converting component file %q, %v", cfile, err)
 	}
 
 	if bw.Kind() != "Component" && bw.Kind() != "ComponentBuilder" {
@@ -72,8 +81,9 @@ func Run(t *testing.T, testSuiteFile string) {
 	var comp *bundle.Component
 	if bw.Kind() == "ComponentBuilder" {
 		inliner := build.NewLocalInliner(ts.RootDirectory)
-		comp, err = inliner.ComponentFiles(ctx, bw.ComponentBuilder(), ts.ComponentFile)
+		comp, err = inliner.ComponentFiles(ctx, bw.ComponentBuilder(), cfile)
 		if err != nil {
+			t.Fatalf("Inlining component files: %v", err)
 		}
 	} else {
 		comp = bw.Component()

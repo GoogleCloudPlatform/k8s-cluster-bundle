@@ -36,6 +36,7 @@ type Inliner struct {
 	// Readers reads from the local filesystem.
 	Readers map[files.URLScheme]files.FileObjReader
 
+	// PathRewriter rewrites paths from relative to absolute.
 	PathRewriter *RelativePathRewriter
 }
 
@@ -64,11 +65,15 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader)
 	}
 }
 
-// BundleFiles converts dereferences file-references in for bundle files.
+// BundleFiles converts dereferences file-references in for bundle files. The
+// bundlePath must be an absolute path path this point.
 func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, bundlePath string) (*bundle.Bundle, error) {
 	bundleURL, err := url.Parse(bundlePath)
 	if err != nil {
 		return nil, err
+	}
+	if !filepath.IsAbs(bundleURL.Path) {
+		return nil, fmt.Errorf("bundlePath must be absolute but was %s", bundleURL.Path)
 	}
 	var comps []*bundle.Component
 	for _, f := range data.ComponentFiles {
@@ -130,12 +135,16 @@ var onlyWhitespace = regexp.MustCompile(`^\s*$`)
 var multiDoc = regexp.MustCompile("(^|\n)---")
 var nonDNS = regexp.MustCompile(`[^-a-z0-9\.]`)
 
-// ComponentFiles reads file-references for component builder objects.
-// The returned components are copies with the file-references removed.
+// ComponentFiles reads file-references for component builder objects.  The
+// returned components are copies with the file-references removed. The
+// componentPath must be an absolute path at this point.
 func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuilder, componentPath string) (*bundle.Component, error) {
 	componentURL, err := url.Parse(componentPath)
 	if err != nil {
 		return nil, err
+	}
+	if !filepath.IsAbs(componentURL.Path) {
+		return nil, fmt.Errorf("componentPath must be absolute but was %s", componentURL.Path)
 	}
 
 	newObjs, tmplBuilders, err := n.objectFiles(ctx, comp.ObjectFiles, comp.ComponentReference(), componentURL)
@@ -209,7 +218,7 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
+			return nil, nil, fmt.Errorf("reading file %v for component %v: %v", cf, ref, err)
 		}
 		ext := filepath.Ext(cf.URL)
 		if ext == ".yaml" && multiDoc.Match(contents) {

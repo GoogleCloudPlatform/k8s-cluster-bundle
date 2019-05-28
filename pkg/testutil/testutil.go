@@ -35,3 +35,16 @@ func ChangeToBazelDir(curDir string) {
 		}
 	}
 }
+
+// ChangeToBazelDirWithoutWorkspace, like ChangeToBazelDir, changes the CWD to
+// a bazel directory if necessary, but doesn't use the workspace path as part
+// of the path building. If changing the directory fails, the method panics.
+func ChangeToBazelDirWithoutWorkspace(curDir string) {
+	bazelTestPath := os.Getenv("TEST_SRCDIR")
+	if bazelTestPath != "" {
+		dir := filepath.Join(bazelTestPath, curDir)
+		if err := os.Chdir(dir); err != nil {
+			panic(fmt.Sprintf("os.Chdir(%q): %v", dir, err))
+		}
+	}
+}

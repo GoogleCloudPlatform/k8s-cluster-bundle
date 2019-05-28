@@ -36,9 +36,6 @@ func (rw *RelativePathRewriter) MakeAbs(parent, obj *url.URL) *url.URL {
 		// Only file schemes are supported.
 		return obj
 	}
-	if !filepath.IsAbs(parent.Path) {
-		return obj
-	}
 	if filepath.IsAbs(obj.Path) {
 		return obj
 	}
