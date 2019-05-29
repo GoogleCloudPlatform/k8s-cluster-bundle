@@ -17,6 +17,7 @@ go_test(
         "bazel_init_test.go",
         "examples_test.go",
     ],
+    data = [":testdata"],
     deps = [
         "//pkg/testutil:go_default_library",
         "//pkg/testutil/componentsuite:go_default_library",

@@ -22,13 +22,13 @@ import (
 // RelativePathRewriter rewrites paths when the paths are relative paths.
 type RelativePathRewriter struct{}
 
-// MakeAbs rewrites file paths if the path is relative, from the
+// AbsWithParent rewrites file paths if the path is relative, from the
 // original object path, to an object path that's based on a parent component
 // path. Note that the parent path must be an absolute path.
 //
 // For example, if the component path is foo/bar/biff.yaml and the object path
 // is zed/fred.yaml, the object will be rewritten as foo/bar/zed/fred.yaml
-func (rw *RelativePathRewriter) MakeAbs(parent, obj *url.URL) *url.URL {
+func (rw *RelativePathRewriter) AbsWithParent(parent, obj *url.URL) *url.URL {
 	if parent == nil || obj == nil {
 		return obj
 	}
@@ -44,6 +44,24 @@ func (rw *RelativePathRewriter) MakeAbs(parent, obj *url.URL) *url.URL {
 		Host:   parent.Host,
 		Path:   filepath.Clean(filepath.Join(filepath.Dir(parent.Path), obj.Path)),
 	}
+}
+
+// Abs makes an absolute url for URL that has an empty or file-based
+// scheme.
+func (rw *RelativePathRewriter) Abs(obj *url.URL) (*url.URL, error) {
+	npath := obj.Path
+	if (obj.Scheme == "file" || obj.Scheme == "") && !filepath.IsAbs(obj.Path) {
+		s, err := filepath.Abs(obj.Path)
+		if err != nil {
+			return nil, err
+		}
+		npath = s
+	}
+	return &url.URL{
+		Scheme: obj.Scheme,
+		Host:   obj.Host,
+		Path:   npath,
+	}, nil
 }
 
 // DefaultPathRewriter provides a RelativePathRewriter instance.

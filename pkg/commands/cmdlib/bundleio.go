@@ -135,16 +135,8 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 
 // inlineData inlines a cluster bundle before processing
 func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *wrapper.BundleWrapper, g *GlobalOptions) (*wrapper.BundleWrapper, error) {
-	var err error
 	infile := g.InputFile
-	if !filepath.IsAbs(infile) {
-		infile, err = filepath.Abs(infile)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
+	inliner := brw.makeInlinerFn(brw.rw, infile)
 	switch bw.Kind() {
 	case "BundleBuilder":
 		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder(), infile)
