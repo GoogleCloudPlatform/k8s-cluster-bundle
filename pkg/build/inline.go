@@ -35,9 +35,6 @@ import (
 type Inliner struct {
 	// Readers reads from the local filesystem.
 	Readers map[files.URLScheme]files.FileObjReader
-
-	// PathRewriter rewrites paths from relative to absolute.
-	PathRewriter *RelativePathRewriter
 }
 
 // NewLocalInliner creates a new inliner that only knows how to read local
@@ -60,8 +57,7 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader)
 		scheme: objReader,
 	}
 	return &Inliner{
-		Readers:      rdrMap,
-		PathRewriter: DefaultPathRewriter,
+		Readers: rdrMap,
 	}
 }
 
@@ -73,11 +69,10 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 	if err != nil {
 		return nil, err
 	}
-	bundleURL, err = n.PathRewriter.Abs(bundleURL)
+	bundleURL, err = makeAbsForFileScheme(bundleURL)
 	if err != nil {
 		return nil, err
 	}
-
 	if !filepath.IsAbs(bundleURL.Path) {
 		return nil, fmt.Errorf("bundlePath must be absolute but was %s", bundleURL.Path)
 	}
@@ -87,7 +82,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 		if err != nil {
 			return nil, err
 		}
-		f.URL = n.PathRewriter.AbsWithParent(bundleURL, furl).String()
+		f.URL = makeAbsWithParent(bundleURL, furl).String()
 
 		contents, err := n.readFile(ctx, f)
 		if err != nil {
@@ -150,14 +145,12 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 	if err != nil {
 		return nil, err
 	}
-	componentURL, err = n.PathRewriter.Abs(componentURL)
+	componentURL, err = makeAbsForFileScheme(componentURL)
 	if err != nil {
 		return nil, err
 	}
-
-	componentURL = n.PathRewriter.AbsWithParent(nil, componentURL)
 	if !filepath.IsAbs(componentURL.Path) {
-		return nil, fmt.Errorf("componentPath must be absolute but was %s", componentURL.Path)
+		return nil, fmt.Errorf("componentURL must be absolute but was %s", componentURL.Path)
 	}
 
 	newObjs, tmplBuilders, err := n.objectFiles(ctx, comp.ObjectFiles, comp.ComponentReference(), componentURL)
@@ -227,7 +220,7 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 		if err != nil {
 			return nil, nil, err
 		}
-		cf.URL = n.PathRewriter.AbsWithParent(componentPath, furl).String()
+		cf.URL = makeAbsWithParent(componentPath, furl).String()
 
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
@@ -295,7 +288,7 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 				return nil, err
 			}
 
-			builder.File.URL = n.PathRewriter.AbsWithParent(parentURL, furl).String()
+			builder.File.URL = makeAbsWithParent(parentURL, furl).String()
 
 			contents, err := n.readFile(ctx, builder.File)
 			if err != nil {
@@ -351,7 +344,7 @@ func (n *Inliner) rawTextFiles(ctx context.Context, fileGroups []bundle.FileGrou
 			if err != nil {
 				return nil, err
 			}
-			cf.URL = n.PathRewriter.AbsWithParent(componentPath, furl).String()
+			cf.URL = makeAbsWithParent(componentPath, furl).String()
 
 			text, err := n.readFile(ctx, cf)
 			if err != nil {

@@ -16,53 +16,43 @@ package build
 
 import (
 	"net/url"
+	"path"
 	"path/filepath"
 )
 
-// RelativePathRewriter rewrites paths when the paths are relative paths.
-type RelativePathRewriter struct{}
-
-// AbsWithParent rewrites file paths if the path is relative, from the
+// makeAbsWithParent rewrites file paths if the path is relative, from the
 // original object path, to an object path that's based on a parent component
 // path. Note that the parent path must be an absolute path.
 //
 // For example, if the component path is foo/bar/biff.yaml and the object path
 // is zed/fred.yaml, the object will be rewritten as foo/bar/zed/fred.yaml
-func (rw *RelativePathRewriter) AbsWithParent(parent, obj *url.URL) *url.URL {
+func makeAbsWithParent(parent, obj *url.URL) *url.URL {
 	if parent == nil || obj == nil {
 		return obj
 	}
-	if parent.Scheme != "file" && parent.Scheme != "" {
-		// Only file schemes are supported.
-		return obj
-	}
-	if filepath.IsAbs(obj.Path) {
+	if path.IsAbs(obj.Path) {
 		return obj
 	}
 	return &url.URL{
 		Scheme: parent.Scheme,
 		Host:   parent.Host,
-		Path:   filepath.Clean(filepath.Join(filepath.Dir(parent.Path), obj.Path)),
+		Path:   path.Clean(path.Join(path.Dir(parent.Path), obj.Path)),
 	}
 }
 
-// Abs makes an absolute url for URL that has an empty or file-based
-// scheme.
-func (rw *RelativePathRewriter) Abs(obj *url.URL) (*url.URL, error) {
-	npath := obj.Path
+// makeAbsForFileScheme makes an absolute url for URL that has an empty or
+// file-based schemes.
+func makeAbsForFileScheme(obj *url.URL) (*url.URL, error) {
 	if (obj.Scheme == "file" || obj.Scheme == "") && !filepath.IsAbs(obj.Path) {
 		s, err := filepath.Abs(obj.Path)
 		if err != nil {
 			return nil, err
 		}
-		npath = s
+		return &url.URL{
+			Scheme: obj.Scheme,
+			Host:   obj.Host,
+			Path:   s,
+		}, nil
 	}
-	return &url.URL{
-		Scheme: obj.Scheme,
-		Host:   obj.Host,
-		Path:   npath,
-	}, nil
+	return obj, nil
 }
-
-// DefaultPathRewriter provides a RelativePathRewriter instance.
-var DefaultPathRewriter = &RelativePathRewriter{}
