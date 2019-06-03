@@ -61,7 +61,7 @@ func NewInlinerWithScheme(scheme files.URLScheme, objReader files.FileObjReader)
 	}
 }
 
-// BundleFiles converts dereferences file-references in for bundle files. If
+// BundleFiles inlines file-references in for bundle files. If
 // the bundlePath is defined and not absolute and the scheme is file based
 // scheme, then the path is made absolute before proceeding.
 func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, bundlePath string) (*bundle.Bundle, error) {
@@ -224,7 +224,7 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 
 		contents, err := n.readFile(ctx, cf)
 		if err != nil {
-			return nil, nil, fmt.Errorf("reading file %v for component %v: %v", cf, ref, err)
+			return nil, nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
 		}
 		ext := filepath.Ext(cf.URL)
 		if ext == ".yaml" && multiDoc.Match(contents) {
