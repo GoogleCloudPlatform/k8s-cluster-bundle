@@ -24,7 +24,8 @@ type ComponentTestSuite struct {
 	// file.
 	ComponentFile string `json:"componentFile"`
 
-	// RootDirectory is the path to a root-directory.
+	// RootDirectory is the path to a root-directory to run the tests. If not
+	// specified, sets the root directory to the test-suite file directory.
 	RootDirectory string `json:"rootDirectory"`
 
 	// TestCases contains a list of component TestCases.

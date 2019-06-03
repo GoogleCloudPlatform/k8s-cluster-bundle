@@ -43,7 +43,7 @@ spec:
     resources:
       requests:
         cpu: 10m
-        memory: 100Mi
+        memory: 101Mi
     volumeMounts:
     - mountPath: /var/log/rescheduler.log
       name: logfile

@@ -1,5 +1,4 @@
 componentFile: etcd-component-builder.yaml
-rootDirectory: './'
 
 testCases:
 - description: Success

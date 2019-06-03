@@ -135,18 +135,19 @@ func (brw *realBundleReaderWriter) ReadBundleData(ctx context.Context, g *Global
 
 // inlineData inlines a cluster bundle before processing
 func (brw *realBundleReaderWriter) inlineData(ctx context.Context, bw *wrapper.BundleWrapper, g *GlobalOptions) (*wrapper.BundleWrapper, error) {
-	inliner := brw.makeInlinerFn(brw.rw, g.InputFile)
+	infile := g.InputFile
+	inliner := brw.makeInlinerFn(brw.rw, infile)
 	switch bw.Kind() {
 	case "BundleBuilder":
-		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder(), g.InputFile)
+		newBun, err := inliner.BundleFiles(ctx, bw.BundleBuilder(), infile)
 		if err != nil {
-			return nil, fmt.Errorf("error inlining component data files: %v", err)
+			return nil, fmt.Errorf("inlining component data files: %v", err)
 		}
 		return wrapper.FromBundle(newBun), nil
 	case "ComponentBuilder":
-		newComp, err := inliner.ComponentFiles(ctx, bw.ComponentBuilder(), g.InputFile)
+		newComp, err := inliner.ComponentFiles(ctx, bw.ComponentBuilder(), infile)
 		if err != nil {
-			return nil, fmt.Errorf("error inlining objects: %v", err)
+			return nil, fmt.Errorf("inlining objects: %v", err)
 		}
 		return wrapper.FromComponent(newComp), nil
 	default:

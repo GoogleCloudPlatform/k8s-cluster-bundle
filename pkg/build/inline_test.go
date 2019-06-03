@@ -645,7 +645,7 @@ metadata:
 			desc:         "fail: can't read file",
 			data:         kubeApiserverComponent,
 			files:        make(map[string][]byte),
-			expErrSubstr: "error reading file",
+			expErrSubstr: "reading file",
 		},
 		{
 			desc: "fail: can't read raw text file",
