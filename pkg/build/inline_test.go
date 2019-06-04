@@ -640,11 +640,11 @@ metadata:
 			},
 		},
 		{
-			desc:            "success: component, object template builder: already inlined",
+			desc:            "success: component, object template builder: already inlined; dir",
 			pathToComponent: "/component",
 			data: `
 kind: ComponentBuilder
-componentName: binary-blob
+componentName: tmpl-builder
 version: 1.2.3
 objects:
 - kind: ObjectTemplateBuilder
@@ -665,9 +665,52 @@ metadata:
 `),
 			},
 			expComp: compRef{
-				name: "binary-blob-1.2.3",
+				name: "tmpl-builder-1.2.3",
 				ref: bundle.ComponentReference{
-					ComponentName: "binary-blob",
+					ComponentName: "tmpl-builder",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name: "obj-tmpl",
+						subStrings: []string{
+							"name: {{.foo}}",
+							"type: string",
+							"type: go-template",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:            "success: component, object template builder: already inlined",
+			pathToComponent: "/foof/component.yaml",
+			data: `
+kind: ComponentBuilder
+componentName: tmpl-builder
+version: 1.2.3
+objects:
+- kind: ObjectTemplateBuilder
+  metadata:
+    name: obj-tmpl
+  file:
+    url: 'manifest/tmpl.yaml'
+  optionsSchema:
+    properties:
+      foo:
+        type: string
+`,
+			files: map[string][]byte{
+				"/foof/manifest/tmpl.yaml": []byte(`
+kind: pod
+metadata:
+  name: {{.foo}}
+`),
+			},
+			expComp: compRef{
+				name: "tmpl-builder-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "tmpl-builder",
 					Version:       "1.2.3",
 				},
 				obj: []objCheck{

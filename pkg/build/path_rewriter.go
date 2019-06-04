@@ -33,10 +33,15 @@ func makeAbsWithParent(parent, obj *url.URL) *url.URL {
 	if path.IsAbs(obj.Path) {
 		return obj
 	}
+	parentDir := path.Dir(parent.Path)
+	if path.Ext(parent.Path) == "" {
+		// No extension: assume we've been passed a directory.
+		parentDir = parent.Path
+	}
 	return &url.URL{
 		Scheme: parent.Scheme,
 		Host:   parent.Host,
-		Path:   path.Clean(path.Join(path.Dir(parent.Path), obj.Path)),
+		Path:   path.Clean(path.Join(parentDir, obj.Path)),
 	}
 }
 
