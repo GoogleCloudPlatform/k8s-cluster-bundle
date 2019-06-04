@@ -639,6 +639,49 @@ metadata:
 				},
 			},
 		},
+		{
+			desc:            "success: component, object template builder: already inlined",
+			pathToComponent: "/component",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+objects:
+- kind: ObjectTemplateBuilder
+  metadata:
+    name: obj-tmpl
+  file:
+    url: 'manifest/tmpl.yaml'
+  optionsSchema:
+    properties:
+      foo:
+        type: string
+`,
+			files: map[string][]byte{
+				"/component/manifest/tmpl.yaml": []byte(`
+kind: pod
+metadata:
+  name: {{.foo}}
+`),
+			},
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						name: "obj-tmpl",
+						subStrings: []string{
+							"name: {{.foo}}",
+							"type: string",
+							"type: go-template",
+						},
+					},
+				},
+			},
+		},
 
 		// Error cases.
 		{

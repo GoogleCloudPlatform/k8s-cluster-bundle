@@ -158,6 +158,12 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		return nil, err
 	}
 
+	objs, tbuilders := n.separateObjects(comp.Objects, componentURL)
+	newObjs = append(newObjs, objs...)
+	for k, vals := range tbuilders {
+		tmplBuilders[k] = append(tmplBuilders[k], vals...)
+	}
+
 	tmplObjs, err := n.objectTemplateBuilders(ctx, tmplBuilders, comp.ComponentReference())
 	if err != nil {
 		return nil, err
@@ -237,6 +243,10 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 				if err != nil {
 					return nil, nil, fmt.Errorf("converting multi-doc object number %d for component %v, %v", i, ref, err)
 				}
+				// It's easiest to extract the ObjectTemplateBuilder objects here,
+				// because, if relative paths are used within the
+				// ObjectTemplateBuilder, they'll be relative to the path used for the
+				// ObjectTemplateBuilder
 				if obj.GetKind() == "ObjectTemplateBuilder" {
 					if objTmplBuilders[cf.URL] == nil {
 						objTmplBuilders[cf.URL] = []*unstructured.Unstructured{obj}
@@ -262,6 +272,22 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 	return newObjs, objTmplBuilders, nil
 }
 
+// objects returns the objects, separated into objects and object template builders.
+func (n *Inliner) separateObjects(objs []*unstructured.Unstructured, parent *url.URL) ([]*unstructured.Unstructured, map[string][]*unstructured.Unstructured) {
+	var outObj []*unstructured.Unstructured
+	tmplBuilders := make(map[string][]*unstructured.Unstructured)
+
+	pstr := parent.String()
+	for _, obj := range objs {
+		if obj.GetKind() == "ObjectTemplateBuilder" {
+			tmplBuilders[pstr] = append(tmplBuilders[pstr], obj)
+		} else {
+			outObj = append(outObj, obj)
+		}
+	}
+	return outObj, tmplBuilders
+}
+
 // objectTemplateBuilders builds ObjectTemplates from ObjectTemplateBuilders
 func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string][]*unstructured.Unstructured, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
@@ -275,7 +301,7 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 
 			builder := &bundle.ObjectTemplateBuilder{}
 			if err := converter.FromUnstructured(obj).ToObject(builder); err != nil {
-				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+				return nil, fmt.Errorf("while parsing component %v and object %q: %v", ref, name, err)
 			}
 
 			parentURL, err := url.Parse(parentPath)
@@ -292,7 +318,7 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 
 			contents, err := n.readFile(ctx, builder.File)
 			if err != nil {
-				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)
+				return nil, fmt.Errorf("while reading component %v and object %q: %v", ref, name, err)
 			}
 
 			objTemplate := &bundle.ObjectTemplate{

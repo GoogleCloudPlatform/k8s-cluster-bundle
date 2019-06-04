@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -61,7 +62,7 @@ type ComponentBuilder struct {
 	// more details. The version is optional for the ComponentBuilder.
 	Version string `json:"version,omitempty"`
 
-	// Objects that are specified via a File-URL. The process of inlining a
+	// ObjectFiles that are specified via a File-URL. The process of inlining a
 	// component turns object files into objects.  During the inline process, if
 	// the file is YAML-formatted and contains multiple objects in the YAML-doc,
 	// the objects will be split into separate inline objects. In other words,
@@ -71,11 +72,17 @@ type ComponentBuilder struct {
 	// it should be representable as either YAML or JSON.
 	ObjectFiles []File `json:"objectFiles,omitempty"`
 
-	// Raw files represent arbitrary string data. Unlike object files,
+	// RawTextFiles files represent arbitrary string data. Unlike object files,
 	// these files don't need to be parsable as YAML or JSON. So, during the
 	// inline process, the data is inserted into a generated config map before
 	// being added to the objects. A ConfigMap is generated per-filegroup.
 	RawTextFiles []FileGroup `json:"rawTextFiles,omitempty"`
+
+	// Objects are object-files that are already inlined in the component. These
+	// are largely passed through to the built Component object, except for some
+	// built-in Builder types (ObjectTemplateBuilder, for example), that will be
+	// processed during the build process.
+	Objects []*unstructured.Unstructured `json:"objects,omitempty"`
 }
 
 // FileGroup represents a collection of files. When used to create ConfigMaps
