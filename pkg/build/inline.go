@@ -109,7 +109,7 @@ func (n *Inliner) BundleFiles(ctx context.Context, data *bundle.BundleBuilder, b
 			if c.GetName() == "" && data.ComponentNamePolicy == "SetAndComponent" {
 				c.ObjectMeta.Name = strings.Join([]string{data.SetName, data.Version, c.ComponentName, c.Version}, "-")
 			}
-			comp, err := n.ComponentFiles(ctx, c, furl.String())
+			comp, err := n.ComponentFiles(ctx, c, f.URL)
 			if err != nil {
 				return nil, err
 			}
