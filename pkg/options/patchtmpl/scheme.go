@@ -15,6 +15,7 @@
 package patchtmpl
 
 import (
+	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -50,6 +51,7 @@ func init() {
 	must(policyv1beta1.AddToScheme(k.KubeScheme))
 	must(rbacv1.AddToScheme(k.KubeScheme))
 	must(storagev1.AddToScheme(k.KubeScheme))
+	must(bundle.AddToScheme(k.KubeScheme))
 
 	defaultPatcherScheme = k
 }

@@ -74,6 +74,10 @@ type Expect struct {
 	// Objects contains expectations for objects.
 	Objects []ObjectCheck `json:"objects"`
 
+	// CanKubeDeserialize ensures that all objects can be deserialized as
+	// concrete Kubernetes objects, using the built in schema.
+	CanKubeDeserialize bool `json:"CanKubeDeserialize"`
+
 	// BuildErrSubstr indicates a substring that's expected to be in an error in
 	// the build-process.
 	BuildErrSubstr string `json:"buildErrSubstr"`

@@ -1,3 +1,5 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
 package(default_visibility = ["//visibility:private"])
 
 filegroup(
@@ -15,4 +17,10 @@ filegroup(
         "//pkg/options/jsonnet:__subpackages__",
         "//examples:__pkg__",
     ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["bazel_init_test.go"],
+    deps = ["//pkg/testutil:go_default_library"],
 )

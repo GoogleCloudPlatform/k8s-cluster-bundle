@@ -1,6 +1,16 @@
 componentFile: etcd-component-builder.yaml
 
 testCases:
+- description: Deserialize Objects
+  build:
+    options:
+      ImageTag: '2.0'
+  apply:
+    options:
+      namespace: default
+  expect:
+    canKubeDeserialize: true
+
 - description: Success
   apply:
     options:

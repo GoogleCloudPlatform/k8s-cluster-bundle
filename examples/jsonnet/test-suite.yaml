@@ -1,0 +1,47 @@
+componentFile: builder.yaml
+
+testCases:
+- description: Deserialize Objects
+  apply:
+    options:
+      DNSPolicy: default
+      ContainerImage: gcr.io/foof/foof:1.0
+  expect:
+    canKubeDeserialize: true
+
+- description: single-pod
+  apply:
+    options:
+      DNSPolicy: default-policy
+      ContainerImage: gcr.io/foof/foof:1.0
+  expect:
+    objects:
+    - kind: Pod
+      name: logger-pod
+      findSubstrs:
+      - 'dnsPolicy: default-policy'
+      - 'image: gcr.io/foof/foof:1.0'
+      - "name: logger"
+
+- description: Multi-pods
+  apply:
+    options:
+      DNSPolicy: default-policy
+      ContainerImage: gcr.io/foof/foof:1.0
+  expect:
+    objects:
+    - kind: Pod
+      name: pod1
+      findSubstrs:
+      - 'dnsPolicy: default-policy'
+      - 'image: gcr.io/foof/foof:1.0'
+    - kind: Pod
+      name: pod2
+      findSubstrs:
+      - 'dnsPolicy: default-policy'
+      - 'image: gcr.io/foof/foof:1.0'
+    - kind: Pod
+      name: pod3
+      findSubstrs:
+      - 'dnsPolicy: default-policy'
+      - 'image: gcr.io/foof/foof:1.0'
