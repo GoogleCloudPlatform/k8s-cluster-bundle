@@ -21,6 +21,12 @@ filegroup(
 
 go_test(
     name = "go_default_test",
-    srcs = ["bazel_init_test.go"],
-    deps = ["//pkg/testutil:go_default_library"],
+    srcs = [
+        "bazel_init_test.go",
+        "jsonnet_test.go",
+    ],
+    deps = [
+        "//pkg/testutil:go_default_library",
+        "//pkg/testutil/componentsuite:go_default_library",
+    ],
 )
