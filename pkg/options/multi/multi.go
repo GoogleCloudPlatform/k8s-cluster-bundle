@@ -37,8 +37,8 @@ func NewApplier(appliers []options.Applier) options.Applier {
 func NewDefaultApplier() options.Applier {
 	return NewApplier([]options.Applier{
 		gotmpl.NewApplier(),
-		patchtmpl.NewDefaultApplier(),
 		jsonnet.NewApplier(nil /* importer */),
+		patchtmpl.NewDefaultApplier(),
 	})
 }
 
