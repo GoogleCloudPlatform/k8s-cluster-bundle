@@ -134,12 +134,9 @@ func runApply(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Compon
 	if cerr != nil {
 		t.Fatal(cerr)
 	}
-
-	o, _ := converter.FromObject(comp).ToYAMLString()
-	t.Logf("obj: %v", o)
-
 	if err != nil {
-		// Since there's an error, it's a terminal condition
+		// Since there's an error, it's a terminal condition. We've already checked
+		// that the err is as expected in CheckErrorCases.
 		return nil
 	}
 	return comp

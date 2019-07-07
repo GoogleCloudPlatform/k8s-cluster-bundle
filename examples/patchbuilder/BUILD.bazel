@@ -3,9 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 filegroup(
     name = "testdata",
     srcs = glob([
-        "**/*.yaml",
-        "**/*.txt",
+        "*.yaml",
+        "*.txt",
     ]),
+    testonly = True,
     visibility = ["//visibility:public"],
 )
 

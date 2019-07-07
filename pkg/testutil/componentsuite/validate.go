@@ -76,8 +76,7 @@ func checkObjectsDeserialize(t *testing.T, comp *bundle.Component) {
 			continue
 		}
 
-		_, err = runtime.Decode(deserializer, objByt)
-		if err != nil {
+		if _, err = runtime.Decode(deserializer, objByt); err != nil {
 			t.Errorf("Error decode object %v: %v", key, err)
 		}
 	}
@@ -91,39 +90,41 @@ func checkObjectProperties(t *testing.T, comp *bundle.Component, tc *TestCase) {
 
 	objMap := make(map[objKey]string)
 	for _, obj := range comp.Spec.Objects {
-		matchFail := false
-
 		key := objKeyFromObj(obj)
-		objStr, err := converter.FromObject(obj).ToYAMLString()
-		if err != nil {
-			// This is a very unlikely error.
-			t.Fatal(err)
-		}
-		objMap[key] = objStr
-
-		check := objCheckMap[key]
-		for _, expStr := range check.FindSubstrs {
-			if !strings.Contains(objStr, expStr) {
-				t.Errorf("Did not find %q in object %v, but expected to", expStr, key)
-				matchFail = true
+		t.Run(fmt.Sprintf("for object %v", obj), func(t *testing.T) {
+			matchFail := false
+			objStr, err := converter.FromObject(obj).ToYAMLString()
+			if err != nil {
+				// This is a very unlikely error.
+				t.Fatal(err)
 			}
-		}
+			objMap[key] = objStr
 
-		for _, noExpStr := range check.NotFindSubstrs {
-			if strings.Contains(objStr, noExpStr) {
-				t.Errorf("Found %q in object %v, but did not expect to", noExpStr, key)
-				matchFail = true
+			check := objCheckMap[key]
+			for _, expStr := range check.FindSubstrs {
+				if !strings.Contains(objStr, expStr) {
+					t.Errorf("Did not find %q in object %v, but expected to", expStr, key)
+					matchFail = true
+				}
 			}
-		}
 
-		if matchFail {
-			t.Logf("Contents for object that didn't meet expectations %v:\n%s", key, objStr)
-		}
+			for _, noExpStr := range check.NotFindSubstrs {
+				if strings.Contains(objStr, noExpStr) {
+					t.Errorf("Found %q in object %v, but did not expect to", noExpStr, key)
+					matchFail = true
+				}
+			}
+
+			if matchFail {
+				t.Logf("Contents for object that didn't meet expectations %v:\n%s", key, objStr)
+			}
+
+		})
 	}
 
 	for key := range objCheckMap {
 		if _, ok := objMap[key]; !ok {
-			t.Errorf("Got object-keys %q, but expected to find object %v", stringMapKeys(objMap), key)
+			t.Errorf("Got object-keys %s, but expected to find object %v", stringMapKeys(objMap), key)
 		}
 	}
 }
