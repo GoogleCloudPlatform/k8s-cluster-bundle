@@ -53,20 +53,12 @@ type TestCase struct {
 type Build struct {
 	// Options for the PatchTemplate build process
 	Options options.JSONOptions `json:"options"`
-
-	// Filters selects which patches to apply, based on the
-	// annotations on the patches.
-	Filters map[string]string `json:"filters"`
 }
 
 // Apply contains build paramaters
 type Apply struct {
 	// Options for apply process
 	Options options.JSONOptions `json:"options"`
-
-	// Filters selects which patches to apply, based on the
-	// annotations on the patches.
-	Filters map[string]string `json:"filters"`
 }
 
 // Expect contains expectations that should be filled.

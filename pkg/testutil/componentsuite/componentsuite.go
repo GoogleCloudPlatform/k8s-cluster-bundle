@@ -124,9 +124,6 @@ func runBuild(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Compon
 }
 
 func runApply(t *testing.T, comp *bundle.Component, tc *TestCase) *bundle.Component {
-	applyOpts := &filter.Options{}
-	applyOpts.Annotations = tc.Apply.Filters
-
 	applier := multi.NewDefaultApplier()
 
 	comp, err := applier.ApplyOptions(comp, tc.Apply.Options)
