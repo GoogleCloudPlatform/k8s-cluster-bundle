@@ -30,7 +30,7 @@ func ApplyCommon(ref bundle.ComponentReference, objs []*unstructured.Unstructure
 	for _, obj := range objs {
 		outObjects, err := objFn(obj, ref, opts)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Sprintf("for component %v, error in applying: %v", ref, err)
 		}
 		newObj = append(newObj, outObjects...)
 	}
