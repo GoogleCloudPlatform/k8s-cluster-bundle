@@ -53,26 +53,22 @@ type TestCase struct {
 type Build struct {
 	// Options for the PatchTemplate build process
 	Options options.JSONOptions `json:"options"`
-
-	// Filters selects which patches to apply, based on the
-	// annotations on the patches.
-	Filters map[string]string `json:"filters"`
 }
 
 // Apply contains build paramaters
 type Apply struct {
 	// Options for apply process
 	Options options.JSONOptions `json:"options"`
-
-	// Filters selects which patches to apply, based on the
-	// annotations on the patches.
-	Filters map[string]string `json:"filters"`
 }
 
 // Expect contains expectations that should be filled.
 type Expect struct {
 	// Objects contains expectations for objects.
 	Objects []ObjectCheck `json:"objects"`
+
+	// CanKubeDeserialize ensures that all objects can be deserialized as
+	// concrete Kubernetes objects, using the built in schema.
+	CanKubeDeserialize bool `json:"CanKubeDeserialize"`
 
 	// BuildErrSubstr indicates a substring that's expected to be in an error in
 	// the build-process.

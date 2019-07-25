@@ -6,6 +6,7 @@ filegroup(
         "**/*.yaml",
         "**/*.txt",
     ]),
+    testonly = True,
     visibility = ["//visibility:public"],
 )
 

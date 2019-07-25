@@ -2,9 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
+    testonly = True,
     srcs = [
         "componentsuite.go",
         "schema.go",
+        "validate.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil/componentsuite",
     visibility = ["//visibility:public"],
@@ -14,15 +16,19 @@ go_library(
         "//pkg/converter:go_default_library",
         "//pkg/filter:go_default_library",
         "//pkg/options:go_default_library",
+        "//pkg/options/multi:go_default_library",
         "//pkg/options/patchtmpl:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/validate:go_default_library",
         "//pkg/wrapper:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
     ],
 )
 
 go_test(
     name = "go_default_test",
+    testonly = True,
     srcs = [
         "bazel_init_test.go",
         "componentsuite_test.go",

@@ -5,4 +5,5 @@ version: 11.0.0
 objectFiles:
 - url: ./pod.builder.yaml
 - url: ./multi-pods.builder.yaml
-- url: ./pod-with-imports.builder.yaml
+# imports are not yet supported
+# - url: ./pod-with-imports.builder.yaml

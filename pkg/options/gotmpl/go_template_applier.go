@@ -87,13 +87,13 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 
 	tmpl, err := template.New(ref.ComponentName + "-" + obj.GetName() + "-tmpl").Parse(objTmpl.Template)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing template for object %q in component %v: %v", obj.GetName(), ref, err)
+		return nil, fmt.Errorf("error parsing template for object %q: %v", obj.GetName(), err)
 	}
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, opts)
 	if err != nil {
-		return nil, fmt.Errorf("error executing template for component %v: %v", ref, err)
+		return nil, fmt.Errorf("error executing template for object %v: %v", obj.GetName(), err)
 	}
 
 	// TODO(kashomon): It would be better to use YAML-stream decoding, as can be

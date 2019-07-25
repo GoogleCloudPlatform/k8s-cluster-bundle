@@ -8,6 +8,7 @@ filegroup(
         "//examples/jsonnet:testdata",
         "//examples/patchbuilder:testdata",
     ],
+    testonly = True,
     visibility = ["//visibility:public"],
 )
 

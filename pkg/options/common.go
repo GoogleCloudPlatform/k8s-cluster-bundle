@@ -15,6 +15,8 @@
 package options
 
 import (
+	"fmt"
+
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -30,7 +32,7 @@ func ApplyCommon(ref bundle.ComponentReference, objs []*unstructured.Unstructure
 	for _, obj := range objs {
 		outObjects, err := objFn(obj, ref, opts)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("for component %v, error in applying: %v", ref, err)
 		}
 		newObj = append(newObj, outObjects...)
 	}

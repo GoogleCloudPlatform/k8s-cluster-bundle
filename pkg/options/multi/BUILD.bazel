@@ -9,6 +9,7 @@ go_library(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/options:go_default_library",
         "//pkg/options/gotmpl:go_default_library",
+        "//pkg/options/jsonnet:go_default_library",
         "//pkg/options/patchtmpl:go_default_library",
     ],
 )
