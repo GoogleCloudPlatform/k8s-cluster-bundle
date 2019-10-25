@@ -70,6 +70,7 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 			APIVersion: "bundle.gke.io/v1alpha1",
 			Kind:       "PatchTemplate",
 		},
+		PatchType:     ptb.PatchType,
 		ObjectMeta:    *ptb.ObjectMeta.DeepCopy(),
 		OptionsSchema: ptb.TargetSchema.DeepCopy(),
 		Template:      buf.String(),

@@ -84,6 +84,41 @@ spec:
 `,
 		},
 		{
+			desc: "success: patch, no options, patchType: JSONPatch",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: MyCustomResource
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    patchType: JSONPatch
+    template: |
+      kind: MyCustomResource
+      metadata:
+        namespace: foo
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: MyCustomResource
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    patchType: JSONPatch
+    template: |
+      kind: MyCustomResource
+      metadata:
+        namespace: foo
+`,
+		},
+		{
 			desc: "success: patch, build options, no schema",
 			opts: map[string]interface{}{
 				"Namespace": "foo",
