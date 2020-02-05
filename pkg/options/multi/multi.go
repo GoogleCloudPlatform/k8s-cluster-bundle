@@ -20,7 +20,6 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/gotmpl"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/jsonnet"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/patchtmpl"
 )
 
@@ -37,7 +36,6 @@ func NewApplier(appliers []options.Applier) options.Applier {
 func NewDefaultApplier() options.Applier {
 	return NewApplier([]options.Applier{
 		gotmpl.NewApplier(),
-		jsonnet.NewApplier(nil /* importer */),
 		patchtmpl.NewDefaultApplier(),
 	})
 }

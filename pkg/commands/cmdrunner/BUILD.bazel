@@ -2,10 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "go_default_library",
+    testonly = True,
     srcs = ["execute_cmd.go"],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/cmdrunner",
     visibility = ["//visibility:public"],
-    testonly = True,
     deps = [
         "//pkg/commands:go_default_library",
         "//pkg/commands/cmdlib:go_default_library",

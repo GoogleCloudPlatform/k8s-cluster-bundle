@@ -5,7 +5,6 @@ filegroup(
     srcs = [
         "//examples/cluster:testdata",
         "//examples/component:testdata",
-        "//examples/jsonnet:testdata",
         "//examples/patchbuilder:testdata",
     ],
     testonly = True,
