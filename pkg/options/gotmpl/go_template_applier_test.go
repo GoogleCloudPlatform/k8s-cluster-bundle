@@ -403,3 +403,47 @@ spec:
 			"Values were new string:\n%s\nOriginal string:\n%s", newCompStr, origStr)
 	}
 }
+
+const missingValueComponent = `kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: ObjectTemplate
+    type: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        containers:
+        - name: logger
+          image: '{{.NotHere}}'`
+
+func TestMissingValueOK(t *testing.T) {
+	comp, err := converter.FromYAMLString(missingValueComponent).ToComponent()
+	if err != nil {
+		t.Fatalf("Unexpected failure parsing component: %v", err)
+	}
+
+	applier := NewApplier()
+
+	_, err = applier.ApplyOptions(comp, map[string]interface{}{})
+	if err != nil {
+		t.Errorf("During ApplyOptions(): got %q, want nil", err)
+	}
+}
+
+func TestMissingValueError(t *testing.T) {
+	comp, err := converter.FromYAMLString(missingValueComponent).ToComponent()
+	if err != nil {
+		t.Fatalf("Unexpected failure parsing component: %v", err)
+	}
+
+	applier := NewApplier(WithGoTmplOptions("missingkey=error"))
+
+	_, err = applier.ApplyOptions(comp, map[string]interface{}{})
+	if err == nil {
+		t.Errorf("During ApplyOptions(): got nil error, wanted non-nil error")
+	}
+}

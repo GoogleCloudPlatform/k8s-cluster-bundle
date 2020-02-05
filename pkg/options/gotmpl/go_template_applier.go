@@ -38,14 +38,32 @@ var (
 	onlyWhitespace = regexp.MustCompile(`^\s*$`)
 )
 
+// ApplierConfig is a config option that can be passed to NewApplier.
+type ApplierConfig func(*applier)
+
 // applier applies options via go-templating for objects stored as raw strings
 // in config maps. This applier only applies to `RawTextFiles` that have been
 // inlined as part of the component inlining process.
-type applier struct{}
+type applier struct {
+	goTmplOptions []string
+}
 
-// NewApplier creates a new options applier instance.
-func NewApplier() options.Applier {
-	return &applier{}
+// WithGoTmplOptions modifies NewApplier so that the returned Applier uses the
+// specified Go text/template options.
+func WithGoTmplOptions(goTmplOptions ...string) ApplierConfig {
+	return func(a *applier) {
+		a.goTmplOptions = append(a.goTmplOptions, goTmplOptions...)
+	}
+}
+
+// NewApplier creates a new options applier instance using the specified
+// ApplierConfigs.
+func NewApplier(opts ...ApplierConfig) options.Applier {
+	a := &applier{}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 // ApplyOptions applies options to the raw-text that's been inlined. To be
@@ -62,7 +80,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 
 	matched, notMatched := options.PartitionObjectTemplates(comp.Spec.Objects, string(bundle.TemplateTypeGo))
 
-	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, applyOptions)
+	newObjs, err := options.ApplyCommon(comp.ComponentReference(), matched, opts, m.applyOptions)
 	if err != nil {
 		return comp, err
 	}
@@ -70,7 +88,7 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 	return comp, nil
 }
 
-func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
+func (m *applier) applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
 	// TODO(kashomon): this should probably clone the options for safety.
 	objTmpl := &bundle.ObjectTemplate{}
 	err := converter.FromUnstructured(obj).ToObject(objTmpl)
@@ -88,6 +106,10 @@ func applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference,
 	tmpl, err := template.New(ref.ComponentName + "-" + obj.GetName() + "-tmpl").Parse(objTmpl.Template)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template for object %q: %v", obj.GetName(), err)
+	}
+
+	for _, goTmplOpt := range m.goTmplOptions {
+		tmpl.Option(goTmplOpt)
 	}
 
 	var buf bytes.Buffer
