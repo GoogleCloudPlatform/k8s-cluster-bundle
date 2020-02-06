@@ -52,7 +52,7 @@ spec:
 	}
 
 	for i := 0; i < t.N; i++ {
-		patcher := NewApplier(DefaultPatcherScheme(), customFilter, true)
+		patcher := NewApplierWithConfig(WithFilterOpts(customFilter), WithIncludeTemplates(true))
 		compObj, err := converter.FromYAMLString(component).ToComponent()
 		if err != nil {
 			t.Fatal(err)

@@ -30,6 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
+// ApplierConfig is a config option that can be passed to NewApplier.
+type ApplierConfig func(*applier)
+
 // applier applies options via patch-templates
 type applier struct {
 	scheme *PatcherScheme
@@ -46,24 +49,73 @@ type applier struct {
 	templateOpts []string
 }
 
+// WithPatcherScheme modifies NewApplierWithConfig so that the returned Applier
+// uses the specified patcher scheme.
+func WithPatcherScheme(pt *PatcherScheme) ApplierConfig {
+	return func(a *applier) {
+		a.scheme = pt
+	}
+}
+
+// WithGoTmplOptions modifies NewApplierWithConfig so that the returned Applier
+// uses the specified text/template options.
+func WithGoTmplOptions(goTmplOptions ...string) ApplierConfig {
+	return func(a *applier) {
+		a.templateOpts = append(a.templateOpts, goTmplOptions...)
+	}
+}
+
+// WithFilterOpts modifies NewApplierWithConfig so that the returned Applier
+// uses the specified filter options.
+func WithFilterOpts(filterOpts *filter.Options) ApplierConfig {
+	return func(a *applier) {
+		a.tmplFilter = filterOpts
+	}
+}
+
+// WithIncludeTemplates modifies NewApplierWithConfig so that the returned
+// Applier to include or not include patch templates.
+func WithIncludeTemplates(include bool) ApplierConfig {
+	return func(a *applier) {
+		a.includeTemplates = include
+	}
+}
+
+// NewApplierWithConfig creates a new options applier instance with the
+// specified config options.
+func NewApplierWithConfig(opts ...ApplierConfig) options.Applier {
+	a := &applier{
+		scheme:           DefaultPatcherScheme(),
+		tmplFilter:       nil,
+		includeTemplates: false,
+		templateOpts:     []string{},
+	}
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	if len(a.templateOpts) == 0 {
+		a.templateOpts = []string{options.MissingKeyError}
+	}
+
+	return a
+}
+
 // NewApplier creates a new options applier instance. The filter indicates
 // keep-only options for what subsets of patches to look for.
 func NewApplier(pt *PatcherScheme, opts *filter.Options, includeTemplates bool, templateOpts ...string) options.Applier {
-	if templateOpts == nil || len(templateOpts) == 0 {
-		templateOpts = []string{options.MissingKeyError}
-	}
-
-	return &applier{
-		scheme:           pt,
-		tmplFilter:       opts,
-		includeTemplates: includeTemplates,
-		templateOpts:     templateOpts,
-	}
+	return NewApplierWithConfig(
+		WithPatcherScheme(pt),
+		WithFilterOpts(opts),
+		WithIncludeTemplates(includeTemplates),
+		WithGoTmplOptions(templateOpts...),
+	)
 }
 
 // NewDefaultApplier creates a default patch template applier.
 func NewDefaultApplier() options.Applier {
-	return NewApplier(DefaultPatcherScheme(), nil, false)
+	return NewApplierWithConfig()
 }
 
 // ApplyOptions looks for PatchTemplates and applies them to the component objects.
