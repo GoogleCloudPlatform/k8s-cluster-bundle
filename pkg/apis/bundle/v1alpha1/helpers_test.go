@@ -72,7 +72,7 @@ func TestGetAllLocalObjectRefs(t *testing.T) {
 	}
 }
 
-func TestMakeComponentReference(t *testing.T) {
+func TestComponentReference(t *testing.T) {
 	comp := Component{
 		Spec: ComponentSpec{
 			ComponentName: "zip",
@@ -81,7 +81,20 @@ func TestMakeComponentReference(t *testing.T) {
 	}
 	exp := ComponentReference{"zip", "1.2.3"}
 	if got := comp.ComponentReference(); got != exp {
-		t.Errorf("GetAllLocalObjectRefs: got %v, but wanted %v", got, exp)
+		t.Errorf("ComponentReference: got %v, but wanted %v", got, exp)
+	}
+}
+
+func TestComponentSetReference(t *testing.T) {
+	set := ComponentSet{
+		Spec: ComponentSetSpec{
+			SetName: "zip",
+			Version: "1.2.3",
+		},
+	}
+	exp := ComponentSetReference{"zip", "1.2.3"}
+	if got := set.ComponentSetReference(); got != exp {
+		t.Errorf("ComponentSetReference: got %v, but wanted %v", got, exp)
 	}
 }
 

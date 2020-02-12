@@ -66,7 +66,7 @@ func (c *Component) MakeAndSetName() {
 	return
 }
 
-// ComponentReference creates a ComponentReference from a component.
+// ComponentReference creates a ComponentReference from a Component.
 func (c *Component) ComponentReference() ComponentReference {
 	return ComponentReference{
 		ComponentName: c.Spec.ComponentName,
@@ -74,7 +74,15 @@ func (c *Component) ComponentReference() ComponentReference {
 	}
 }
 
-// ComponentReference creates a ComponentReference from a component.
+// ComponentSetReference creates a ComponentSetReference from a ComponentSet.
+func (c *ComponentSet) ComponentSetReference() ComponentSetReference {
+	return ComponentSetReference{
+		SetName: c.Spec.SetName,
+		Version: c.Spec.Version,
+	}
+}
+
+// ComponentReference creates a ComponentReference from a ComponentBuilder.
 func (c *ComponentBuilder) ComponentReference() ComponentReference {
 	return ComponentReference{
 		ComponentName: c.ComponentName,
