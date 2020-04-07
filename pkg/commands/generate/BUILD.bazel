@@ -7,6 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/generate:go_default_library",
-        "//vendor/github.com/spf13/cobra:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
     ],
 )

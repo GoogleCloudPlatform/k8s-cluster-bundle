@@ -11,9 +11,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
-        "//vendor/github.com/blang/semver:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/util/validation:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",
+        "@com_github_blang_semver//:go_default_library",
+        "@io_k8s_apimachinery//pkg/util/validation:go_default_library",
+        "@io_k8s_apimachinery//pkg/util/validation/field:go_default_library",
     ],
 )
 
@@ -27,6 +27,6 @@ go_test(
     deps = [
         "//pkg/converter:go_default_library",
         "//pkg/testutil:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/util/validation/field:go_default_library",
+        "@io_k8s_apimachinery//pkg/util/validation/field:go_default_library",
     ],
 )
