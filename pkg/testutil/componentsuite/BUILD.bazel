@@ -21,8 +21,8 @@ go_library(
         "//pkg/testutil:go_default_library",
         "//pkg/validate:go_default_library",
         "//pkg/wrapper:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
     ],
 )
 

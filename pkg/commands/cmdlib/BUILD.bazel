@@ -17,7 +17,7 @@ go_library(
         "//pkg/files:go_default_library",
         "//pkg/options:go_default_library",
         "//pkg/wrapper:go_default_library",
-        "//vendor/k8s.io/klog:go_default_library",
+        "@io_k8s_klog//:go_default_library",
     ],
 )
 

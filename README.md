@@ -353,7 +353,7 @@ To make using Bazel easier, we use Gazelle to automatically write Build targets.
 To automatically write the Build targets, run:
 
 ```shell
-bazel run //:gazelle
+bazel run //:gazelle -- update-repos -from_file=go.mod
 ```
 
 ### Regenerate Generated Code
