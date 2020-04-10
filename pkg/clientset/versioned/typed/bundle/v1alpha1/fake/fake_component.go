@@ -60,7 +60,7 @@ func (c *FakeComponents) List(opts v1.ListOptions) (result *v1alpha1.ComponentLi
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.ComponentList{}
+	list := &v1alpha1.ComponentList{ListMeta: obj.(*v1alpha1.ComponentList).ListMeta}
 	for _, item := range obj.(*v1alpha1.ComponentList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
@@ -117,7 +117,7 @@ func (c *FakeComponents) DeleteCollection(options *v1.DeleteOptions, listOptions
 // Patch applies the patch and returns the patched component.
 func (c *FakeComponents) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Component, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(componentsResource, c.ns, name, data, subresources...), &v1alpha1.Component{})
+		Invokes(testing.NewPatchSubresourceAction(componentsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Component{})
 
 	if obj == nil {
 		return nil, err

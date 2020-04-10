@@ -17,7 +17,6 @@
 package versioned
 
 import (
-	glog "k8s.io/klog"
 	bundlev1alpha1 "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset/versioned/typed/bundle/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -27,8 +26,6 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Bundle() bundlev1alpha1.BundleV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -40,12 +37,6 @@ type Clientset struct {
 
 // BundleV1alpha1 retrieves the BundleV1alpha1Client
 func (c *Clientset) BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface {
-	return c.bundleV1alpha1
-}
-
-// Deprecated: Bundle retrieves the default version of BundleClient.
-// Please explicitly pick a version.
-func (c *Clientset) Bundle() bundlev1alpha1.BundleV1alpha1Interface {
 	return c.bundleV1alpha1
 }
 
@@ -72,7 +63,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
-		glog.Errorf("failed to create the DiscoveryClient: %v", err)
 		return nil, err
 	}
 	return &cs, nil
