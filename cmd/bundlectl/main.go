@@ -17,14 +17,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
 	"os"
 )
 
 func main() {
-	flag.Lookup("logtostderr").Value.Set("true")
-
 	root := commands.AddCommands(context.Background(), os.Args[1:])
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
