@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# The release-1.11 version of the tooling appears to work the best, although
-# there are some mismatches since the kube-apimachinery version is set to 1.9.
-K8S_VERSION="release-1.11"
+K8S_VERSION="release-1.15"
 
 command -v deepcopy-gen >/dev/null 2>&1 || {
   pt1="Error: deepcopy-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
@@ -39,9 +37,9 @@ command -v client-gen >/dev/null 2>&1 || {
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
 
-command -v crd >/dev/null 2>&1 || {
-  pt1="Error: crd (generator) is required, but was not found. Download sigs.k8s.io/controller-tools.\n"
-  pt2="Then, install with 'go install sigs.k8s.io/controller-tools/cmd/crd'"
+command -v controller-gen >/dev/null 2>&1 || {
+  pt1="Error: controller-gen (generator) is required, but was not found. Download sigs.k8s.io/controller-tools.\n"
+  pt2="Then, install with 'go install sigs.k8s.io/controller-tools/cmd'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
 
@@ -66,21 +64,4 @@ client-gen --clientset-name=versioned \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
-clientsetpattern="*clientset_generated.go"
-files=$(find ./pkg/clientset -type f -name *.go)
-for f in $files
-do
-  echo "Fixing ${f}"
-  # Not using sed -i because darwin / bash have different behaviors for -i =(
-
-  # TODO(#115): Replace googlecloudplatform with GoogleCloudPlatform. This is
-  # fixed with controller-tools >= release-1.12 (?)
-  sed $'s/googlecloudplatform/GoogleCloudPlatform/' $f > $f.t
-  mv $f.t $f
-  sed $'s/github.com\/golang\/glog/k8s.io\/klog/' $f > $f.t
-  mv $f.t $f
-done
-
-# Relies on ../PROJECT file
-# creates CRDS in ../config/crds/
-crd generate
+controller-gen crd paths=./apis/...

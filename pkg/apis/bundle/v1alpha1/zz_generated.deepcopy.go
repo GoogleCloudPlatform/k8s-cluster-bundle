@@ -32,11 +32,10 @@ func (in *Bundle) DeepCopyInto(out *Bundle) {
 		in, out := &in.Components, &out.Components
 		*out = make([]*Component, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(Component)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Component)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -161,7 +160,7 @@ func (in *ComponentBuilder) DeepCopyObject() runtime.Object {
 func (in *ComponentList) DeepCopyInto(out *ComponentList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Component, len(*in))
@@ -253,7 +252,7 @@ func (in *ComponentSet) DeepCopyObject() runtime.Object {
 func (in *ComponentSetList) DeepCopyInto(out *ComponentSetList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ComponentSet, len(*in))
@@ -326,11 +325,9 @@ func (in *ComponentSpec) DeepCopyInto(out *ComponentSpec) {
 		in, out := &in.Objects, &out.Objects
 		*out = make([]*unstructured.Unstructured, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
-				(*out)[i] = new(unstructured.Unstructured)
-				(*in)[i].DeepCopyInto((*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = (*in).DeepCopy()
 			}
 		}
 	}
@@ -432,12 +429,8 @@ func (in *ObjectSelector) DeepCopyInto(out *ObjectSelector) {
 	}
 	if in.InvertMatch != nil {
 		in, out := &in.InvertMatch, &out.InvertMatch
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(bool)
-			**out = **in
-		}
+		*out = new(bool)
+		**out = **in
 	}
 	return
 }
@@ -459,11 +452,7 @@ func (in *ObjectTemplate) DeepCopyInto(out *ObjectTemplate) {
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	if in.OptionsSchema != nil {
 		in, out := &in.OptionsSchema, &out.OptionsSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -494,11 +483,7 @@ func (in *ObjectTemplateBuilder) DeepCopyInto(out *ObjectTemplateBuilder) {
 	out.File = in.File
 	if in.OptionsSchema != nil {
 		in, out := &in.OptionsSchema, &out.OptionsSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -528,20 +513,12 @@ func (in *PatchTemplate) DeepCopyInto(out *PatchTemplate) {
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	if in.Selector != nil {
 		in, out := &in.Selector, &out.Selector
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectSelector)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ObjectSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.OptionsSchema != nil {
 		in, out := &in.OptionsSchema, &out.OptionsSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -571,28 +548,16 @@ func (in *PatchTemplateBuilder) DeepCopyInto(out *PatchTemplateBuilder) {
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	if in.Selector != nil {
 		in, out := &in.Selector, &out.Selector
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectSelector)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ObjectSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.BuildSchema != nil {
 		in, out := &in.BuildSchema, &out.BuildSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.TargetSchema != nil {
 		in, out := &in.TargetSchema, &out.TargetSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
