@@ -46,7 +46,6 @@ func (c *UnstructuredConverter) ExtractObjectMeta() *metav1.ObjectMeta {
 	metadata.Labels = c.o.GetLabels()
 	metadata.Annotations = c.o.GetAnnotations()
 	metadata.OwnerReferences = c.o.GetOwnerReferences()
-	metadata.Initializers = c.o.GetInitializers()
 	metadata.Finalizers = c.o.GetFinalizers()
 	metadata.ClusterName = c.o.GetClusterName()
 	return metadata
