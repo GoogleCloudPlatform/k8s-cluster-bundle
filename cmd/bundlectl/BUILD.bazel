@@ -5,7 +5,10 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/GoogleCloudPlatform/k8s-cluster-bundle/cmd/bundlectl",
     visibility = ["//visibility:private"],
-    deps = ["//pkg/commands:go_default_library"],
+    deps = [
+        "//pkg/commands:go_default_library",
+        "@io_k8s_klog//:go_default_library",
+    ],
 )
 
 go_binary(

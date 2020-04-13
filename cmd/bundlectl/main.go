@@ -17,11 +17,16 @@ package main
 
 import (
 	"context"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
+	"flag"
 	"os"
+
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands"
+	_ "k8s.io/klog"
 )
 
 func main() {
+	flag.Set("logtostderr", "true")
+
 	root := commands.AddCommands(context.Background(), os.Args[1:])
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
