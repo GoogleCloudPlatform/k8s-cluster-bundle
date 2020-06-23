@@ -16,4 +16,4 @@
 package version
 
 // BundlectlVersion is the version used by bundlectl.
-const BundlectlVersion = "0.12.0"
+const BundlectlVersion = "0.12.3"
