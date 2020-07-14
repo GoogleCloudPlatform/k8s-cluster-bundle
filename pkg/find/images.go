@@ -47,6 +47,10 @@ type ContainerImage struct {
 	Image string
 }
 
+// Filter is a function type which filters images from being emitted by the finder.
+// A filter should return true if the image should be emitted, false otherwise.
+type Filter func(fieldName string, parentFieldName string, img string) bool
+
 // String converts the ContainerImage into a human-readable string.
 func (c *ContainerImage) String() string {
 	return fmt.Sprintf("{Key:%v, Image:%q}", c.Key, c.Image)
@@ -55,8 +59,14 @@ func (c *ContainerImage) String() string {
 // AllContainerImages returns all the images from the cluster components in a list
 // of components.
 func (b *ImageFinder) AllContainerImages() []*ContainerImage {
+	return b.AllFilteredContainerImages(nil)
+}
+
+// AllFilteredContainerImages returns all the images from the cluster components in a list
+// of components.
+func (b *ImageFinder) AllFilteredContainerImages(filter Filter) []*ContainerImage {
 	var images []*ContainerImage
-	b.WalkAllContainerImages(func(key core.ClusterObjectKey, img string) string {
+	b.WalkAllContainerImages(filter, func(key core.ClusterObjectKey, img string) string {
 		images = append(images, &ContainerImage{key, img})
 		return img
 	})
@@ -65,12 +75,18 @@ func (b *ImageFinder) AllContainerImages() []*ContainerImage {
 
 // ContainerImages returns all the images from a single Kubernetes object.
 func (b *ImageFinder) ContainerImages(key bundle.ComponentReference, st *unstructured.Unstructured) []*ContainerImage {
+	return b.FilteredContainerImages(nil, key, st)
+}
+
+// FilteredContainerImages returns all the images from a single Kubernetes object,
+// filtered by the specified function.
+func (b *ImageFinder) FilteredContainerImages(filter Filter, key bundle.ComponentReference, st *unstructured.Unstructured) []*ContainerImage {
 	objkey := core.ClusterObjectKey{
 		Component: key,
 		Object:    core.ObjectRefFromUnstructured(st),
 	}
 	var images []*ContainerImage
-	b.WalkContainerImages(st, func(img string) string {
+	b.WalkContainerImages(st, filter, func(img string) string {
 		images = append(images, &ContainerImage{objkey, img})
 		return img
 	})
@@ -86,12 +102,12 @@ func (b *ImageFinder) ContainerImages(key bundle.ComponentReference, st *unstruc
 //
 // This changes the components object in-place, so if changes are intended, it is
 // recommend that the components be cloned.
-func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, fn func(img string) string) {
+func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, filter Filter, emit func(img string) string) {
 	// It would be more robust to just be aware of Pods, Deployments, and the
 	// various K8S types that have container images rather then recursing through
 	// everything.  It's possible, for example, that we that we might encouncer
 	// an 'image' field in some options custom resource that's unintended.
-	containerImageRecurser("", "", st.Object, fn)
+	containerImageRecurser("", "", st.Object, filter, emit)
 }
 
 // WalkAllContainerImages works the same as WalkContainerImages, except all
@@ -100,7 +116,7 @@ func (b *ImageFinder) WalkContainerImages(st *unstructured.Unstructured, fn func
 //
 // This changes the components object in-place, so if changes are intended, it is
 // recommend that the components be cloned.
-func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, img string) string) {
+func (b *ImageFinder) WalkAllContainerImages(filter Filter, emit func(key core.ClusterObjectKey, img string) string) {
 	for _, ca := range b.components {
 		key := ca.ComponentReference()
 		for _, obj := range ca.Spec.Objects {
@@ -109,8 +125,8 @@ func (b *ImageFinder) WalkAllContainerImages(fn func(key core.ClusterObjectKey, 
 				Component: key,
 				Object:    ref,
 			}
-			b.WalkContainerImages(obj, func(img string) string {
-				return fn(key, img)
+			b.WalkContainerImages(obj, filter, func(img string) string {
+				return emit(key, img)
 			})
 		}
 	}
@@ -127,7 +143,8 @@ type imageMod struct {
 //
 // If an image value is returned from the function and the value is not equal
 // to the input value.
-func containerImageRecurser(fieldName string, parentFieldName string, elem interface{}, fn func(img string) string) *imageMod {
+// 
+func containerImageRecurser(fieldName string, parentFieldName string, elem interface{}, filter Filter, emit func(img string) string) *imageMod {
 	switch elem := elem.(type) {
 	case map[string]interface{}:
 		if elem == nil {
@@ -135,7 +152,7 @@ func containerImageRecurser(fieldName string, parentFieldName string, elem inter
 		}
 		var changes []*imageMod
 		for key, val := range elem {
-			if o := containerImageRecurser(key, fieldName, val, fn); o != nil {
+			if o := containerImageRecurser(key, fieldName, val, filter, emit); o != nil {
 				changes = append(changes, o)
 			}
 		}
@@ -149,9 +166,12 @@ func containerImageRecurser(fieldName string, parentFieldName string, elem inter
 		// container object is 'container', 'containers' or
 		// 'somethingContainer[s]'.
 		if fieldName == "image" && (strings.Contains(parentFieldName, "container") || strings.Contains(parentFieldName, "Container")) ||
-			fieldName == "url" && parentFieldName == "osImage" { // hack to make finding images work with NodeConfigs
-			if ret := fn(elem); ret != elem {
-				return &imageMod{fieldName, ret}
+				fieldName == "url" && parentFieldName == "osImage" { // hack to make finding images work with NodeConfigs
+			if filter == nil || filter(fieldName, parentFieldName, elem) {
+				ret := emit(elem)
+				if ret != elem {
+					return &imageMod{fieldName, ret}
+				}
 			}
 		}
 		return nil
@@ -161,7 +181,7 @@ func containerImageRecurser(fieldName string, parentFieldName string, elem inter
 		}
 		for _, val := range elem {
 			// Ignore any result here. image-fields should be singletons in maps.
-			containerImageRecurser(fieldName, parentFieldName, val, fn)
+			containerImageRecurser(fieldName, parentFieldName, val, filter, emit)
 		}
 		return nil
 	case int64, bool, float64, nil, json.Number:
@@ -178,7 +198,7 @@ func containerImageRecurser(fieldName string, parentFieldName string, elem inter
 // This changes the component objects in-place, so if changes are intended, it is
 // recommend that the components be cloned.
 func (b *ImageFinder) WalkAllImages(fn func(key core.ClusterObjectKey, img string) string) {
-	b.WalkAllContainerImages(fn)
+	b.WalkAllContainerImages(nil, fn)
 }
 
 // AllImages returns all images found -- both container images and OS images for nodes.
