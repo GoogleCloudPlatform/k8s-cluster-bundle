@@ -184,6 +184,61 @@ func TestImageFinder_MultipleImages(t *testing.T) {
 	}
 }
 
+var initContainerExample = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: logger-pod
+spec:
+  dnsPolicy: Default
+  initContainers:
+  - name: initializer
+    image: gcr.io/floof/initializer
+    command:
+       - /initializer
+       - --logtostderr
+  containers:
+  - name: logger
+    image: gcr.io/floof/logger
+    command:
+       - /logger
+       - --logtostderr
+  - name: chopper
+    image: gcr.io/floof/chopper
+    command:
+       - /chopper
+       - --logtostderr`
+
+func TestImageFinder_Filtered(t *testing.T) {
+	s, err := converter.FromYAMLString(initContainerExample).ToUnstructured()
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := bundle.ComponentReference{
+		ComponentName: "logger",
+		Version:       "100.3",
+	}
+
+	filter := func(fieldName string, parentFieldName string, img string) bool {
+		return strings.Contains(parentFieldName, "initContainer")
+	}
+	found := NewImageFinder([]*bundle.Component{}).FilteredContainerImages(filter, key, s)
+
+	expected := []*ContainerImage{
+		&ContainerImage{
+			core.ClusterObjectKey{
+				Component: bundle.ComponentReference{ComponentName: "logger", Version: "100.3"},
+				Object:    core.ObjectRef{APIVersion: "v1", Kind: "Pod", Name: "logger-pod"},
+			},
+			"gcr.io/floof/initializer",
+		},
+	}
+
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("For finding cluster object images, got %v, but wanted %v", found, expected)
+	}
+}
+
 var componentsExample = `
 components:
 - spec:
