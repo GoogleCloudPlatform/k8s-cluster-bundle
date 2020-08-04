@@ -2,12 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 filegroup(
     name = "testdata",
-    srcs = [
-        "//examples/cluster:testdata",
-        "//examples/component:testdata",
-        "//examples/patchbuilder:testdata",
-        "//examples/templatebuilder:testdata",
-    ],
+    srcs = glob([
+        "*.yaml",
+        "*.txt",
+    ]),
     testonly = True,
     visibility = ["//visibility:public"],
 )
@@ -16,7 +14,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "bazel_init_test.go",
-        "examples_test.go",
+        "component_test.go",
     ],
     data = [":testdata"],
     deps = [
