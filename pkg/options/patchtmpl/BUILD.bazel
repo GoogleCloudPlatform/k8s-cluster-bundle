@@ -15,6 +15,7 @@ go_library(
         "//pkg/options:go_default_library",
         "//pkg/options/openapi:go_default_library",
         "@com_github_evanphx_json_patch//:go_default_library",
+        "@io_k8s_api//admissionregistration/v1beta1:go_default_library",
         "@io_k8s_api//apps/v1:go_default_library",
         "@io_k8s_api//apps/v1beta1:go_default_library",
         "@io_k8s_api//apps/v1beta2:go_default_library",
