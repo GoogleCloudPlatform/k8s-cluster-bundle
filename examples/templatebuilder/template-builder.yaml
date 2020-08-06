@@ -1,0 +1,4 @@
+apiVersion: bundle.gke.io/v1alpha1
+kind: ObjectTemplateBuilder
+file:
+  url: etcd-template.yaml
