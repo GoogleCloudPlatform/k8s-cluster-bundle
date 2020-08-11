@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+filegroup(
+    name = "testdata",
+    srcs = glob([
+        "*.yaml",
+        "*.txt",
+    ]),
+    testonly = True,
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bazel_init_test.go",
+        "component_test.go",
+    ],
+    data = [":testdata"],
+    deps = [
+        "//pkg/testutil:go_default_library",
+        "//pkg/testutil/componentsuite:go_default_library",
+    ],
+)

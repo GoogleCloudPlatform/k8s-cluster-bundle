@@ -64,6 +64,11 @@ metadata:
   name: biffbam
 biff: bam`
 
+var podTemplate = `
+kind: pod
+metadata:
+  name: {{.foo}}`
+
 var defaultFiles = map[string][]byte{
 	"/path/to/apiserver-component.yaml": []byte(kubeApiserverComponent),
 	"/path/to/kube_apiserver.yaml":      []byte(kubeApiserver),
@@ -570,11 +575,7 @@ optionsSchema:
     foo:
       type: string
 `),
-				"/path/to/tmpl.yaml": []byte(`
-kind: pod
-metadata:
-  name: {{.foo}}
-`),
+				"/path/to/tmpl.yaml": []byte(podTemplate),
 			},
 			expComp: compRef{
 				name: "binary-blob-1.2.3",
@@ -615,11 +616,7 @@ optionsSchema:
     foo:
       type: string
 `),
-				"/path/to/manifest/tmpl.yaml": []byte(`
-kind: pod
-metadata:
-  name: {{.foo}}
-`),
+				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
 			},
 			expComp: compRef{
 				name: "binary-blob-1.2.3",
@@ -633,6 +630,64 @@ metadata:
 						subStrings: []string{
 							"name: {{.foo}}",
 							"type: string",
+							"type: go-template",
+						},
+					},
+				},
+			},
+		},
+
+		{
+			desc: "success: component, template files",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+templateType: go-template
+templateFiles:
+- url: '/path/to/manifest/tmpl.yaml'`,
+			files: map[string][]byte{
+				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
+			},
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						subStrings: []string{
+							"name: {{.foo}}",
+							"type: go-template",
+						},
+					},
+				},
+			},
+		},
+
+		{
+			desc: "success: component, template files: relative path, no templateType",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+templateFiles:
+- url: 'manifest/tmpl.yaml'`,
+			files: map[string][]byte{
+				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
+			},
+			pathToComponent: "/path/to/builder.yaml",
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						subStrings: []string{
+							"name: {{.foo}}",
 							"type: go-template",
 						},
 					},
