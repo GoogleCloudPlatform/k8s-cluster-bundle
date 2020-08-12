@@ -65,7 +65,7 @@ metadata:
 biff: bam`
 
 var podTemplate = `
-kind: pod
+kind: Pod
 metadata:
   name: {{.foo}}`
 
@@ -643,9 +643,10 @@ optionsSchema:
 kind: ComponentBuilder
 componentName: binary-blob
 version: 1.2.3
-templateType: go-template
 templateFiles:
-- url: '/path/to/manifest/tmpl.yaml'`,
+- templateType: go-template
+  files:
+  - url: '/path/to/manifest/tmpl.yaml'`,
 			files: map[string][]byte{
 				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
 			},
@@ -673,7 +674,8 @@ kind: ComponentBuilder
 componentName: binary-blob
 version: 1.2.3
 templateFiles:
-- url: 'manifest/tmpl.yaml'`,
+- files:
+  - url: 'manifest/tmpl.yaml'`,
 			files: map[string][]byte{
 				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
 			},

@@ -16,6 +16,7 @@ apiVersion: bundle.gke.io/v1alpha1
 kind: ComponentBuilder
 componentName: etcd-component
 version: 30.0.2
-templateType: go-template # optional, default to 'go-template'
 templateFiles:
-- url: etcd-template.yaml
+- templateType: go-template # optional, default to 'go-template'
+  files:
+  - url: etcd-template.yaml

@@ -166,7 +166,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 	newObjs = append(newObjs, tmplObjs...)
 
 	// tmplObjs from template files
-	tmplObjs, err = n.templateFiles(ctx, comp.TemplateFiles, comp.TemplateType, comp.ComponentReference(), componentURL)
+	tmplObjs, err = n.templateFiles(ctx, comp.TemplateFiles, comp.ComponentReference(), componentURL)
 	if err != nil {
 		return nil, err
 	}
@@ -271,49 +271,51 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 }
 
 // templateFiles reads template files and builds ObjectTemplates.
-func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.File, tmplTypeFromBuilder bundle.TemplateType, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
+func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.TemplateFileSet, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
-	for _, cf := range tmplFiles {
-		furl, err := cf.ParsedURL()
-		if err != nil {
-			return nil, err
-		}
-		cf.URL = makeAbsWithParent(componentPath, furl).String()
+	for _, tmplFileSet := range tmplFiles {
+		for _, tf := range tmplFileSet.Files {
+			furl, err := tf.ParsedURL()
+			if err != nil {
+				return nil, err
+			}
+			tf.URL = makeAbsWithParent(componentPath, furl).String()
 
-		contents, err := n.readFile(ctx, cf)
-		if err != nil {
-			return nil, fmt.Errorf("error reading file %v for component %v: %v", cf, ref, err)
-		}
+			contents, err := n.readFile(ctx, tf)
+			if err != nil {
+				return nil, fmt.Errorf("error reading file %v for component %v: %v", tf, ref, err)
+			}
 
-		// Note: metadata and optionsSchema are not supported with
-		// 'templateFiles' syntax.
-		objTemplate := &bundle.ObjectTemplate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "bundle.gke.io/v1alpha1",
-				Kind:       "ObjectTemplate",
-			},
-			Template: string(contents),
-		}
-		objTemplate.ObjectMeta.Annotations = make(map[string]string)
-		objTemplate.ObjectMeta.Annotations[string(bundle.InlinePathIdentifier)] = cf.URL
+			// Note: metadata and optionsSchema are not supported with
+			// 'templateFiles' syntax.
+			objTemplate := &bundle.ObjectTemplate{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "bundle.gke.io/v1alpha1",
+					Kind:       "ObjectTemplate",
+				},
+				Template: string(contents),
+			}
+			objTemplate.ObjectMeta.Annotations = make(map[string]string)
+			objTemplate.ObjectMeta.Annotations[string(bundle.InlinePathIdentifier)] = tf.URL
 
-		// templateType default is Go Template
-		tmplType := bundle.TemplateTypeGo
-		if tmplTypeFromBuilder != bundle.TemplateTypeUndefined {
-			tmplType = tmplTypeFromBuilder
-		}
-		objTemplate.Type = tmplType
+			// templateType default is Go Template
+			tmplType := bundle.TemplateTypeGo
+			if tmplFileSet.TemplateType != bundle.TemplateTypeUndefined {
+				tmplType = tmplFileSet.TemplateType
+			}
+			objTemplate.Type = tmplType
 
-		objJSON, err := converter.FromObject(objTemplate).ToJSON()
-		if err != nil {
-			return nil, fmt.Errorf("for component %v and template file %q, while converting back to JSON: %v", ref, cf.URL, err)
-		}
+			objJSON, err := converter.FromObject(objTemplate).ToJSON()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and template file %q, while converting back to JSON: %v", ref, tf.URL, err)
+			}
 
-		unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
-		if err != nil {
-			return nil, fmt.Errorf("for component %v and template file %q, while converting back to Unstructured: %v", ref, cf.URL, err)
+			unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and template file %q, while converting back to Unstructured: %v", ref, tf.URL, err)
+			}
+			outObj = append(outObj, unsObj)
 		}
-		outObj = append(outObj, unsObj)
 	}
 	return outObj, nil
 }

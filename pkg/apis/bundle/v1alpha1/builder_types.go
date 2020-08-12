@@ -71,25 +71,32 @@ type ComponentBuilder struct {
 	// it should be representable as either YAML or JSON.
 	ObjectFiles []File `json:"objectFiles,omitempty"`
 
-	// Templates that are specified via a File-URL. The process of inlining a
-	// component turns template files into objects with template.  During the
-	// inline process, if the file is YAML-formatted and contains multiple
-	// objects in the YAML-doc, the objects will be split into separate inline
-	// objects. In other words, one object file may result in multiple objects.
-	//
-	// Each object file must be parsable into a Struct: In other words,
-	// it should be representable as either YAML or JSON.
-	TemplateFiles []File `json:"templateFiles,omitempty"`
-
-	// Type indicates how the template file should be detemplatized. It defaults
-	// to Go Templates during build if left unspecified.
-	TemplateType TemplateType `json:"templateType,omitempty"`
+	// TemplateFiles represent templates with a specific template type.
+	// The process of inlining a component turns template files into
+	// objectTemplates. During the inline process, each templateFileSet
+	// which may contain one or multiple template files of the same type,
+	// will be built into separate inline objects.
+	TemplateFiles []TemplateFileSet `json:"templateFiles,omitempty"`
 
 	// Raw files represent arbitrary string data. Unlike object files,
 	// these files don't need to be parsable as YAML or JSON. So, during the
 	// inline process, the data is inserted into a generated config map before
 	// being added to the objects. A ConfigMap is generated per-filegroup.
 	RawTextFiles []FileGroup `json:"rawTextFiles,omitempty"`
+}
+
+// TemplateFileSet represents a collection of template files which must be of the
+// same template type.
+type TemplateFileSet struct {
+	// Type indicates how the template files should be detemplatized. It defaults
+	// to Go Templates during build if left unspecified.
+	TemplateType TemplateType `json:"templateType,omitempty"`
+
+	// Templates files that are specified via a File-URL. During the
+	// inline process, if the file is YAML-formatted and contains multiple
+	// objects in the YAML-doc, the objects will be split into separate inline
+	// objects. In other words, one template file may result in multiple objects.
+	Files []File `json:"files,omitempty"`
 }
 
 // FileGroup represents a collection of files. When used to create ConfigMaps
