@@ -158,7 +158,15 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 		return nil, err
 	}
 
+	// tmplObjs from template builder
 	tmplObjs, err := n.objectTemplateBuilders(ctx, tmplBuilders, comp.ComponentReference())
+	if err != nil {
+		return nil, err
+	}
+	newObjs = append(newObjs, tmplObjs...)
+
+	// tmplObjs from template files
+	tmplObjs, err = n.templateFiles(ctx, comp.TemplateFiles, comp.ComponentReference(), componentURL)
 	if err != nil {
 		return nil, err
 	}
@@ -262,17 +270,66 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 	return newObjs, objTmplBuilders, nil
 }
 
+// templateFiles reads template files and builds ObjectTemplates.
+func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.TemplateFileSet, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
+	var outObj []*unstructured.Unstructured
+	for _, tmplFileSet := range tmplFiles {
+		for _, tf := range tmplFileSet.Files {
+			furl, err := tf.ParsedURL()
+			if err != nil {
+				return nil, err
+			}
+			tf.URL = makeAbsWithParent(componentPath, furl).String()
+
+			contents, err := n.readFile(ctx, tf)
+			if err != nil {
+				return nil, fmt.Errorf("error reading file %v for component %v: %v", tf, ref, err)
+			}
+
+			// Note: metadata and optionsSchema are not supported with
+			// 'templateFiles' syntax.
+			objTemplate := &bundle.ObjectTemplate{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "bundle.gke.io/v1alpha1",
+					Kind:       "ObjectTemplate",
+				},
+				Template: string(contents),
+			}
+			objTemplate.ObjectMeta.Annotations = make(map[string]string)
+			objTemplate.ObjectMeta.Annotations[string(bundle.InlinePathIdentifier)] = tf.URL
+
+			// templateType default is Go Template
+			tmplType := bundle.TemplateTypeGo
+			if tmplFileSet.TemplateType != bundle.TemplateTypeUndefined {
+				tmplType = tmplFileSet.TemplateType
+			}
+			objTemplate.Type = tmplType
+
+			objJSON, err := converter.FromObject(objTemplate).ToJSON()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and template file %q, while converting back to JSON: %v", ref, tf.URL, err)
+			}
+
+			unsObj, err := converter.FromJSON(objJSON).ToUnstructured()
+			if err != nil {
+				return nil, fmt.Errorf("for component %v and template file %q, while converting back to Unstructured: %v", ref, tf.URL, err)
+			}
+			outObj = append(outObj, unsObj)
+		}
+	}
+	return outObj, nil
+}
+
 // objectTemplateBuilders builds ObjectTemplates from ObjectTemplateBuilders
 func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string][]*unstructured.Unstructured, ref bundle.ComponentReference) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
 	for parentPath, objList := range objects {
 		for _, obj := range objList {
 			if obj.GetKind() != "ObjectTemplateBuilder" {
-				// There shouldn't be any ObjectTemplateBuilders at this point
+				// There shouldn't be any non-ObjectTemplateBuilders at this point
 				continue
 			}
 			name := obj.GetName()
-
 			builder := &bundle.ObjectTemplateBuilder{}
 			if err := converter.FromUnstructured(obj).ToObject(builder); err != nil {
 				return nil, fmt.Errorf("for component %v and object %q: %v", ref, name, err)

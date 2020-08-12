@@ -1,0 +1,20 @@
+componentFile: builder.yaml
+
+testCases:
+- description: Deserialize Objects
+  apply:
+    options:
+      Namespace: default
+  expect:
+    canKubeDeserialize: true
+
+- description: Success
+  apply:
+    options:
+      Namespace: default-ns
+  expect:
+    objects:
+    - kind: Pod
+      name: etcd-server
+      findSubstrs:
+      - 'namespace: default-ns'
