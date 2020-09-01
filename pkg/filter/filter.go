@@ -314,9 +314,9 @@ func Select(components []*bundle.Component, predicate ComponentPredicate) []*bun
 	return out
 }
 
-// UnstructuredKindIn checks if any of the components object.GetKind()
+// ObjectKindIn checks if any of the components object.GetKind()
 // are in kinds.
-func UnstructuredKindIn(kinds ...string) ComponentPredicate {
+func ObjectKindIn(kinds ...string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
 			for _, kind := range kinds {
@@ -329,9 +329,9 @@ func UnstructuredKindIn(kinds ...string) ComponentPredicate {
 	}
 }
 
-// UnstructuredNamespaceIn checks if any of the components object.GetNamespace()
+// ObjectNamespaceIn checks if any of the components object.GetNamespace()
 // are in namespaces.
-func UnstructuredNamespaceIn(namespaces ...string) ComponentPredicate {
+func ObjectNamespaceIn(namespaces ...string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
 			for _, namespace := range namespaces {
@@ -356,9 +356,9 @@ func ComponentNameIn(names ...string) ComponentPredicate {
 	}
 }
 
-// UnstructuredNameIn returns true if any of the components object.GetName()
+// ObjectNameIn returns true if any of the components object.GetName()
 // are in names.
-func UnstructuredNameIn(names ...string) ComponentPredicate {
+func ObjectNameIn(names ...string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
 			for _, name := range names {
@@ -398,10 +398,10 @@ func ComponentAnnotationsIn(annotations map[string]string) ComponentPredicate {
 	}
 }
 
-// UnstructuredAnnotationsIn returns true if any of the components objects
+// ObjectAnnotationsIn returns true if any of the components objects
 // annotations match the specified annotations. If the value for a key in
 // annotations is "", then match is true if the key matches.
-func UnstructuredAnnotationsIn(annotations map[string]string) ComponentPredicate {
+func ObjectAnnotationsIn(annotations map[string]string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
 			annots := obj.GetAnnotations()
@@ -429,10 +429,10 @@ func ComponentLabelsIn(labels map[string]string) ComponentPredicate {
 	}
 }
 
-// UnstructuredLabelsIn return true if any of the components objects labels
+// ObjectLabelsIn return true if any of the components objects labels
 // match the specified labels. If the value for a key in labels is "", then
 // match is true if the key matches.
-func UnstructuredLabelsIn(labels map[string]string) ComponentPredicate {
+func ObjectLabelsIn(labels map[string]string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
 			objLabels := obj.GetLabels()
@@ -471,4 +471,27 @@ func Or(componentPredicates ...ComponentPredicate) ComponentPredicate {
 		}
 		return false
 	}
+}
+
+// SelectObjects returns components with only the objects that match the
+// predicate.
+func SelectObjects(components []*bundle.Component, predicate ComponentPredicate) []*bundle.Component {
+	var out []*bundle.Component
+	for _, component := range components {
+		temp := component.DeepCopy()
+		var selectedObjects []*unstructured.Unstructured
+		for _, object := range component.Spec.Objects {
+			temp.Spec.Objects = []*unstructured.Unstructured{object}
+			if predicate(temp) {
+				selectedObjects = append(selectedObjects, object)
+			}
+		}
+		if len(selectedObjects) == 0 {
+			continue
+		}
+		newComp := component.DeepCopy()
+		newComp.Spec.Objects = selectedObjects
+		out = append(out, newComp)
+	}
+	return out
 }
