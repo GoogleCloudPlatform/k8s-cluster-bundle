@@ -297,3 +297,178 @@ func matches(d *objectData, o *Options) bool {
 	}
 	return matchesKinds && matchesNS && matchesNames && matchesAnnot && matchesLabels
 }
+
+// ComponentPredicate is a func that returns true for components that match
+// criteria and false otherwise.
+type ComponentPredicate func(*bundle.Component) bool
+
+// Select takes a list of components and a predicate and returns the
+// components that match the predicate.
+func Select(components []*bundle.Component, predicate ComponentPredicate) []*bundle.Component {
+	var out []*bundle.Component
+	for _, component := range components {
+		if predicate(component) {
+			out = append(out, component)
+		}
+	}
+	return out
+}
+
+// UnstructuredKindIn checks if any of the components object.GetKind()
+// are in kinds.
+func UnstructuredKindIn(kinds ...string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			for _, kind := range kinds {
+				if obj.GetKind() == kind {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// UnstructuredNamespaceIn checks if any of the components object.GetNamespace()
+// are in namespaces.
+func UnstructuredNamespaceIn(namespaces ...string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			for _, namespace := range namespaces {
+				if obj.GetNamespace() == namespace {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// ComponentNameIn returns true if Component.Spec.ComponentName is in names.
+func ComponentNameIn(names ...string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, name := range names {
+			if component.Spec.ComponentName == name {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// UnstructuredNameIn returns true if any of the components object.GetName()
+// are in names.
+func UnstructuredNameIn(names ...string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			for _, name := range names {
+				if obj.GetName() == name {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// anyKeyValueMatch takes two non nil maps and returns true if any key value
+// pair in a matches a key value pair in b. If the value in b is "" then it
+// always matches a matching key in a.
+func anyKeyValueMatch(a, b map[string]string) bool {
+	for ak, av := range a {
+		for bk, bv := range b {
+			if ak == bk && (av == bv || bv == "") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ComponentAnnotationsIn returns true if any of the annotations on the
+// component match the specified annotations. If the value for a key in
+// annotations is "", then match is true if the key matches.
+func ComponentAnnotationsIn(annotations map[string]string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		annots := component.GetAnnotations()
+		if annots == nil {
+			return false
+		}
+		return anyKeyValueMatch(annots, annotations)
+	}
+}
+
+// UnstructuredAnnotationsIn returns true if any of the components objects
+// annotations match the specified annotations. If the value for a key in
+// annotations is "", then match is true if the key matches.
+func UnstructuredAnnotationsIn(annotations map[string]string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			annots := obj.GetAnnotations()
+			if annots == nil {
+				return false
+			}
+			if anyKeyValueMatch(annots, annotations) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// ComponentLabelsIn returns true if any of the labels on the
+// component match the specified labels. If the value for a key in
+// labels is "", then match is true if the key matches.
+func ComponentLabelsIn(labels map[string]string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		componentLabels := component.GetLabels()
+		if componentLabels == nil {
+			return false
+		}
+		return anyKeyValueMatch(componentLabels, labels)
+	}
+}
+
+// UnstructuredLabelsIn return true if any of the components objects labels
+// match the specified labels. If the value for a key in labels is "", then
+// match is true if the key matches.
+func UnstructuredLabelsIn(labels map[string]string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			objLabels := obj.GetLabels()
+			if objLabels == nil {
+				return false
+			}
+			if anyKeyValueMatch(objLabels, labels) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// And returns true if every ComponentPredicate function returns true and
+// returns false otherwise.
+func And(componentPredicates ...ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, predicate := range componentPredicates {
+			if !predicate(component) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+// Or returns true if any ComponentPredicate function returns true and
+// returns false otherwise.
+func Or(componentPredicates ...ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, predicate := range componentPredicates {
+			if predicate(component) {
+				return true
+			}
+		}
+		return false
+	}
+}
