@@ -376,10 +376,11 @@ func ObjectNameIn(names ...string) ComponentPredicate {
 // always matches a matching key in a.
 func anyKeyValueMatch(a, b map[string]string) bool {
 	for ak, av := range a {
-		for bk, bv := range b {
-			if ak == bk && (av == bv || bv == "") {
+		if bv, exists := b[ak]; exists {
+			if bv == "" {
 				return true
 			}
+			return av == bv
 		}
 	}
 	return false

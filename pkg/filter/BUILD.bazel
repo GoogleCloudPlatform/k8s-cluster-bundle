@@ -20,6 +20,7 @@ go_test(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )
