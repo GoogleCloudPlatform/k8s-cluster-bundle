@@ -18,10 +18,10 @@ import (
 	"reflect"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/google/go-cmp/cmp"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type filterType string
@@ -81,6 +81,15 @@ components:
         annotations:
           zoof: zarf
         namespace: zube`
+
+func FromYAMLStringToBundle(t *testing.T, bundle string) *bundle.Bundle {
+	t.Helper()
+	out, err := converter.FromYAMLString(bundle).ToBundle()
+	if err != nil {
+		t.Fatalf("could not convert string to bundle: %v", err)
+	}
+	return out
+}
 
 func TestFilterObjects(t *testing.T) {
 	testcases := []struct {
@@ -240,10 +249,7 @@ func TestFilterObjects(t *testing.T) {
 		},
 	}
 
-	data, err := converter.FromYAMLString(example).ToBundle()
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := FromYAMLStringToBundle(t, example)
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
 			var newData []*unstructured.Unstructured
@@ -447,10 +453,7 @@ func TestFilterComponents(t *testing.T) {
 		},
 	}
 
-	data, err := converter.FromYAMLString(componentExample).ToBundle()
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := FromYAMLStringToBundle(t, componentExample)
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
 			var newData []*bundle.Component
@@ -500,10 +503,7 @@ func TestPartitionObjects(t *testing.T) {
 		},
 	}
 
-	data, err := converter.FromYAMLString(example).ToBundle()
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := FromYAMLStringToBundle(t, example)
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
 			match, notMatch := NewFilter().PartitionObjects(flatten(data.Components), tc.opt)
@@ -514,6 +514,276 @@ func TestPartitionObjects(t *testing.T) {
 			}
 			if !reflect.DeepEqual(notMatchNames, tc.expNotMatch) {
 				t.Errorf("Filter.PartitionObjects(): got not-match group %v but wanted %v", notMatchNames, tc.expNotMatch)
+			}
+		})
+	}
+}
+
+func TestSelect(t *testing.T) {
+	testcases := []struct {
+		name           string
+		predicate      ComponentPredicate
+		wantComponents []*bundle.Component
+	}{
+		{
+			name:           "true predicate returns all components",
+			predicate:      func(*bundle.Component) bool { return true },
+			wantComponents: FromYAMLStringToBundle(t, example).Components,
+		},
+		{
+			name:           "false predicate returns no components",
+			predicate:      func(*bundle.Component) bool { return false },
+			wantComponents: nil,
+		},
+		{
+			name:      "select on component name works",
+			predicate: ComponentNameIn("zap", "zog"),
+			wantComponents: FromYAMLStringToBundle(t, `
+components:
+- spec:
+    componentName: zap
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap-pod
+        labels:
+          component: zork
+        annotations:
+          foo: bar
+        namespace: kube-system
+- spec:
+    componentName: zog
+    objects:
+    - apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: zog-dep
+        labels:
+          component: zork
+        annotations:
+          zoof: zarf
+        namespace: zube`).Components,
+		},
+		{
+			name:      "select by object annotations works",
+			predicate: ObjectAnnotationsIn(map[string]string{"foof": "narf", "zoof": ""}),
+			wantComponents: FromYAMLStringToBundle(t, `components:
+- spec:
+    componentName: nog
+    objects:
+    - apiVersion: v1beta1
+      kind: Pod
+      metadata:
+        name: nog-pod
+        labels:
+          component: nork
+        annotations:
+          foof: narf
+        namespace: kube
+- spec:
+    componentName: zog
+    objects:
+    - apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: zog-dep
+        labels:
+          component: zork
+        annotations:
+          zoof: zarf
+        namespace: zube`).Components,
+		},
+		{
+			name:      "select using or",
+			predicate: Or(ComponentNameIn("bog"), ObjectKindIn("Deployment")),
+			wantComponents: FromYAMLStringToBundle(t, `components:
+- spec:
+    componentName: bog
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bog-pod
+        labels:
+          component: bork
+        annotations:
+          foof: yar
+        namespace: kube-system
+- spec:
+    componentName: zog
+    objects:
+    - apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: zog-dep
+        labels:
+          component: zork
+        annotations:
+          zoof: zarf
+        namespace: zube`).Components,
+		},
+		{
+			name:      "starting to get fancy works",
+			predicate: And(ObjectKindIn("Pod"), Or(ComponentNameIn("bog"), ObjectLabelsIn(map[string]string{"component": "zork"}))),
+			wantComponents: FromYAMLStringToBundle(t, `components:
+- spec:
+    componentName: zap
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: zap-pod
+        labels:
+          component: zork
+        annotations:
+          foo: bar
+        namespace: kube-system
+- spec:
+    componentName: bog
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bog-pod
+        labels:
+          component: bork
+        annotations:
+          foof: yar
+        namespace: kube-system`).Components,
+		},
+	}
+	components := FromYAMLStringToBundle(t, example).Components
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotComponents := Select(components, tc.predicate)
+			if diff := cmp.Diff(tc.wantComponents, gotComponents); diff != "" {
+				t.Fatalf("unexpected diff in components: (-want, +got)\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSelectObjects(t *testing.T) {
+	components := FromYAMLStringToBundle(t, `
+components:
+- spec:
+    componentName: foo
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-frontend
+        labels:
+          environment: prod
+          tier: frontend
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-backend
+        labels:
+          environment: prod
+          tier: backend
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-frontend
+        labels:
+          environment: test
+          tier: frontend
+- spec:
+    componentName: bar
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bar-frontend
+        labels:
+          environment: prod
+          tier: frontend
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bar-frontend
+        labels:
+          environment: test
+          tier: frontend`).Components
+
+	testcases := []struct {
+		name           string
+		predicate      ComponentPredicate
+		wantComponents []*bundle.Component
+	}{
+		{
+			name:      "false predicate returns no components",
+			predicate: func(*bundle.Component) bool { return false },
+		},
+		{
+			name:           "true predicate returns all components and objects",
+			predicate:      func(*bundle.Component) bool { return true },
+			wantComponents: components,
+		},
+		{
+			name:      "selecting by object returns components with only matching objects",
+			predicate: ObjectNameIn("foo-frontend"),
+			wantComponents: FromYAMLStringToBundle(t, `components:
+- spec:
+    componentName: foo
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-frontend
+        labels:
+          environment: prod
+          tier: frontend
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-frontend
+        labels:
+          environment: test
+          tier: frontend`).Components,
+		},
+		{
+			name:      "selecting object works with multiple components",
+			predicate: ObjectLabelsIn(map[string]string{"environment": "prod"}),
+			wantComponents: FromYAMLStringToBundle(t, `components:
+- spec:
+    componentName: foo
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-frontend
+        labels:
+          environment: prod
+          tier: frontend
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: foo-backend
+        labels:
+          environment: prod
+          tier: backend
+- spec:
+    componentName: bar
+    objects:
+    - apiVersion: v1
+      kind: Pod
+      metadata:
+        name: bar-frontend
+        labels:
+          environment: prod
+          tier: frontend`).Components,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotComponents := SelectObjects(components, tc.predicate)
+			if diff := cmp.Diff(tc.wantComponents, gotComponents); diff != "" {
+				t.Fatalf("unexpected diff in components: (-want, +got)\n%s", diff)
 			}
 		})
 	}
