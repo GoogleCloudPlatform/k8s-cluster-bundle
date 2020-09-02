@@ -314,134 +314,30 @@ func Select(components []*bundle.Component, predicate ComponentPredicate) []*bun
 	return out
 }
 
-// ObjectKindIn checks if any of the components object.GetKind()
-// are in kinds.
-func ObjectKindIn(kinds ...string) ComponentPredicate {
+// ComponentFieldMatchIn takes a []string and see if the field matches one of
+// those.
+func ComponentFieldMatchIn(matchList []string, fieldGetter func(*bundle.Component) string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		fv := fieldGetter(component)
+		for _, match := range matchList {
+			if fv == match {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// ObjectFieldMatchIn takes a []string and sees if any object in the component
+// matches one of those.
+func ObjectFieldMatchIn(matchList []string, objectGetter func(*unstructured.Unstructured) string) ComponentPredicate {
 	return func(component *bundle.Component) bool {
 		for _, obj := range component.Spec.Objects {
-			for _, kind := range kinds {
-				if obj.GetKind() == kind {
+			ov := objectGetter(obj)
+			for _, match := range matchList {
+				if ov == match {
 					return true
 				}
-			}
-		}
-		return false
-	}
-}
-
-// ObjectNamespaceIn checks if any of the components object.GetNamespace()
-// are in namespaces.
-func ObjectNamespaceIn(namespaces ...string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		for _, obj := range component.Spec.Objects {
-			for _, namespace := range namespaces {
-				if obj.GetNamespace() == namespace {
-					return true
-				}
-			}
-		}
-		return false
-	}
-}
-
-// ComponentNameIn returns true if Component.Spec.ComponentName is in names.
-func ComponentNameIn(names ...string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		for _, name := range names {
-			if component.Spec.ComponentName == name {
-				return true
-			}
-		}
-		return false
-	}
-}
-
-// ObjectNameIn returns true if any of the components object.GetName()
-// are in names.
-func ObjectNameIn(names ...string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		for _, obj := range component.Spec.Objects {
-			for _, name := range names {
-				if obj.GetName() == name {
-					return true
-				}
-			}
-		}
-		return false
-	}
-}
-
-// anyKeyValueMatch takes two non nil maps and returns true if any key value
-// pair in a matches a key value pair in b. If the value in b is "" then it
-// always matches a matching key in a.
-func anyKeyValueMatch(a, b map[string]string) bool {
-	for ak, av := range a {
-		if bv, exists := b[ak]; exists {
-			if bv == "" {
-				return true
-			}
-			return av == bv
-		}
-	}
-	return false
-}
-
-// ComponentAnnotationsIn returns true if any of the annotations on the
-// component match the specified annotations. If the value for a key in
-// annotations is "", then match is true if the key matches.
-func ComponentAnnotationsIn(annotations map[string]string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		annots := component.GetAnnotations()
-		if annots == nil {
-			return false
-		}
-		return anyKeyValueMatch(annots, annotations)
-	}
-}
-
-// ObjectAnnotationsIn returns true if any of the components objects
-// annotations match the specified annotations. If the value for a key in
-// annotations is "", then match is true if the key matches.
-func ObjectAnnotationsIn(annotations map[string]string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		for _, obj := range component.Spec.Objects {
-			annots := obj.GetAnnotations()
-			if annots == nil {
-				return false
-			}
-			if anyKeyValueMatch(annots, annotations) {
-				return true
-			}
-		}
-		return false
-	}
-}
-
-// ComponentLabelsIn returns true if any of the labels on the
-// component match the specified labels. If the value for a key in
-// labels is "", then match is true if the key matches.
-func ComponentLabelsIn(labels map[string]string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		componentLabels := component.GetLabels()
-		if componentLabels == nil {
-			return false
-		}
-		return anyKeyValueMatch(componentLabels, labels)
-	}
-}
-
-// ObjectLabelsIn return true if any of the components objects labels
-// match the specified labels. If the value for a key in labels is "", then
-// match is true if the key matches.
-func ObjectLabelsIn(labels map[string]string) ComponentPredicate {
-	return func(component *bundle.Component) bool {
-		for _, obj := range component.Spec.Objects {
-			objLabels := obj.GetLabels()
-			if objLabels == nil {
-				return false
-			}
-			if anyKeyValueMatch(objLabels, labels) {
-				return true
 			}
 		}
 		return false
