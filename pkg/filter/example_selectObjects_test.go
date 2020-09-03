@@ -32,5 +32,5 @@ func Example_selectObjects() {
 	// Output:
 	// c1: [{zap [zap-pod zip-pod]} {zog [zog-pod zog-dep]}]
 	// c2: [{zap [zap-pod]} {nog [nog-pod]}]
-	// c3: [{zap [zip-pod]} {bog [bog-pod-2]} {zog [zog-pod]}]
+	// c3: [{zap [zip-pod]} {bog [bog-pod-2]} {nog [nog-pod]}]
 }
