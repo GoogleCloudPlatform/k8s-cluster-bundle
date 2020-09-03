@@ -370,6 +370,13 @@ func Or(componentPredicates ...ComponentPredicate) ComponentPredicate {
 	}
 }
 
+// Not returns a ComponentPredicate that negates it's result.
+func Not(predicate ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		return !predicate(component)
+	}
+}
+
 // SelectObjects returns components with only the objects that match the
 // predicate.
 func SelectObjects(components []*bundle.Component, predicate ComponentPredicate) []*bundle.Component {

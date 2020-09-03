@@ -39,7 +39,7 @@ components:
     - apiVersion: v1
       kind: Pod
       metadata:
-        name: bog-pod
+        name: bog-pod-1
         labels:
           component: bork
         annotations:
@@ -48,7 +48,7 @@ components:
     - apiVersion: v1
       kind: Pod
       metadata: 
-        name: bog-pod
+        name: bog-pod-2
         namespace: default
 - spec:
     componentName: nog
@@ -122,7 +122,7 @@ func Example_select() {
 	fmt.Println("c1:", toComponentList(c1))
 
 	c2 := filter.Select(bundle.Components, filter.Or(
-		filter.ObjectFieldMatchIn([]string{"bog-pod"}, (*unstructured.Unstructured).GetName),
+		filter.ObjectFieldMatchIn([]string{"bog-pod-1"}, (*unstructured.Unstructured).GetName),
 		filter.ComponentFieldMatchIn([]string{"nog"}, componentName)))
 	fmt.Println("c2:", toComponentList(c2))
 
@@ -132,6 +132,6 @@ func Example_select() {
 	fmt.Println("c3:", toComponentList(c3))
 	// Output:
 	// c1: [{zap [zap-pod zip-pod]} {zog [zog-pod zog-dep]}]
-	// c2: [{bog [bog-pod bog-pod]} {nog [nog-pod]}]
-	// c3: [{zap [zap-pod zip-pod]} {bog [bog-pod bog-pod]} {zog [zog-pod zog-dep]}]
+	// c2: [{bog [bog-pod-1 bog-pod-2]} {nog [nog-pod]}]
+	// c3: [{zap [zap-pod zip-pod]} {bog [bog-pod-1 bog-pod-2]} {zog [zog-pod zog-dep]}]
 }

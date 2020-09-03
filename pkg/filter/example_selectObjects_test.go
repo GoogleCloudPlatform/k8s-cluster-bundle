@@ -24,13 +24,13 @@ func Example_selectObjects() {
 		filter.ComponentFieldMatchIn([]string{"nog"}, componentName)))
 	fmt.Println("c2:", toComponentList(c2))
 
-	// Only pods that are in kube-system namespace are returned.
+	// Only pods that are not in kube-system namespace are returned.
 	c3 := filter.SelectObjects(bundle.Components, filter.And(
 		filter.ObjectFieldMatchIn([]string{"Pod"}, (*unstructured.Unstructured).GetKind),
-		filter.ObjectFieldMatchIn([]string{"kube-system"}, (*unstructured.Unstructured).GetNamespace)))
+		filter.Not(filter.ObjectFieldMatchIn([]string{"kube-system"}, (*unstructured.Unstructured).GetNamespace))))
 	fmt.Println("c3:", toComponentList(c3))
 	// Output:
 	// c1: [{zap [zap-pod zip-pod]} {zog [zog-pod zog-dep]}]
 	// c2: [{zap [zap-pod]} {nog [nog-pod]}]
-	// c3: [{zap [zap-pod]} {bog [bog-pod]} {zog [zog-pod]}]
+	// c3: [{zap [zip-pod]} {bog [bog-pod-2]} {zog [zog-pod]}]
 }
