@@ -517,3 +517,155 @@ func TestPartitionObjects(t *testing.T) {
 		})
 	}
 }
+
+func fromYAMLStringToComponent(t *testing.T, yaml string) *bundle.Component {
+	t.Helper()
+	component, err := converter.FromYAMLString(yaml).ToComponent()
+	if err != nil {
+		t.Fatalf("could not convert yaml to component: %v", err)
+	}
+	return component
+}
+
+func TestComponentFieldMatchIn(t *testing.T) {
+	fooYAML := `apiVersion: bundle.gke.io/v1alpha1
+kind: Component
+metadata:
+  name: foo-component
+spec:
+  componentName: foo
+  version: 1.2.3`
+	fooComponent := fromYAMLStringToComponent(t, fooYAML)
+	componentName := func(c *bundle.Component) string { return c.Spec.ComponentName }
+	testCases := []struct {
+		name           string
+		matches        []string
+		componentField func(*bundle.Component) string
+		want           bool
+	}{
+		{
+			name:           "returns true on match",
+			matches:        []string{"foo"},
+			componentField: componentName,
+			want:           true,
+		},
+		{
+			name:           "returns false when no match",
+			matches:        []string{"bar", "baz"},
+			componentField: componentName,
+			want:           false,
+		},
+		{
+			name:           "if any matches return true",
+			matches:        []string{"bar", "foo", "baz"},
+			componentField: componentName,
+			want:           true,
+		},
+		{
+			name:           "you can match on methods that return string",
+			matches:        []string{"foo-component"},
+			componentField: (*bundle.Component).GetName,
+			want:           true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pred := ComponentFieldMatchIn(tc.matches, tc.componentField)
+			got := pred(fooComponent)
+			if got != tc.want {
+				t.Fatalf("ComponentFieldMatchIn(%v) got=%v want=%v", tc.matches, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestObjectFieldMatchIn(t *testing.T) {
+	fooYAML := `
+apiVersion: bundle.gke.io/v1alpha1
+kind: Component
+metadata:
+  name: foo-component
+spec:
+  componentName: foo
+  version: 1.2.3
+  objects:
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: foo-blog-stable
+      namespace: kube-system
+    spec:
+      containers:
+      - name: blog
+        image: nginx:stable
+      - name: redis
+        image: redis:6
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: foo-blog-latest
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+      - name: redis
+        image: redis:latest`
+	fooComponent := fromYAMLStringToComponent(t, fooYAML)
+	testCases := []struct {
+		name        string
+		matches     []string
+		objectField func(*unstructured.Unstructured) string
+		want        bool
+	}{
+		{
+			name:        "returns true on object match",
+			matches:     []string{"foo-blog-stable"},
+			objectField: (*unstructured.Unstructured).GetName,
+			want:        true,
+		},
+		{
+			name:        "returns false when there is no match",
+			matches:     []string{"foo-job"},
+			objectField: (*unstructured.Unstructured).GetName,
+			want:        false,
+		},
+		{
+			name:        "returns true if any object field matches",
+			matches:     []string{"foo-job", "foo-blog-latest"},
+			objectField: (*unstructured.Unstructured).GetName,
+			want:        true,
+		},
+		{
+			name:    "you can match on anything in the object",
+			matches: []string{"redis:latest"},
+			// returns the image of the redis containers
+			objectField: func(u *unstructured.Unstructured) string {
+				containers, found, err := unstructured.NestedSlice(u.Object, "spec", "containers")
+				if !found || err != nil {
+					return ""
+				}
+				for _, container := range containers {
+					name, found, err := unstructured.NestedString(container.(map[string]interface{}), "name")
+					if !found || err != nil {
+						return ""
+					}
+					if name == "redis" {
+						image, _, _ := unstructured.NestedString(container.(map[string]interface{}), "image")
+						return image
+					}
+				}
+				return ""
+			},
+			want: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pred := ObjectFieldMatchIn(tc.matches, tc.objectField)
+			got := pred(fooComponent)
+			if got != tc.want {
+				t.Fatalf("ObjectFieldMatchIn(%v) got=%v want=%v", tc.matches, got, tc.want)
+			}
+		})
+	}
+}
