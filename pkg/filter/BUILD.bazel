@@ -15,7 +15,11 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["filter_test.go"],
+    srcs = [
+        "example_selectObjects_test.go",
+        "example_select_test.go",
+        "filter_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",

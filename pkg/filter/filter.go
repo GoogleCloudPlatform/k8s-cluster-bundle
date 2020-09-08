@@ -297,3 +297,105 @@ func matches(d *objectData, o *Options) bool {
 	}
 	return matchesKinds && matchesNS && matchesNames && matchesAnnot && matchesLabels
 }
+
+// ComponentPredicate is a func that returns true for components that match
+// criteria and false otherwise.
+type ComponentPredicate func(*bundle.Component) bool
+
+// Select takes a list of components and a predicate and returns the
+// components that match the predicate.
+func Select(components []*bundle.Component, predicate ComponentPredicate) []*bundle.Component {
+	var out []*bundle.Component
+	for _, component := range components {
+		if predicate(component) {
+			out = append(out, component)
+		}
+	}
+	return out
+}
+
+// ComponentFieldMatchIn takes a []string and see if the field matches one of
+// those.
+func ComponentFieldMatchIn(matchList []string, fieldGetter func(*bundle.Component) string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		fv := fieldGetter(component)
+		for _, match := range matchList {
+			if fv == match {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// ObjectFieldMatchIn takes a []string and sees if any object in the component
+// matches one of those.
+func ObjectFieldMatchIn(matchList []string, objectGetter func(*unstructured.Unstructured) string) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, obj := range component.Spec.Objects {
+			ov := objectGetter(obj)
+			for _, match := range matchList {
+				if ov == match {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// And returns true if every ComponentPredicate function returns true and
+// returns false otherwise.
+func And(componentPredicates ...ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, predicate := range componentPredicates {
+			if !predicate(component) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+// Or returns true if any ComponentPredicate function returns true and
+// returns false otherwise.
+func Or(componentPredicates ...ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		for _, predicate := range componentPredicates {
+			if predicate(component) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// Not returns a ComponentPredicate that negates it's result.
+func Not(predicate ComponentPredicate) ComponentPredicate {
+	return func(component *bundle.Component) bool {
+		return !predicate(component)
+	}
+}
+
+// SelectObjects returns components with only the objects that match the
+// predicate.
+func SelectObjects(components []*bundle.Component, predicate ComponentPredicate) []*bundle.Component {
+	var out []*bundle.Component
+	for _, component := range components {
+		temp := component.DeepCopy()
+		var selectedObjects []*unstructured.Unstructured
+		for _, object := range component.Spec.Objects {
+			temp.Spec.Objects = []*unstructured.Unstructured{object}
+			if predicate(temp) {
+				selectedObjects = append(selectedObjects, object)
+			}
+		}
+		if len(selectedObjects) == 0 {
+			continue
+		}
+		newComp := component.DeepCopy()
+		newComp.Spec.Objects = selectedObjects
+		out = append(out, newComp)
+	}
+	return out
+}
