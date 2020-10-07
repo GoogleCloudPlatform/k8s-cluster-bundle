@@ -87,10 +87,7 @@ func OptionsFromObjectSelector(sel *bundle.ObjectSelector) *Options {
 // properties of the object-children of the components. This is the opposite
 // matching from SelectComponents.
 func (f *Filter) FilterComponents(data []*bundle.Component, o *Options) []*bundle.Component {
-	matched, notMatched := f.PartitionComponents(data, o)
-	if o.InvertMatch {
-		return matched
-	}
+	_, notMatched := f.PartitionComponents(data, o)
 	return notMatched
 }
 
@@ -100,10 +97,7 @@ func (f *Filter) FilterComponents(data []*bundle.Component, o *Options) []*bundl
 // object-children of the components. This performs the opposte matching from
 // FilterComponents.
 func (f *Filter) SelectComponents(data []*bundle.Component, o *Options) []*bundle.Component {
-	matched, notMatched := f.PartitionComponents(data, o)
-	if o.InvertMatch {
-		return notMatched
-	}
+	matched, _ := f.PartitionComponents(data, o)
 	return matched
 }
 
@@ -138,20 +132,14 @@ func (f *Filter) PartitionComponents(data []*bundle.Component, o *Options) ([]*b
 // FilterObjects removes objects based on the ObjectMeta properties of the objects,
 // returning a new list with just filtered objects. This performs the opposite match from SelectObjects.
 func (f *Filter) FilterObjects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
-	matched, notMatched := f.PartitionObjects(data, o)
-	if o.InvertMatch {
-		return matched
-	}
+	_, notMatched := f.PartitionObjects(data, o)
 	return notMatched
 }
 
 // SelectObjects picks objects based on the ObjectMeta properties of the objects,
 // returning a new list with just filtered objects.
 func (f *Filter) SelectObjects(data []*unstructured.Unstructured, o *Options) []*unstructured.Unstructured {
-	matched, notMatched := f.PartitionObjects(data, o)
-	if o.InvertMatch {
-		return notMatched
-	}
+	matched, _ := f.PartitionObjects(data, o)
 	return matched
 }
 
@@ -295,5 +283,10 @@ func matches(d *objectData, o *Options) bool {
 			}
 		}
 	}
-	return matchesKinds && matchesNS && matchesNames && matchesAnnot && matchesLabels
+
+	matches := matchesKinds && matchesNS && matchesNames && matchesAnnot && matchesLabels
+	if o.InvertMatch {
+		return !matches
+	}
+	return matches
 }
