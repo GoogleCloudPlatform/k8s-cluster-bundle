@@ -17,7 +17,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-K8S_VERSION="release-1.15"
+K8S_VERSION="release-1.18"
 
 command -v deepcopy-gen >/dev/null 2>&1 || {
   pt1="Error: deepcopy-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
@@ -26,7 +26,7 @@ command -v deepcopy-gen >/dev/null 2>&1 || {
 }
 
 command -v register-gen >/dev/null 2>&1 || {
-  pt1="Error: register-gen is required, but was not found. Download release-1.12 of k8s.io/code-generator.\n"
+  pt1="Error: register-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"
   pt2="Then, install with 'go install k8s.io/code-generator/cmd/register-gen'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
@@ -39,7 +39,7 @@ command -v client-gen >/dev/null 2>&1 || {
 
 command -v controller-gen >/dev/null 2>&1 || {
   pt1="Error: controller-gen (generator) is required, but was not found. Download sigs.k8s.io/controller-tools.\n"
-  pt2="Then, install with 'go install sigs.k8s.io/controller-tools/cmd'"
+  pt2="Then, install with 'go install sigs.k8s.io/controller-tools/cmd/controller-gen'"
   printf >&2 "${pt1}${pt2}"; exit 1;
 }
 
@@ -47,21 +47,25 @@ command -v controller-gen >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "${REPO_ROOT}"
 
+echo "Generating with deepcopy-gen"
 deepcopy-gen \
   -h hack/boilerplate.go.txt \
   -O zz_generated.deepcopy \
   --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
+echo "Generating with register-gen"
 register-gen \
   -h hack/boilerplate.go.txt \
   --input-dirs=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1
 
+echo "Generating with client-gen"
 client-gen --clientset-name=versioned \
   -h hack/boilerplate.go.txt \
   --input-base "" \
   --input=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1 \
   --output-package=github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/clientset
 
-controller-gen crd paths=./apis/...
+# controller-gen doesn't currently work with apiserver extensions. =/
+# controller-gen crd paths=./pkg/apis/...
