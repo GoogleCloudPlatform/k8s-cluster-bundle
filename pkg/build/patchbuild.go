@@ -73,6 +73,7 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 		PatchType:     ptb.PatchType,
 		ObjectMeta:    *ptb.ObjectMeta.DeepCopy(),
 		OptionsSchema: ptb.TargetSchema.DeepCopy(),
+		Selector:      ptb.Selector.DeepCopy(),
 		Template:      buf.String(),
 	}
 	return pt, nil
