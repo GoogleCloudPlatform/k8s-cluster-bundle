@@ -17,7 +17,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-K8S_VERSION="release-1.18"
+K8S_VERSION="release-1.22"
 
 command -v deepcopy-gen >/dev/null 2>&1 || {
   pt1="Error: deepcopy-gen is required, but was not found. Download $K8S_VERSION of k8s.io/code-generator.\n"

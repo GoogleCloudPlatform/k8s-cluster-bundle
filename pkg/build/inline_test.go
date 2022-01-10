@@ -762,7 +762,7 @@ version: 1.2.3
 objectFiles:
 - url: '/path/to/kube_apiserver.yaml'`,
 			files:        defaultFiles,
-			expErrSubstr: "DNS-1123",
+			expErrSubstr: "DNS 1123",
 		},
 		{
 			desc: "error: invalid generated name",
@@ -774,7 +774,7 @@ version: 1.2.3-
 objectFiles:
 - url: '/path/to/kube_apiserver.yaml'`,
 			files:        defaultFiles,
-			expErrSubstr: "DNS-1123",
+			expErrSubstr: "DNS 1123",
 		},
 	}
 	for _, tc := range testCases {

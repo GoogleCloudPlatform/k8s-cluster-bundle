@@ -72,7 +72,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // BundleV1alpha1 retrieves the BundleV1alpha1Client
 func (c *Clientset) BundleV1alpha1() bundlev1alpha1.BundleV1alpha1Interface {

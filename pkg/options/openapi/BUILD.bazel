@@ -17,6 +17,7 @@ go_library(
         "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions:go_default_library",
         "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1beta1:go_default_library",
         "@io_k8s_apiextensions_apiserver//pkg/apiserver/validation:go_default_library",
+        "@io_k8s_kube_openapi//pkg/validation/spec:go_default_library",
     ],
 )
 

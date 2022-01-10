@@ -16,6 +16,7 @@ package patchtmpl
 
 import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
+	webhookv1 "k8s.io/api/admissionregistration/v1"
 	webhookv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -26,6 +27,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
+	crdextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	crdextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -48,12 +50,14 @@ func init() {
 	must(appsv1beta1.AddToScheme(k.KubeScheme))
 	must(appsv1beta2.AddToScheme(k.KubeScheme))
 	must(corev1.AddToScheme(k.KubeScheme))
+	must(crdextv1.AddToScheme(k.KubeScheme))
 	must(crdextv1beta1.AddToScheme(k.KubeScheme))
 	must(extv1beta1.AddToScheme(k.KubeScheme))
 	must(policyv1beta1.AddToScheme(k.KubeScheme))
 	must(rbacv1.AddToScheme(k.KubeScheme))
 	must(storagev1.AddToScheme(k.KubeScheme))
 	must(storagev1beta1.AddToScheme(k.KubeScheme))
+	must(webhookv1.AddToScheme(k.KubeScheme))
 	must(webhookv1beta1.AddToScheme(k.KubeScheme))
 	must(bundle.AddToScheme(k.KubeScheme))
 

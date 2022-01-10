@@ -24,6 +24,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
+	kspec "k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 // ValidateOptions based on an OpenAPI schema. The returned result object
@@ -49,10 +50,18 @@ func ValidateOptions(opts options.JSONOptions, optSchema *apiextv1beta1.JSONSche
 		return nil, err
 	}
 
-	openapiSchema := &spec.Schema{}
-	if err := validation.ConvertJSONSchemaProps(intOptSchema, openapiSchema); err != nil {
+	k8sOpenapiSchema := &kspec.Schema{}
+	if err := validation.ConvertJSONSchemaProps(intOptSchema, k8sOpenapiSchema); err != nil {
 		return nil, err
 	}
+
+	openapiSchema := &spec.Schema{}
+	data, err := k8sOpenapiSchema.MarshalJSON()
+	if err != nil {
+                return nil, err
+        }
+	openapiSchema.UnmarshalJSON(data)
+
 	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)
 
 	// Convert back to map[string]interface{}, since that's what the validation expects.
