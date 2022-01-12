@@ -21,6 +21,8 @@ import (
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/multi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -152,10 +154,19 @@ func (bw *BundleWrapper) AllComponents() []*bundle.Component {
 
 // ExportAsObjects will export a Bundle as a ComponentSet and Components,
 // or a Component as unstructured Objects.
-func (bw *BundleWrapper) ExportAsObjects() ([]*unstructured.Unstructured, error) {
+func (bw *BundleWrapper) ExportAsObjects(opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
 	switch bw.Kind() {
 	case "Component":
-		return bw.Component().Spec.Objects, nil
+		components := bw.Component()
+		if opts != nil {
+			applier := multi.NewDefaultApplier()
+			comp, err := applier.ApplyOptions(components, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to apply options: %v", err)
+			}
+			components = comp
+		}
+		return components.Spec.Objects, nil
 	case "Bundle":
 		bun := bw.Bundle()
 		y, err := converter.FromObject(bun.ComponentSet()).ToYAML()
