@@ -8,6 +8,8 @@ go_library(
     deps = [
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
+        "//pkg/options:go_default_library",
+        "//pkg/options/multi:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured:go_default_library",
     ],
 )

@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//pkg/commands/cmdlib:go_default_library",
         "//pkg/converter:go_default_library",
+        "//pkg/options:go_default_library",
         "//pkg/files:go_default_library",
         "@com_github_spf13_cobra//:go_default_library",
         "@io_k8s_klog//:go_default_library",
