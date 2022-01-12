@@ -34,5 +34,9 @@ func GetCommand(ctx context.Context, fio files.FileReaderWriter, sio cmdlib.Stdi
 			action(ctx, fio, sio, cmd, opts, gopts)
 		},
 	}
+
+	cmd.Flags().StringArrayVar(&opts.optionsFiles, "options-files", []string{},
+		"File containing options to apply to templates. May be repeated, later values override earlier ones. If not set, templates will not be rendered")
+
 	return cmd
 }
