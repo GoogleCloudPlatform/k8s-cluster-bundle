@@ -34,5 +34,7 @@ template: |
         containers:
           - name: hello-app
             image: {{ .Registry }}/hello-app:{{ .ImageTag }}
+            {{if ge .Port 1}}
             ports:
             - containerPort: {{.Port}}
+            {{end}}
