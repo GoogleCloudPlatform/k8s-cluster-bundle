@@ -7,6 +7,14 @@ buildSchema:
     ImageTag:
       description: The image tag to deploy.
       type: string
+    PortStartGuard:
+      description: Start stanza for the port
+      type: string
+      default: "{{if ge .Port 1.0}}"
+    PortEndGuard:
+      description: End stanza for the port
+      type: string
+      default: "{{end}}"
 targetSchema:
   required:
     - Namespace
@@ -32,9 +40,9 @@ template: |
     template:
       spec:
         containers:
-          - name: hello-app
-            image: {{ .Registry }}/hello-app:{{ .ImageTag }}
-            {{if ge .Port 1}}
-            ports:
-            - containerPort: {{.Port}}
-            {{end}}
+        - name: hello-app
+          image: {{ .Registry }}/hello-app:{{ .ImageTag }}
+          {{ .PortStartGuard }}
+          ports:
+          - containerPort: {{ .Port }}
+          {{ .PortEndGuard }}
