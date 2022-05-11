@@ -15,6 +15,7 @@
 package converter
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -199,5 +200,35 @@ func TestConverterFormatTypeInversions(t *testing.T) {
 	}
 	if secondIttObj.APIVersion != "bundle.gke.io/v1alpha1" {
 		t.Fatalf("manifest apiVersion key doesn't match original one:expected=v1, got=%v", thirdIttObj.APIVersion)
+	}
+}
+
+type SomeObject struct {
+	String string
+	Float  float64
+	Int    int
+	Val    interface{}
+}
+
+func TestConvertInteger(t *testing.T) {
+	example := &SomeObject{
+		String: "foo",
+		Float:  1.123,
+		Int:    123,
+		Val:    123.0,
+	}
+	yamlEx := `
+String: foo
+Float: 1.123
+Int: 123
+Val: 123
+`
+	out := &SomeObject{}
+	err := FromYAMLString(yamlEx).ToObject(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(out, example) {
+		t.Errorf("Convert(%s)=%+v, but expected %+v", yamlEx, out, example)
 	}
 }

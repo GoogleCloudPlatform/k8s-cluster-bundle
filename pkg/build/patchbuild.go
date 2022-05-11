@@ -36,7 +36,7 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: it has an empty template", name)
 	}
 
-	tmpl, err := template.New("ptb").Parse(ptb.Template)
+	tmpl, err := template.New("temporary-patch-template-builder").Parse(ptb.Template)
 	if err != nil {
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: error parsing template: %v", name, err)
 	}

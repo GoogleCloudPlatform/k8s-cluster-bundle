@@ -489,6 +489,39 @@ spec:
 			removeTemplates: true,
 		},
 
+		{
+			desc: "success: patch with numbers (floats)",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    optionsSchema:
+      properties:
+        Name:
+          type: string
+          default: zed
+        Port:
+          description: Container port for the helloweb app.
+          type: number
+          default: 8080
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+      spec:
+        containers:
+          - name: hello-app
+            {{if ge .Port 1.0}}
+            ports:
+            - containerPort: {{.Port}}
+            {{end}}
+`,
+			expMatchSubstrs: []string{"containerPort: 8080"},
+		},
+
 		// Errors
 		{
 			desc: "fail: patch, basic options: missing variable",

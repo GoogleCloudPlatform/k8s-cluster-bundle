@@ -58,8 +58,8 @@ func ValidateOptions(opts options.JSONOptions, optSchema *apiextv1beta1.JSONSche
 	openapiSchema := &spec.Schema{}
 	data, err := k8sOpenapiSchema.MarshalJSON()
 	if err != nil {
-                return nil, err
-        }
+		return nil, err
+	}
 	openapiSchema.UnmarshalJSON(data)
 
 	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)
