@@ -22,4 +22,6 @@ template: |
   spec:
     ports:
     - port: 80
+      {{if ge .Port 1}}
       targetPort: {{.Port}}
+      {{end}}
