@@ -491,6 +491,9 @@ spec:
 
 		{
 			desc: "success: patch with numbers (floats)",
+			opts: map[string]interface{}{
+				"Port": 80,
+			},
 			component: `
 kind: Component
 spec:
