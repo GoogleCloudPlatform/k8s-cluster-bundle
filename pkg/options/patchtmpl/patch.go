@@ -16,7 +16,9 @@ package patchtmpl
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"strconv"
 	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
@@ -207,7 +209,7 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 			return nil, nil, fmt.Errorf("bad patch type: %s", patchType)
 		}
 
-		tmpl, err := template.New(fmt.Sprintf("patch-tmpl-%d", j)).Parse(pto.Template)
+		tmpl, err := template.New(fmt.Sprintf("patch-tmpl-%d", j)).Funcs(patchFuncs).Parse(pto.Template)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
 		}
@@ -357,4 +359,30 @@ func objectApplier(scheme *PatcherScheme, patches []*parsedPatch) options.ObjHan
 // checks to ensure that if the patch defines a name,
 func canApplyPatch(pat *parsedPatch, obj *unstructured.Unstructured) bool {
 	return filter.MatchesObject(obj, filter.OptionsFromObjectSelector(pat.selector))
+}
+
+var floatConversionError = errors.New("error converting to float")
+
+// convertToFloat is a helper function that can be used at during
+func convertToFloat(val interface{}) (float64, error) {
+	switch v := val.(type) {
+	case int:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case string:
+		return strconv.ParseFloat(v, 64)
+	case float32:
+		return float64(v), nil
+	case float64:
+		return v, nil
+	default:
+		return 0, fmt.Errorf("%w; value %v with type %T could not be converted to float", floatConversionError, val, v)
+	}
+}
+
+var patchFuncs template.FuncMap = map[string]interface{}{
+	"convertAnyToFloat": convertToFloat,
 }

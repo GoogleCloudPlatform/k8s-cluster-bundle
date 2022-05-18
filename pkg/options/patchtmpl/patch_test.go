@@ -15,6 +15,7 @@
 package patchtmpl
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -521,6 +522,41 @@ spec:
 `,
 			expMatchSubstrs: []string{"containerPort: 8080"},
 		},
+		{
+			desc: "success: patch with numbers (int to floats)",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplate
+    optionsSchema:
+      properties:
+        Name:
+          type: string
+          default: zed
+        Port:
+          description: Container port for the helloweb app.
+          type: number
+          default: 8080
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Name}}
+      spec:
+        containers:
+          - name: hello-app
+            {{with $x := convertAnyToFloat .Port}}{{if ge $x 1.0}}
+            ports:
+            - containerPort: {{$x}}
+            {{end}}{{end}}
+`,
+			opts: map[string]interface{}{
+				"Port": 8080,
+			},
+			expMatchSubstrs: []string{"containerPort: 8080"},
+		},
 
 		// Errors
 		{
@@ -630,6 +666,62 @@ spec:
 			}
 			if hasErr {
 				t.Errorf("got yaml contents:\n%s", compStr)
+			}
+		})
+	}
+}
+
+func TestConvertToFloat(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		in     interface{}
+		exp    float64
+		expErr error
+	}{
+		{
+			desc: "float success",
+			in:   12.2,
+			exp:  12.2,
+		},
+		{
+			desc: "float32 success",
+			in:   float32(12),
+			exp:  12,
+		},
+		{
+			desc: "string success",
+			in:   "12.2",
+			exp:  12.2,
+		},
+		{
+			desc: "int success",
+			in:   12,
+			exp:  12.0,
+		},
+		{
+			desc: "int32 success",
+			in:   int32(12),
+			exp:  12.0,
+		},
+		{
+			desc: "int64 success",
+			in:   int64(12),
+			exp:  12.0,
+		},
+		{
+			desc:   "basic error",
+			in:     func() {},
+			expErr: floatConversionError,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			out, err := convertToFloat(tc.in)
+			if !errors.Is(err, tc.expErr) {
+				t.Fatalf("got error %v, but expected error %v", err, tc.expErr)
+			}
+			if out != tc.exp {
+				t.Fatalf("got value %v, but expected value %v", out, tc.exp)
 			}
 		})
 	}
