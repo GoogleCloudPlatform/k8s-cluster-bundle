@@ -680,7 +680,7 @@ func TestConvertToFloat(t *testing.T) {
 	}{
 		{
 			desc: "float success",
-			in:   12.2,
+			in:   float64(12.2),
 			exp:  12.2,
 		},
 		{
@@ -690,12 +690,12 @@ func TestConvertToFloat(t *testing.T) {
 		},
 		{
 			desc: "string success",
-			in:   "12.2",
+			in:   string("12.2"),
 			exp:  12.2,
 		},
 		{
 			desc: "int success",
-			in:   12,
+			in:   int(12),
 			exp:  12.0,
 		},
 		{
