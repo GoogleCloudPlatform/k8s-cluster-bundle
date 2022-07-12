@@ -338,7 +338,7 @@ build` and `go test` for building and testing.
 To run the unit tests, run
 
 ```shell
-bazel test ...
+bazel test //...
 ```
 
 It should also work to use the `go` command:
