@@ -9,6 +9,7 @@ require (
 	github.com/go-openapi/spec v0.19.7
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/validate v0.19.7
+	github.com/google/safetext v0.0.0-20221026122733-23539d61753f
 	github.com/spf13/cobra v1.4.0
 	k8s.io/api v0.24.1
 	k8s.io/apiextensions-apiserver v0.24.1
@@ -37,7 +38,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/google/safetext v0.0.0-20221026122733-23539d61753f // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

@@ -12,6 +12,7 @@ go_library(
         "//pkg/apis/bundle/v1alpha1:go_default_library",
         "//pkg/converter:go_default_library",
         "//pkg/filter:go_default_library",
+        "//pkg/internal:go_default_library",
         "//pkg/options:go_default_library",
         "//pkg/options/openapi:go_default_library",
         "@com_github_evanphx_json_patch//:go_default_library",
