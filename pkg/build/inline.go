@@ -274,6 +274,7 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.TemplateFileSet, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
 	for _, tmplFileSet := range tmplFiles {
+		useSafeYamlTemplaterDefault := tmplFileSet.UseSafeYAMLTemplater
 		for _, tf := range tmplFileSet.Files {
 			furl, err := tf.ParsedURL()
 			if err != nil {
@@ -304,6 +305,9 @@ func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.Template
 				tmplType = tmplFileSet.TemplateType
 			}
 			objTemplate.Type = tmplType
+			if useSafeYamlTemplaterDefault != nil && objTemplate.UseSafeYAMLTemplater == nil {
+				objTemplate.UseSafeYAMLTemplater = useSafeYamlTemplaterDefault
+			}
 
 			objJSON, err := converter.FromObject(objTemplate).ToJSON()
 			if err != nil {
@@ -357,9 +361,10 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 					APIVersion: "bundle.gke.io/v1alpha1",
 					Kind:       "ObjectTemplate",
 				},
-				ObjectMeta:    builder.ObjectMeta,
-				OptionsSchema: builder.OptionsSchema,
-				Template:      string(contents),
+				ObjectMeta:           builder.ObjectMeta,
+				OptionsSchema:        builder.OptionsSchema,
+				Template:             string(contents),
+				UseSafeYAMLTemplater: builder.UseSafeYAMLTemplater,
 			}
 			objTemplate.ObjectMeta.Annotations = make(map[string]string)
 			for key, value := range builder.ObjectMeta.Annotations {

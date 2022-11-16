@@ -92,6 +92,9 @@ type TemplateFileSet struct {
 	// to Go Templates during build if left unspecified.
 	TemplateType TemplateType `json:"templateType,omitempty"`
 
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
+
 	// Templates files that are specified via a File-URL. During the
 	// inline process, if the file is YAML-formatted and contains multiple
 	// objects in the YAML-doc, the objects will be split into separate inline

@@ -697,6 +697,38 @@ templateFiles:
 			},
 		},
 
+		{
+			desc: "success: component, template files: relative path, safe YAML",
+			data: `
+kind: ComponentBuilder
+componentName: binary-blob
+version: 1.2.3
+templateFiles:
+- useSafeYamlTemplater: true
+  files:
+  - url: 'manifest/tmpl.yaml'`,
+			files: map[string][]byte{
+				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
+			},
+			pathToComponent: "/path/to/builder.yaml",
+			expComp: compRef{
+				name: "binary-blob-1.2.3",
+				ref: bundle.ComponentReference{
+					ComponentName: "binary-blob",
+					Version:       "1.2.3",
+				},
+				obj: []objCheck{
+					{
+						subStrings: []string{
+							"name: {{.foo}}",
+							"type: go-template",
+							"useSafeYamlTemplater: true",
+						},
+					},
+				},
+			},
+		},
+
 		// Error cases.
 		{
 			desc:         "fail: can't read file",

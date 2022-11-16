@@ -56,7 +56,10 @@ spec:
           image: '{{.AnotherContainerImage}}'
 `
 
+type foo string
+
 func TestGoTemplateApplier(t *testing.T) {
+
 	testCases := []struct {
 		desc          string
 		component     string
@@ -202,6 +205,7 @@ spec:
 				"ObjectTemplate",
 			},
 		},
+
 		{
 			desc: "object templates and other objects",
 			component: `
@@ -232,6 +236,39 @@ spec:
 				"derp",
 			},
 		},
+
+		{
+			desc: "object templates and other objects + SafeYAML",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: Pod
+    metadata:
+      name: derp
+  - kind: ObjectTemplate
+    type: go-template
+    useSafeYAMLTemplater: true
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        dnsPolicy: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expSubstrings: []string{
+				"derp",
+			},
+		},
+
 		{
 			desc: "object templates: options schema defaulting",
 			component: `
@@ -293,7 +330,70 @@ spec:
 			},
 			expErrSubstr: "ContainerImage in body should match",
 		},
+
+		{
+			desc: "object templates and other objects + unsafe YAML (not using safeYAML)",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: Pod
+    metadata:
+      name: derp
+  - kind: ObjectTemplate
+    type: go-template
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        {{.DNSKey}}: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSKey":         "dnsPolicy",
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expSubstrings: []string{
+				"derp",
+			},
+		},
+		{
+			desc: "object templates and other objects + unsafe YAML (using safeYAML)",
+			component: `
+kind: Component
+spec:
+  componentName: data-component
+  objects:
+  - kind: Pod
+    metadata:
+      name: derp
+  - kind: ObjectTemplate
+    type: go-template
+    useSafeYAMLTemplater: true
+    template: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: logger-pod
+      spec:
+        {{.DNSKey}}: '{{.DNSPolicy}}'
+        containers:
+        - name: logger
+          image: '{{.ContainerImage}}'`,
+			usedParams: map[string]interface{}{
+				"DNSKey":         "dnsPolicy",
+				"DNSPolicy":      "FooBarPolicy",
+				"ContainerImage": "MyContainerImage",
+			},
+			expErrSubstr: "YAML Injection Detected",
+		},
 	}
+
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
@@ -313,7 +413,7 @@ spec:
 				return allMap
 			}()
 
-			newComp, err := NewApplier().ApplyOptions(comp, opts)
+			newComp, err := NewApplier(WithGoTmplOptions()).ApplyOptions(comp, opts)
 			cerr := testutil.CheckErrorCases(err, tc.expErrSubstr)
 			if cerr != nil {
 				t.Fatal(cerr)

@@ -51,6 +51,9 @@ type ObjectTemplateBuilder struct {
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.
 	OptionsSchema *apiextensions.JSONSchemaProps `json:"optionsSchema,omitempty"`
+
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -69,4 +72,7 @@ type ObjectTemplate struct {
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the object template, which includes both defaulting and validation.
 	OptionsSchema *apiextensions.JSONSchemaProps `json:"optionsSchema,omitempty"`
+
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
 }

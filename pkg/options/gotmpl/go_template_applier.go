@@ -24,10 +24,10 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
-	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/internal"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -45,7 +45,8 @@ type ApplierConfig func(*applier)
 // in config maps. This applier only applies to `RawTextFiles` that have been
 // inlined as part of the component inlining process.
 type applier struct {
-	goTmplOptions []string
+	goTmplOptions        []string
+	useSafeYAMLTemplater bool
 }
 
 // WithGoTmplOptions modifies NewApplier so that the returned Applier uses the
@@ -53,6 +54,14 @@ type applier struct {
 func WithGoTmplOptions(goTmplOptions ...string) ApplierConfig {
 	return func(a *applier) {
 		a.goTmplOptions = append(a.goTmplOptions, goTmplOptions...)
+	}
+}
+
+// WithSafeYAML modifies the applier behavior to use the safetext YAML
+// templater. This overrides behavior specified in the template.
+func WithSafeYAMLTemplaterOverride() ApplierConfig {
+	return func(a *applier) {
+		a.useSafeYAMLTemplater = true
 	}
 }
 
@@ -89,7 +98,6 @@ func (m *applier) ApplyOptions(comp *bundle.Component, opts options.JSONOptions)
 }
 
 func (m *applier) applyOptions(obj *unstructured.Unstructured, ref bundle.ComponentReference, opts options.JSONOptions) ([]*unstructured.Unstructured, error) {
-	// TODO(kashomon): this should probably clone the options for safety.
 	objTmpl := &bundle.ObjectTemplate{}
 	err := converter.FromUnstructured(obj).ToObject(objTmpl)
 	if err != nil {
@@ -103,7 +111,13 @@ func (m *applier) applyOptions(obj *unstructured.Unstructured, ref bundle.Compon
 		}
 	}
 
-	tmpl, err := template.New(ref.ComponentName + "-" + obj.GetName() + "-tmpl").Parse(objTmpl.Template)
+	tmplFuncs := make(map[string]interface{})
+
+	useSafeYAMLTemplater := m.useSafeYAMLTemplater
+	if objTmpl.UseSafeYAMLTemplater != nil && *objTmpl.UseSafeYAMLTemplater {
+		useSafeYAMLTemplater = *objTmpl.UseSafeYAMLTemplater
+	}
+	tmpl, err := internal.NewTemplater(ref.ComponentName+"-"+obj.GetName(), objTmpl.Template, tmplFuncs, useSafeYAMLTemplater)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template for object %q: %v", obj.GetName(), err)
 	}
@@ -118,7 +132,6 @@ func (m *applier) applyOptions(obj *unstructured.Unstructured, ref bundle.Compon
 		return nil, fmt.Errorf("error executing template for object %v: %v", obj.GetName(), err)
 	}
 
-	// TODO(kashomon): It would be better to use YAML-stream decoding, as can be
 	// performed by go-yaml: https://godoc.org/gopkg.in/yaml.v2
 	var out []*unstructured.Unstructured
 	yamlStr := buf.String()

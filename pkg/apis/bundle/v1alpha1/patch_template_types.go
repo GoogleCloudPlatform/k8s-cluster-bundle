@@ -85,6 +85,9 @@ type PatchTemplate struct {
 	// OptionsSchema is the schema for the parameters meant to be applied to
 	// the patch template.
 	OptionsSchema *apiextensions.JSONSchemaProps `json:"optionsSchema,omitempty"`
+
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -115,4 +118,7 @@ type PatchTemplateBuilder struct {
 	// TargetSchema is the schema for the parameters after the build-phase. This
 	// becomes the 'OptionsSchema' field.
 	TargetSchema *apiextensions.JSONSchemaProps `json:"targetSchema,omitempty"`
+
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
 }
