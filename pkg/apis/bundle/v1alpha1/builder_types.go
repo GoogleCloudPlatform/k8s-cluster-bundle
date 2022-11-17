@@ -92,7 +92,9 @@ type TemplateFileSet struct {
 	// to Go Templates during build if left unspecified.
 	TemplateType TemplateType `json:"templateType,omitempty"`
 
-	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating.
+	// UseSafeYAMLTemplater determines whether to use SafeYAMLTemplating. If set,
+	// this provides a default value for templates; it doesn't override values set
+	// in individual object templates.
 	UseSafeYAMLTemplater *bool `json:"useSafeYamlTemplater,omitempty"`
 
 	// Templates files that are specified via a File-URL. During the
