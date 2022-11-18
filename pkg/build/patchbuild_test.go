@@ -252,6 +252,7 @@ spec:
         name: {{.PodName}}
 `,
 		},
+
 		{
 			desc: "success: patch, build options, passing schema, target schema + nesting",
 			opts: map[string]interface{}{
@@ -328,6 +329,7 @@ spec:
           {{.Annotations.Key}}: {{.Annotations.Value}}
 `,
 		},
+
 		{
 			desc: "success: patch, build options, defaulted by build schema",
 			component: `
@@ -365,6 +367,91 @@ spec:
       metadata:
         namespace: foobar
 `,
+		},
+		{
+			desc: "success: patch, build options, defaulted by build schema + SafeYAMLTemplater",
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    buildSchema:
+      properties:
+        Namespace:
+          type: string
+          default: foobar
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+    useSafeYamlTemplater: true
+`,
+			output: `
+kind: Component
+metadata:
+  creationTimestamp: null
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - apiVersion: bundle.gke.io/v1alpha1
+    kind: PatchTemplate
+    metadata:
+      creationTimestamp: null
+    template: |
+      kind: Pod
+      metadata:
+        namespace: foobar
+    useSafeYamlTemplater: true
+`,
+		},
+
+		{
+			desc: "error: patch, build options, passing schema, target schema + nesting + SafeYAML",
+			opts: map[string]interface{}{
+				"Namespace": "foo",
+			},
+			component: `
+kind: Component
+spec:
+  objects:
+  - apiVersion: v1
+    kind: Pod
+  - kind: PatchTemplateBuilder
+    apiVersion: bundle.gke.io/v1alpha1
+    useSafeYamlTemplater: true
+    buildSchema:
+      required:
+        - Namespace
+      properties:
+        Namespace:
+          type: string
+    targetSchema:
+      required:
+      - PodName
+      - Annotations
+      properties:
+        Annotations:
+          type: object
+          properties:
+            Key:
+              type: string
+            Value:
+              type: string
+        PodName:
+          type: string
+    template: |
+      kind: Pod
+      metadata:
+        namespace: {{.Namespace}}
+        name: {{.PodName}}
+        annotations:
+          {{.Annotations.Key}}: {{.Annotations.Value}}
+`,
+			expErrSubstr: "YAML Injection Detected",
 		},
 		{
 			desc: "error: patch, build options, missing required",

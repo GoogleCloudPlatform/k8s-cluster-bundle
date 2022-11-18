@@ -17,11 +17,11 @@ package build
 import (
 	"bytes"
 	"fmt"
-	"text/template"
 
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/internal"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/wrapper"
@@ -36,7 +36,12 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: it has an empty template", name)
 	}
 
-	tmpl, err := template.New("temporary-patch-template-builder").Parse(ptb.Template)
+	tmplFuncs := make(map[string]interface{})
+	useSafeYAMLTemplater := false
+	if ptb.UseSafeYAMLTemplater != nil {
+		useSafeYAMLTemplater = *ptb.UseSafeYAMLTemplater
+	}
+	tmpl, err := internal.NewTemplater("temporary-patch-template-builder", ptb.Template, tmplFuncs, useSafeYAMLTemplater)
 	if err != nil {
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: error parsing template: %v", name, err)
 	}
@@ -70,11 +75,12 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 			APIVersion: "bundle.gke.io/v1alpha1",
 			Kind:       "PatchTemplate",
 		},
-		PatchType:     ptb.PatchType,
-		ObjectMeta:    *ptb.ObjectMeta.DeepCopy(),
-		OptionsSchema: ptb.TargetSchema.DeepCopy(),
-		Selector:      ptb.Selector.DeepCopy(),
-		Template:      buf.String(),
+		PatchType:            ptb.PatchType,
+		ObjectMeta:           *ptb.ObjectMeta.DeepCopy(),
+		OptionsSchema:        ptb.TargetSchema.DeepCopy(),
+		Selector:             ptb.Selector.DeepCopy(),
+		Template:             buf.String(),
+		UseSafeYAMLTemplater: ptb.UseSafeYAMLTemplater,
 	}
 	return pt, nil
 }

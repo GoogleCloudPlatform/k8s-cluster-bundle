@@ -24,6 +24,7 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/internal"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/options/openapi"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -39,8 +40,6 @@ type ApplierConfig func(*applier)
 type applier struct {
 	scheme *PatcherScheme
 
-	// TODO(kashomon): Maybe we don't need a full options-filter? Maybe we could
-	// just have annotation values?
 	tmplFilter *filter.Options
 
 	// If includeTemplates is true, applied patch templates will be included in the
@@ -209,11 +208,14 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 			return nil, nil, fmt.Errorf("bad patch type: %s", patchType)
 		}
 
-		tmpl, err := template.New(fmt.Sprintf("patch-tmpl-%d", j)).Funcs(patchFuncs).Parse(pto.Template)
+		useSafeYAMLTemplater := false
+		if pto.UseSafeYAMLTemplater != nil {
+			useSafeYAMLTemplater = *pto.UseSafeYAMLTemplater
+		}
+		tmpl, err := internal.NewTemplater(fmt.Sprintf("patch-tmpl-%d", j), pto.Template, patchFuncs, useSafeYAMLTemplater)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)
 		}
-
 		tmpl = tmpl.Option(a.templateOpts...)
 
 		newOpts := opts

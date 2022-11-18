@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/export"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/find"
-	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/generate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/patch"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/validate"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/commands/version"
@@ -75,8 +74,6 @@ func AddCommandsInternal(ctx context.Context, cio *cmdlib.CmdIO, flagset *flag.F
 	rootCmd.AddCommand(export.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
 	rootCmd.AddCommand(filter.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
 	rootCmd.AddCommand(find.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
-	// TODO(kashomon): Add deps to init.
-	rootCmd.AddCommand(generate.GetCommand())
 	rootCmd.AddCommand(patch.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
 	rootCmd.AddCommand(validate.GetCommand(ctx, cio.FileIO, cio.StdIO, gopts))
 	rootCmd.AddCommand(version.GetCommand(cio))
