@@ -7,5 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
       "@com_github_google_safetext//yamltemplate",
+      "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
     ],
 )

@@ -249,7 +249,9 @@ spec:
       name: derp
   - kind: ObjectTemplate
     type: go-template
-    useSafeYAMLTemplater: true
+    metadata:
+     annotations:
+        bundle.gke.io/safe-yaml: true
     template: |
       apiVersion: v1
       kind: Pod
@@ -373,8 +375,10 @@ spec:
     metadata:
       name: derp
   - kind: ObjectTemplate
+    metadata:
+      annotations:
+        bundle.gke.io/safe-yaml: true
     type: go-template
-    useSafeYAMLTemplater: true
     template: |
       apiVersion: v1
       kind: Pod

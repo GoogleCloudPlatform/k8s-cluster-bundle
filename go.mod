@@ -9,6 +9,7 @@ require (
 	github.com/go-openapi/spec v0.19.7
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/validate v0.19.7
+	github.com/google/go-cmp v0.5.5
 	github.com/google/safetext v0.0.0-20221026122733-23539d61753f
 	github.com/spf13/cobra v1.4.0
 	k8s.io/api v0.24.1

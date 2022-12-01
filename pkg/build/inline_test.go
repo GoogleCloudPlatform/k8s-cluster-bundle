@@ -701,11 +701,13 @@ templateFiles:
 			desc: "success: component, template files: relative path, safe YAML",
 			data: `
 kind: ComponentBuilder
+metadata:
+  annotations:
+    bundle.gke.io/safe-yaml: true
 componentName: binary-blob
 version: 1.2.3
 templateFiles:
-- useSafeYamlTemplater: true
-  files:
+- files:
   - url: 'manifest/tmpl.yaml'`,
 			files: map[string][]byte{
 				"/path/to/manifest/tmpl.yaml": []byte(podTemplate),
@@ -722,7 +724,7 @@ templateFiles:
 						subStrings: []string{
 							"name: {{.foo}}",
 							"type: go-template",
-							"useSafeYamlTemplater: true",
+							"bundle.gke.io/safe-yaml: \"true\"",
 						},
 					},
 				},

@@ -30,6 +30,9 @@ import (
 )
 
 // PatchTemplate renders a PatchTemplate from a PatchTemplateBuilder and options.
+//
+// If the PatchTemplateBuilder has the annotation `bundle.gke.io/safe-yaml`,
+// then yaml-templater will use safe-yaml templater.
 func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (*bundle.PatchTemplate, error) {
 	name := ptb.GetName()
 	if ptb.Template == "" {
@@ -37,10 +40,7 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 	}
 
 	tmplFuncs := make(map[string]interface{})
-	useSafeYAMLTemplater := false
-	if ptb.UseSafeYAMLTemplater != nil {
-		useSafeYAMLTemplater = *ptb.UseSafeYAMLTemplater
-	}
+	useSafeYAMLTemplater := internal.HasSafeYAMLAnnotation(ptb.ObjectMeta)
 	tmpl, err := internal.NewTemplater("temporary-patch-template-builder", ptb.Template, tmplFuncs, useSafeYAMLTemplater)
 	if err != nil {
 		return nil, fmt.Errorf("cannot build PatchTemplate from PatchTemplateBuilder %q: error parsing template: %v", name, err)
@@ -75,12 +75,11 @@ func PatchTemplate(ptb *bundle.PatchTemplateBuilder, opts options.JSONOptions) (
 			APIVersion: "bundle.gke.io/v1alpha1",
 			Kind:       "PatchTemplate",
 		},
-		PatchType:            ptb.PatchType,
-		ObjectMeta:           *ptb.ObjectMeta.DeepCopy(),
-		OptionsSchema:        ptb.TargetSchema.DeepCopy(),
-		Selector:             ptb.Selector.DeepCopy(),
-		Template:             buf.String(),
-		UseSafeYAMLTemplater: ptb.UseSafeYAMLTemplater,
+		PatchType:     ptb.PatchType,
+		ObjectMeta:    *ptb.ObjectMeta.DeepCopy(),
+		OptionsSchema: ptb.TargetSchema.DeepCopy(),
+		Selector:      ptb.Selector.DeepCopy(),
+		Template:      buf.String(),
 	}
 	return pt, nil
 }

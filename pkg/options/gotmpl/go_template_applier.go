@@ -58,7 +58,9 @@ func WithGoTmplOptions(goTmplOptions ...string) ApplierConfig {
 }
 
 // WithSafeYAML modifies the applier behavior to use the safetext YAML
-// templater. This overrides behavior specified in the template.
+// templater.
+//
+// This overrides behavior specified in the template.
 func WithSafeYAMLTemplaterOverride() ApplierConfig {
 	return func(a *applier) {
 		a.useSafeYAMLTemplater = true
@@ -114,8 +116,8 @@ func (m *applier) applyOptions(obj *unstructured.Unstructured, ref bundle.Compon
 	tmplFuncs := make(map[string]interface{})
 
 	useSafeYAMLTemplater := m.useSafeYAMLTemplater
-	if objTmpl.UseSafeYAMLTemplater != nil && *objTmpl.UseSafeYAMLTemplater {
-		useSafeYAMLTemplater = *objTmpl.UseSafeYAMLTemplater
+	if internal.HasSafeYAMLAnnotation(objTmpl.ObjectMeta) {
+		useSafeYAMLTemplater = true
 	}
 	tmpl, err := internal.NewTemplater(ref.ComponentName+"-"+obj.GetName(), objTmpl.Template, tmplFuncs, useSafeYAMLTemplater)
 	if err != nil {
