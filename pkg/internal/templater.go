@@ -5,15 +5,33 @@ import (
 	"text/template"
 
 	"github.com/google/safetext/yamltemplate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// A Templater provides templating functionality
+// SafeYAMLAnnotation is an annotation that can be put on a component that
+// indicates that the component should be processed with the SafeYAML library
+// rather than the default library.
+const SafeYAMLAnnotation = "bundle.gke.io/safe-yaml"
+
+// HasSafeYAMLAnnotation returns whether ObjectMeta contains the
+// SafeYAMLAnnotation.
+func HasSafeYAMLAnnotation(objmeta metav1.ObjectMeta) bool {
+	annot := objmeta.GetAnnotations()
+	if annot == nil {
+		return false
+	}
+	_, ok := annot[SafeYAMLAnnotation]
+	return ok
+}
+
+// Templater provides templating functionality for YAML templating.
 type Templater struct {
 	useSafeYAMLTemplater bool
 	yamlTemplater        *yamltemplate.Template
 	standardTemplater    *template.Template
 }
 
+// NewTemplater creates a new Templater.
 func NewTemplater(tmplName, templateDoc string, funcs map[string]interface{}, useSafeYAMLTemplater bool) (*Templater, error) {
 	if useSafeYAMLTemplater {
 		t := yamltemplate.New(tmplName + "-safetmpl")

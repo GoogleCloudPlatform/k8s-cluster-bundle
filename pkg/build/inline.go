@@ -25,6 +25,7 @@ import (
 	bundle "github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/apis/bundle/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/files"
+	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/internal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -166,7 +167,7 @@ func (n *Inliner) ComponentFiles(ctx context.Context, comp *bundle.ComponentBuil
 	newObjs = append(newObjs, tmplObjs...)
 
 	// tmplObjs from template files
-	tmplObjs, err = n.templateFiles(ctx, comp.TemplateFiles, comp.ComponentReference(), componentURL)
+	tmplObjs, err = n.templateFiles(ctx, comp.TemplateFiles, comp.ComponentReference(), componentURL, comp.ObjectMeta)
 	if err != nil {
 		return nil, err
 	}
@@ -271,10 +272,9 @@ func (n *Inliner) objectFiles(ctx context.Context, objFiles []bundle.File, ref b
 }
 
 // templateFiles reads template files and builds ObjectTemplates.
-func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.TemplateFileSet, ref bundle.ComponentReference, componentPath *url.URL) ([]*unstructured.Unstructured, error) {
+func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.TemplateFileSet, ref bundle.ComponentReference, componentPath *url.URL, compMeta metav1.ObjectMeta) ([]*unstructured.Unstructured, error) {
 	var outObj []*unstructured.Unstructured
 	for _, tmplFileSet := range tmplFiles {
-		useSafeYamlTemplaterDefault := tmplFileSet.UseSafeYAMLTemplater
 		for _, tf := range tmplFileSet.Files {
 			furl, err := tf.ParsedURL()
 			if err != nil {
@@ -299,15 +299,16 @@ func (n *Inliner) templateFiles(ctx context.Context, tmplFiles []bundle.Template
 			objTemplate.ObjectMeta.Annotations = make(map[string]string)
 			objTemplate.ObjectMeta.Annotations[string(bundle.InlinePathIdentifier)] = tf.URL
 
+			if internal.HasSafeYAMLAnnotation(compMeta) {
+				objTemplate.ObjectMeta.Annotations[internal.SafeYAMLAnnotation] = compMeta.GetAnnotations()[internal.SafeYAMLAnnotation]
+			}
+
 			// templateType default is Go Template
 			tmplType := bundle.TemplateTypeGo
 			if tmplFileSet.TemplateType != bundle.TemplateTypeUndefined {
 				tmplType = tmplFileSet.TemplateType
 			}
 			objTemplate.Type = tmplType
-			if useSafeYamlTemplaterDefault != nil && objTemplate.UseSafeYAMLTemplater == nil {
-				objTemplate.UseSafeYAMLTemplater = useSafeYamlTemplaterDefault
-			}
 
 			objJSON, err := converter.FromObject(objTemplate).ToJSON()
 			if err != nil {
@@ -361,10 +362,9 @@ func (n *Inliner) objectTemplateBuilders(ctx context.Context, objects map[string
 					APIVersion: "bundle.gke.io/v1alpha1",
 					Kind:       "ObjectTemplate",
 				},
-				ObjectMeta:           builder.ObjectMeta,
-				OptionsSchema:        builder.OptionsSchema,
-				Template:             string(contents),
-				UseSafeYAMLTemplater: builder.UseSafeYAMLTemplater,
+				ObjectMeta:    builder.ObjectMeta,
+				OptionsSchema: builder.OptionsSchema,
+				Template:      string(contents),
 			}
 			objTemplate.ObjectMeta.Annotations = make(map[string]string)
 			for key, value := range builder.ObjectMeta.Annotations {

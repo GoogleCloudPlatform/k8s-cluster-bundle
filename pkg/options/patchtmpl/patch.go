@@ -208,10 +208,7 @@ func (a *applier) makePatches(ptObjs, objs []*unstructured.Unstructured, opts op
 			return nil, nil, fmt.Errorf("bad patch type: %s", patchType)
 		}
 
-		useSafeYAMLTemplater := false
-		if pto.UseSafeYAMLTemplater != nil {
-			useSafeYAMLTemplater = *pto.UseSafeYAMLTemplater
-		}
+		useSafeYAMLTemplater := internal.HasSafeYAMLAnnotation(pto.ObjectMeta)
 		tmpl, err := internal.NewTemplater(fmt.Sprintf("patch-tmpl-%d", j), pto.Template, patchFuncs, useSafeYAMLTemplater)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parsing patch template %d, %s: %v", j, pto.Template, err)

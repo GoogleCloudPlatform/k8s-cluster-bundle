@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/filter"
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/testutil"
+	"github.com/google/go-cmp/cmp"
 )
 
 const component = `
@@ -377,6 +378,9 @@ spec:
   - apiVersion: v1
     kind: Pod
   - kind: PatchTemplateBuilder
+    metadata:
+      annotations:
+        bundle.gke.io/safe-yaml: true
     apiVersion: bundle.gke.io/v1alpha1
     buildSchema:
       properties:
@@ -387,7 +391,6 @@ spec:
       kind: Pod
       metadata:
         namespace: {{.Namespace}}
-    useSafeYamlTemplater: true
 `,
 			output: `
 kind: Component
@@ -400,12 +403,13 @@ spec:
   - apiVersion: bundle.gke.io/v1alpha1
     kind: PatchTemplate
     metadata:
+      annotations:
+        bundle.gke.io/safe-yaml: "true"
       creationTimestamp: null
     template: |
       kind: Pod
       metadata:
         namespace: foobar
-    useSafeYamlTemplater: true
 `,
 		},
 
@@ -422,7 +426,9 @@ spec:
     kind: Pod
   - kind: PatchTemplateBuilder
     apiVersion: bundle.gke.io/v1alpha1
-    useSafeYamlTemplater: true
+    metadata:
+      annotations:
+        bundle.gke.io/safe-yaml: "true"
     buildSchema:
       required:
         - Namespace
@@ -503,7 +509,8 @@ spec:
 			compStr := strings.Trim(string(compBytes), " \n\r")
 			expStr := strings.Trim(tc.output, " \n\r")
 			if expStr != compStr {
-				t.Errorf("got yaml\n%s\n\nbut expected output yaml to be\n%s", compStr, expStr)
+				diff := cmp.Diff(expStr, compStr)
+				t.Errorf("got yaml\n%s\n\nbut expected output yaml to be\n%s\nDiff:%s", compStr, expStr, diff)
 			}
 		})
 	}
