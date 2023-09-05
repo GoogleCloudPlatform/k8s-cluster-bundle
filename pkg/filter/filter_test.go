@@ -271,9 +271,7 @@ func TestFilterObjects(t *testing.T) {
 func flatten(comp []*bundle.Component) []*unstructured.Unstructured {
 	var out []*unstructured.Unstructured
 	for _, c := range comp {
-		for _, obj := range c.Spec.Objects {
-			out = append(out, obj)
-		}
+		out = append(out, c.Spec.Objects...)
 	}
 	return out
 }
