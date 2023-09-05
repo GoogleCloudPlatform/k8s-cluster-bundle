@@ -17,7 +17,6 @@ package componentsuite
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -40,7 +39,7 @@ func Run(t *testing.T, testSuiteFile string) {
 
 	ctx := context.Background()
 
-	data, err := ioutil.ReadFile(testSuiteFile)
+	data, err := os.ReadFile(testSuiteFile)
 	if err != nil {
 		t.Fatalf("while reading test suite file %q, %v", testSuiteFile, err)
 	}
@@ -61,7 +60,7 @@ func Run(t *testing.T, testSuiteFile string) {
 		}
 	}
 
-	cdata, err := ioutil.ReadFile(cfile)
+	cdata, err := os.ReadFile(cfile)
 	if err != nil {
 		t.Fatalf("While reading component file %q, %v", cfile, err)
 	}

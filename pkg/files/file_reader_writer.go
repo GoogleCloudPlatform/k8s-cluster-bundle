@@ -17,7 +17,6 @@ package files
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -39,7 +38,7 @@ type LocalFileSystemWriter struct{}
 
 // WriteFile writes a file to disk.
 func (*LocalFileSystemWriter) WriteFile(_ context.Context, path string, bytes []byte, permissions os.FileMode) error {
-	return ioutil.WriteFile(path, bytes, permissions)
+	return os.WriteFile(path, bytes, permissions)
 }
 
 // Ensure the LocalFileSystemReader fulfills the contract
@@ -56,7 +55,7 @@ type LocalFileSystemReader struct{}
 
 // ReadFile reads a file from disk.
 func (r *LocalFileSystemReader) ReadFile(_ context.Context, path string) ([]byte, error) {
-	return ioutil.ReadFile(path)
+	return os.ReadFile(path)
 }
 
 // Ensure the LocalFileSystemReader fulfills the contract

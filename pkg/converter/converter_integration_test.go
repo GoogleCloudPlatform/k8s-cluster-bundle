@@ -15,12 +15,12 @@
 package converter
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func TestRealisticDataParse_BundleBuilder(t *testing.T) {
-	b, err := ioutil.ReadFile("../../examples/cluster/bundle-builder-example.yaml")
+	b, err := os.ReadFile("../../examples/cluster/bundle-builder-example.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -36,7 +36,7 @@ func TestRealisticDataParse_BundleBuilder(t *testing.T) {
 }
 
 func TestRealisticDataParse_ComponentSet(t *testing.T) {
-	b, err := ioutil.ReadFile("../../examples/cluster/component-set.yaml")
+	b, err := os.ReadFile("../../examples/cluster/component-set.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -52,7 +52,7 @@ func TestRealisticDataParse_ComponentSet(t *testing.T) {
 }
 
 func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
-	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
+	b, err := os.ReadFile("../../examples/component/etcd-component-builder.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -68,7 +68,7 @@ func TestRealisticDataParse_ComponentBuilder(t *testing.T) {
 }
 
 func TestRealisticDataParse_Component(t *testing.T) {
-	b, err := ioutil.ReadFile("../../examples/component/etcd-component.yaml")
+	b, err := os.ReadFile("../../examples/component/etcd-component.yaml")
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
