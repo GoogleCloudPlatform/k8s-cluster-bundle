@@ -16,7 +16,7 @@ package build
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
@@ -24,7 +24,7 @@ import (
 )
 
 func BenchmarkBuildAndInline_Component(t *testing.B) {
-	b, err := ioutil.ReadFile("../../examples/component/etcd-component-builder.yaml")
+	b, err := os.ReadFile("../../examples/component/etcd-component-builder.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

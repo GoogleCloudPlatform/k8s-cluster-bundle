@@ -16,7 +16,7 @@ package build
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/k8s-cluster-bundle/pkg/converter"
@@ -26,7 +26,7 @@ import (
 func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 	ctx := context.Background()
 	bundlePath := "../../examples/cluster/bundle-builder-example.yaml"
-	b, err := ioutil.ReadFile(bundlePath)
+	b, err := os.ReadFile(bundlePath)
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}
@@ -63,7 +63,7 @@ func TestRealisticDataParseAndInline_Bundle(t *testing.T) {
 func TestRealisticDataParseAndInline_Component(t *testing.T) {
 	ctx := context.Background()
 	dataPath := "../../examples/component/etcd-component-builder.yaml"
-	b, err := ioutil.ReadFile(dataPath)
+	b, err := os.ReadFile(dataPath)
 	if err != nil {
 		t.Fatalf("Error reading file %v", err)
 	}

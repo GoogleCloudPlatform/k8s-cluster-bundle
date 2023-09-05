@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +54,7 @@ type RealStdioReaderWriter struct{}
 
 // ReadAll reads all the input from STDIN.
 func (r *RealStdioReaderWriter) ReadAll() ([]byte, error) {
-	return ioutil.ReadAll(os.Stdin)
+	return io.ReadAll(os.Stdin)
 }
 
 // Write writes content to STDOUT.
