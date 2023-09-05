@@ -32,9 +32,7 @@ func Components(components []*bundle.Component) field.ErrorList {
 	errs := field.ErrorList{}
 	for _, component := range components {
 		compErrs := Component(component)
-		for _, err := range compErrs {
-			errs = append(errs, err)
-		}
+		errs = append(errs, compErrs...)
 	}
 	return errs
 }
